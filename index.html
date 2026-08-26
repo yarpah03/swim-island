@@ -6,17 +6,18 @@
 <title>Плавательный остров ВИП</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --gold:#B98A2E;
-  --gold-lt:#D0A445;
-  --gold-dk:#7E5C1E;
-  --gold-dim:rgba(185,138,46,.16);
-  --gold-line:rgba(185,138,46,.30);
-  --bg:#080807;
-  --surf:#111110;
-  --surf-2:#191817;
+  --gold:#D4AF37;
+  --gold-lt:#E5C767;
+  --gold-dk:#A8862A;
+  --gold-soft:#F2E2A8;
+  --gold-dim:rgba(212,175,55,.16);
+  --gold-line:rgba(212,175,55,.30);
+  --bg:#121228;
+  --surf:#181832;
+  --surf-2:#1E1E3C;
   --txt:#F2EFE8;
   --txt-2:#A8A296;
   --txt-3:#6E6A62;
@@ -26,7 +27,7 @@
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--txt);
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-family:'Oswald',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   font-size:16px;line-height:1.6;
   padding-bottom:64px;
   -webkit-font-smoothing:antialiased;
@@ -40,7 +41,7 @@ header{
 }
 .hd{display:flex;align-items:center;gap:14px;padding:16px 0}
 .mark{width:42px;height:42px;flex:none}
-.wordmark{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;font-weight:600;letter-spacing:.10em;color:var(--gold);line-height:1.1}
+.wordmark{font-family:'Oswald',sans-serif;font-weight:700;font-size:23px;letter-spacing:.10em;color:var(--gold);line-height:1.1}
 .wordmark small{display:block;font-family:'Inter',sans-serif;font-size:10px;font-weight:500;letter-spacing:.28em;color:var(--txt-3);margin-top:3px}
 .hd-spacer{flex:1}
 .acct{width:38px;height:38px;border:1px solid var(--gold-line);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:13px;font-weight:500;flex:none}
@@ -50,7 +51,7 @@ header{
 .crumb a:hover{color:var(--gold-lt)}
 .crumb span.sep{color:var(--txt-3)}
 
-h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;font-weight:600;letter-spacing:.01em;line-height:1.15;margin:6px 0 10px}
+h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:38px;letter-spacing:.01em;line-height:1.15;margin:6px 0 10px}
 .lede{color:var(--txt-2);font-size:16px;max-width:660px;margin-bottom:30px}
 h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:38px 0 16px}
 
@@ -82,24 +83,24 @@ h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 .grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 
 .card{
-  background:var(--surf);border:1px solid rgba(185,138,46,.18);border-radius:var(--r);
+  background:var(--surf);border:1px solid rgba(212,175,55,.18);border-radius:var(--r);
   padding:20px 20px 18px;cursor:pointer;transition:border-color .18s,background .18s,transform .18s;
   display:flex;flex-direction:column;gap:8px;text-align:left;color:inherit;font:inherit;width:100%;
 }
 .card:hover{border-color:var(--gold);background:var(--surf-2);transform:translateY(-2px)}
-.card .num{font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;color:var(--gold-dk);letter-spacing:.06em}
+.card .num{font-family:'Oswald',sans-serif;font-weight:600;font-size:15px;color:var(--gold-dk);letter-spacing:.06em}
 .card .ttl{font-size:18px;font-weight:500;color:var(--txt);letter-spacing:.01em}
 .card .sub{font-size:13.5px;color:var(--txt-2);line-height:1.5}
 .card .meta{margin-top:6px;font-size:12px;color:var(--txt-3);letter-spacing:.04em}
 
 .row{
   display:flex;align-items:center;gap:14px;
-  background:var(--surf);border:1px solid rgba(185,138,46,.14);border-radius:10px;
+  background:var(--surf);border:1px solid rgba(212,175,55,.14);border-radius:10px;
   padding:15px 17px;cursor:pointer;transition:border-color .18s,background .18s;
   text-align:left;color:inherit;font:inherit;width:100%;
 }
 .row:hover{border-color:var(--gold-line);background:var(--surf-2)}
-.row .idx{font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold);min-width:34px;letter-spacing:.04em}
+.row .idx{font-family:'Oswald',sans-serif;font-weight:600;font-size:16px;color:var(--gold);min-width:34px;letter-spacing:.04em}
 .row .body{flex:1;min-width:0}
 .row .name{font-size:15.5px;font-weight:500}
 .row .note{font-size:13px;color:var(--txt-2);margin-top:2px}
@@ -110,8 +111,8 @@ h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:22px}
 
 .slot{
-  border:1px dashed rgba(185,138,46,.34);border-radius:var(--r);
-  padding:30px 22px;text-align:center;color:var(--txt-3);font-size:14px;background:rgba(185,138,46,.03)
+  border:1px dashed rgba(212,175,55,.34);border-radius:var(--r);
+  padding:30px 22px;text-align:center;color:var(--txt-3);font-size:14px;background:rgba(212,175,55,.03)
 }
 .slot b{display:block;color:var(--gold);font-weight:500;font-size:15px;margin-bottom:6px;letter-spacing:.02em}
 
@@ -121,18 +122,18 @@ h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 .tipbox b{color:var(--gold);font-weight:500}
 
 .lesson{max-width:760px}
-.lesson .intro{background:var(--surf);border:1px solid rgba(185,138,46,.16);border-radius:var(--r);padding:20px 22px;margin-bottom:8px;color:var(--txt-2);font-size:15px;line-height:1.65}
+.lesson .intro{background:var(--surf);border:1px solid rgba(212,175,55,.16);border-radius:var(--r);padding:20px 22px;margin-bottom:8px;color:var(--gold-soft);font-style:italic;font-size:15px;line-height:1.65}
 .ex{margin:30px 0 0}
 .ex-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
-.ex-n{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;color:var(--gold-dk);line-height:1;min-width:34px}
+.ex-n{font-family:'Oswald',sans-serif;font-weight:700;font-size:30px;color:var(--gold-dk);line-height:1;min-width:34px}
 .ex-t{font-size:21px;font-weight:500;letter-spacing:.01em;color:var(--txt)}
 .goal,.hint{display:flex;gap:11px;padding:13px 16px;border-radius:10px;font-size:14.5px;line-height:1.6;margin-bottom:9px}
-.goal{background:rgba(185,138,46,.07);border-left:3px solid var(--gold)}
+.goal{background:rgba(212,175,55,.07);border-left:3px solid var(--gold)}
 .hint{background:var(--surf);border-left:3px solid var(--gold-dk)}
 .goal i,.hint i{font-style:normal;color:var(--gold);flex:none;font-size:15px}
-.goal b,.hint b{color:var(--gold);font-weight:500}
-.goal span,.hint span{color:var(--txt-2)}
-.vid{margin:14px 0 0;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(185,138,46,.2)}
+.goal b,.hint b{color:var(--gold);font-weight:600;font-style:italic}
+.goal span,.hint span{color:var(--gold-soft);font-style:italic}
+.vid{margin:14px 0 0;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(212,175,55,.2)}
 .vid video{width:100%;display:block;background:#000}
 .vid-cap{padding:9px 14px;font-size:12.5px;color:var(--txt-3);letter-spacing:.03em;background:var(--surf)}
 .vid{position:relative}
@@ -140,26 +141,26 @@ h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 .vid .frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:block}
 .vid-ph{
   aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  background:rgba(185,138,46,.04);color:var(--txt-3);font-size:13px;text-align:center;padding:20px
+  background:rgba(212,175,55,.04);color:var(--txt-3);font-size:13px;text-align:center;padding:20px
 }
 .vid-ph b{color:var(--gold);font-weight:500;font-size:15px;letter-spacing:.02em}
 .snd{
   position:absolute;right:10px;top:10px;z-index:3;
   display:flex;align-items:center;gap:7px;
   background:rgba(8,8,7,.72);backdrop-filter:blur(6px);
-  border:1px solid rgba(185,138,46,.4);border-radius:20px;
+  border:1px solid rgba(212,175,55,.4);border-radius:20px;
   padding:6px 13px;font-size:12px;color:var(--gold);
   cursor:pointer;pointer-events:none;transition:opacity .25s;letter-spacing:.02em
 }
 .vid.on .snd{opacity:0}
 .vid video{cursor:pointer}
-.plan{margin-top:14px;border:1px solid rgba(185,138,46,.2);border-radius:var(--r);overflow:hidden}
-.plan-r{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid rgba(185,138,46,.14);font-size:14.5px}
+.plan{margin-top:14px;border:1px solid rgba(212,175,55,.2);border-radius:var(--r);overflow:hidden}
+.plan-r{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid rgba(212,175,55,.14);font-size:14.5px}
 .plan-r:last-child{border-bottom:0}
-.plan-r b{color:var(--gold);font-weight:500;flex:none;min-width:62px}
-.plan-r span{color:var(--txt-2)}
+.plan-r b{color:var(--gold);font-weight:600;font-style:italic;flex:none;min-width:62px}
+.plan-r span{color:var(--gold-soft);font-style:italic}
 @media(max-width:600px){.ex-n{font-size:24px;min-width:26px}.ex-t{font-size:18px}}
-footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 8px;color:var(--txt-3);font-size:12.5px;letter-spacing:.04em}
+footer{border-top:1px solid rgba(212,175,55,.14);margin-top:56px;padding:22px 0 8px;color:var(--txt-3);font-size:12.5px;letter-spacing:.04em}
 
 @media(max-width:600px){
   .wrap{padding:0 15px}
@@ -204,7 +205,33 @@ const KINESCOPE = {
   "Баттерфляй_03_Одной_рукой.mp4":          "",
   "Баттерфляй_04_Правой_левой_двумя.mp4":   "",
   "Баттерфляй_05_Паузы_между_ударами.mp4":  "",
-  "Баттерфляй_06_В_координации.mp4":        ""
+  "Баттерфляй_06_В_координации.mp4":        "",
+
+  "Спина_01_Ноги_руки_вдоль_тела.mp4":      "",
+  "Спина_02_Одна_рука_вверх.mp4":           "",
+  "Спина_03_Руки_в_стрелке.mp4":            "",
+  "Спина_04_Разворот_плеч.mp4":             "",
+  "Спина_05_Подъём_руки.mp4":               "",
+  "Спина_06_Гребки_руки_вдоль_тела.mp4":    "",
+  "Спина_07_Гребки_руки_вверху.mp4":        "",
+  "Спина_08_В_координации.mp4":             "",
+
+  "Брасс_01_Ноги_кроль_с_доской.mp4":       "",
+  "Брасс_02_Руки_брасс_ноги_кроль.mp4":     "",
+  "Брасс_03_Ноги_у_бортика.mp4":            "",
+  "Брасс_04_Гребок_и_два_толчка.mp4":       "",
+  "Брасс_05_Полная_координация.mp4":        "",
+
+  "Кроль_01_Ноги_с_доской.mp4":             "",
+  "Кроль_02_Ноги_на_боку_с_доской.mp4":     "",
+  "Кроль_03_На_боку_с_доской_выдох.mp4":    "",
+  "Кроль_04_На_боку_без_доски_выдох.mp4":   "",
+  "Кроль_05_Один_гребок_с_доской.mp4":      "",
+  "Кроль_06_Смена_рук_с_доской.mp4":        "",
+  "Кроль_07_Смена_рук_без_доски.mp4":       "",
+  "Кроль_08_2х2_с_доской.mp4":              "",
+  "Кроль_09_2х2_без_доски.mp4":             "",
+  "Кроль_10_3х3_без_доски.mp4":             ""
 };
 
 const T = {
@@ -260,9 +287,138 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     ]
   }},
 
+  sp0:{title:"На спине с нуля",lede:"Восемь упражнений в том порядке, в котором их нужно осваивать. После каждого — видео с показом.",lesson:{
+    intro:"Плавание на спине — единственный стиль, в котором лицо находится над водой на протяжении всего заплыва. Руки выполняют поочерёдные гребки, а корпус постоянно разворачивается вместе с каждым движением рук. Данный стиль плавания развивает широчайшие мышцы спины, задние дельты и трицепсы, а также мышцы кора и ног, которые держат тело в более стабильном положении.",
+    ex:[
+      {n:1,t:"Ноги на спине, руки вдоль тела",
+       goal:"научиться держать тело горизонтально на поверхности и работать ногами, лёжа на спине.",
+       hint:"смотрим строго вверх, подбородок держим ровно.",
+       v:"Спина_01_Ноги_руки_вдоль_тела.mp4"},
+      {n:2,t:"Одна рука вдоль тела, вторая вверх",
+       goal:"почувствовать асимметричное положение тела и сохранить правильную работу ногами.",
+       hint:"тело должно оставаться на одной линии, без прогиба в пояснице.",
+       v:"Спина_02_Одна_рука_вверх.mp4"},
+      {n:3,t:"Ноги на спине, руки в стрелке",
+       goal:"отработать обтекаемое положение тела, сохраняя правильную работу ногами.",
+       hint:"чтобы зафиксировать руки в стрелке — схватитесь большим пальцем нижней ладони за ладонь, которая находится сверху.",
+       v:"Спина_03_Руки_в_стрелке.mp4"},
+      {n:4,t:"Разворот плеч",
+       goal:"освоить правильную ротацию корпуса — одно плечо приподнимается над водой, второе опускается.",
+       hint:"ротация идёт от корпуса, а не от рук — представь, что тело крутится вокруг воображаемой оси вдоль позвоночника.",
+       v:"Спина_04_Разворот_плеч.mp4"},
+      {n:5,t:"Подъём руки и разворот плеч",
+       goal:"отработать первое движение — подъём руки, лежащей вдоль тела, синхронно с разворотом плеч.",
+       hint:"рука выходит из воды, и плечо в этот момент уже приподнимается.",
+       v:"Спина_05_Подъём_руки.mp4"},
+      {n:6,t:"Гребки из положения руки вдоль тела",
+       goal:"соединить поочерёдные гребки обеими руками с ротацией плеч, начиная движение из положения рук вдоль тела.",
+       hint:"делаем небольшую паузу после каждого гребка, чтобы почувствовать правильный разворот плеч.",
+       v:"Спина_06_Гребки_руки_вдоль_тела.mp4"},
+      {n:7,t:"Гребки из положения руки вверху",
+       goal:"отработать те же поочерёдные движения, но начиная из положения руки вверху, сохраняя ротацию плеч.",
+       hint:"рука входит в воду мизинцем, чуть шире линии плеча — это даёт более длинный и мощный гребок.",
+       v:"Спина_07_Гребки_руки_вверху.mp4"},
+      {n:8,t:"Плавание на спине в координации",
+       goal:"соединить ноги, поочерёдные гребки руками и ротацию плеч в единый непрерывный цикл плавания на спине.",
+       hint:"первое движение — рукой, что внизу, а рука сверху в этот момент дольше скользит. Частая ошибка — грести двумя руками сразу, как «мельница»: руки должны работать строго по очереди.",
+       v:"Спина_08_В_координации.mp4"}
+    ],
+    plan:[
+      ["Этап 1","Ноги и положение тела на спине (упражнения 1, 2 и 3)"],
+      ["Этап 2","Ротация плеч (упражнение 4)"],
+      ["Этап 3","Работа рук вместе с ротацией (упражнения 5, 6 и 7)"],
+      ["Этап 4","Плавание на спине в координации (упражнение 8)"]
+    ]
+  }},
+
+  br0:{title:"Брасс с нуля",lede:"Пять упражнений в том порядке, в котором их нужно осваивать. После каждого — видео с показом.",lesson:{
+    intro:"Брасс — один из самых древних и сложных, с точки зрения техники, стилей плавания. Пловец лежит на груди, а руки и ноги выполняют симметричные движения. За характерное движение в ногах — брасс часто называют «лягушкой». В этом стиле очень хорошо развиваются мышцы груди, приводящие мышцы бёдер и ягодичные мышцы, а также мышцы кора, которые удерживают обтекаемое тело на протяжении всего цикла.",
+    ex:[
+      {n:1,t:"Ноги кроль с доской",
+       goal:"научиться правильно дышать, поднимая и опуская голову. Ноги при этом работают кролем.",
+       hint:"вдох — короткий и быстрый; выдох — долгий и плавный, всё время, пока голова в воде.",
+       v:"Брасс_01_Ноги_кроль_с_доской.mp4"},
+      {n:2,t:"Руки брасс и ноги кроль",
+       goal:"освоить правильную технику гребка руками брассом, пока ноги кролем обеспечивают дополнительную поддержку.",
+       hint:"голова поднимается вместе с началом гребка и уходит вниз вместе с вытягиванием рук — не раньше и не позже.",
+       v:"Брасс_02_Руки_брасс_ноги_кроль.mp4"},
+      {n:3,t:"Ноги брасс, держась за бортик",
+       goal:"понять и настроить правильную технику толчка ногами брассом, держась руками за бортик.",
+       hint:"подтягивание ног — мягко и медленно, толчок — резкий и сильный; колени держим на ширине плеч, не разводите широко.",
+       v:"Брасс_03_Ноги_у_бортика.mp4"},
+      {n:4,t:"Гребок руками и два толчка ногами",
+       goal:"научиться соединять движения рук и ног в правильной последовательности — гребок руками, затем два толчка ногами.",
+       hint:"пауза и скольжение — это важная часть техники, тело в этот момент следует направлять вперёд.",
+       v:"Брасс_04_Гребок_и_два_толчка.mp4"},
+      {n:5,t:"Полная координация",
+       goal:"плыть настоящим брассом — один гребок руками + один толчок ногами.",
+       hint:"когда почувствуете уверенность — начните соединять движения: руки ещё заканчивают гребок, а ноги уже начинают подтягиваться для толчка.",
+       v:"Брасс_05_Полная_координация.mp4"}
+    ],
+    plan:[
+      ["Этап 1","Дыхание и работа рук (упражнения 1 и 2)"],
+      ["Этап 2","Техника ног (упражнение 3)"],
+      ["Этап 3","Соединение рук и ног (упражнение 4)"],
+      ["Этап 4","Полная координация (упражнение 5)"]
+    ]
+  }},
+
+  kr0:{title:"Кроль с нуля",lede:"Десять упражнений в том порядке, в котором их нужно осваивать. После каждого — видео с показом.",lesson:{
+    intro:"Кроль (вольный стиль) — самый быстрый и популярный способ плавания. Пловец лежит на груди, поочерёдно гребёт руками, а ноги непрерывно работают, выполняя короткие и хлёсткие движения. Дыхание происходит в сторону — голова поворачивается вместе с телом, а не поднимается вперёд. Стиль развивает плечи, широчайшие мышцы спины, мышцы кора и ног. Главный секрет лёгкого кроля — ротация всего тела во время плавания.",
+    ex:[
+      {n:1,t:"Ноги кроль с доской",
+       goal:"освоить непрерывную работу ногами и научиться поднимать и опускать голову, соотнося это движение с правильным дыханием.",
+       hint:"ноги работают от бедра, сильно не сгибаясь в коленях — носки натянуты.",
+       v:"Кроль_01_Ноги_с_доской.mp4"},
+      {n:2,t:"Ноги кроль на боку с доской",
+       goal:"научиться удерживать устойчивое положение тела на боку.",
+       hint:"тело вытянуто в одну линию — не заваливайтесь на живот или на спину.",
+       v:"Кроль_02_Ноги_на_боку_с_доской.mp4"},
+      {n:3,t:"Ноги кроль на боку с доской и выдох",
+       goal:"то же положение на боку, но с добавлением правильного вдоха.",
+       hint:"выдох плавный и непрерывный — это готовит вас к дыханию в плавании кролем в координации.",
+       v:"Кроль_03_На_боку_с_доской_выдох.mp4"},
+      {n:4,t:"Ноги кроль на боку без доски и выдох",
+       goal:"баланс тела на боку без опоры, с добавлением дыхания.",
+       hint:"если тяжело удерживать баланс — вернитесь на пару подходов к упражнению с доской.",
+       v:"Кроль_04_На_боку_без_доски_выдох.mp4"},
+      {n:5,t:"Один гребок с доской",
+       goal:"отработать полное движение одной руки в связке с дыханием.",
+       hint:"вдох делается до начала гребка, а во время самого гребка голова смотрит вниз.",
+       v:"Кроль_05_Один_гребок_с_доской.mp4"},
+      {n:6,t:"Смена рук с доской",
+       goal:"научиться передавать движение с одной руки на другую — первый шаг к чередованию.",
+       hint:"момент, когда обе руки почти встречаются у доски, — это и есть переключение с одной руки на другую.",
+       v:"Кроль_06_Смена_рук_с_доской.mp4"},
+      {n:7,t:"Смена рук без доски",
+       goal:"то же самое, но без доски.",
+       hint:"руки всегда практически догоняют друг друга.",
+       v:"Кроль_07_Смена_рук_без_доски.mp4"},
+      {n:8,t:"Кроль 2×2 с паузой, с доской",
+       goal:"плыть с дыханием на каждый второй гребок, сохраняя опору.",
+       hint:"один гребок делается на задержке — вдох происходит только в одну сторону.",
+       v:"Кроль_08_2х2_с_доской.mp4"},
+      {n:9,t:"Кроль 2×2 с паузой, без доски",
+       goal:"то же самое, но уже полностью без опоры.",
+       hint:"это уже почти настоящий кроль с дыханием под второй гребок — не спешите, держите ритм.",
+       v:"Кроль_09_2х2_без_доски.mp4"},
+      {n:10,t:"Кроль 3×3 с паузой, без доски",
+       goal:"финальное упражнение — полноценный кроль с дыханием под каждый третий гребок (в обе стороны).",
+       hint:"это и есть полноценный кроль — теперь работайте над плавностью и длиной гребка.",
+       v:"Кроль_10_3х3_без_доски.mp4"}
+    ],
+    plan:[
+      ["Этап 1","Ноги и дыхание (упражнение 1)"],
+      ["Этап 2","Положение тела на боку (упражнения 2, 3 и 4)"],
+      ["Этап 3","Работа одной рукой и смена рук (упражнения 5, 6 и 7)"],
+      ["Этап 4","Кроль с дыханием 2×2 (упражнения 8 и 9)"],
+      ["Этап 5","Кроль с дыханием 3×3 (упражнение 10)"]
+    ]
+  }},
+
   s1_1:{title:"Обучение с нуля",lede:"Комплексы упражнений для освоения каждого стиля плавания.",rows:[
-    ["1.1.1","Баттерфляй","6 упражнений с видео","bt0"],["1.1.2","Спина","","c"],["1.1.3","Брасс","","c"],
-    ["1.1.4","Кроль","","c"],["1.1.5","Старты","","c"],["1.1.6","Повороты","11 видов поворотов","c"]
+    ["1.1.1","Баттерфляй","6 упражнений с видео","bt0"],["1.1.2","Спина","8 упражнений с видео","sp0"],["1.1.3","Брасс","5 упражнений с видео","br0"],
+    ["1.1.4","Кроль","10 упражнений с видео","kr0"],["1.1.5","Старты","","c"],["1.1.6","Повороты","11 видов поворотов","c"]
   ]},
   s1_2:{title:"Совершенствование техники",lede:"Комплексы упражнений для продвинутого уровня.",rows:[
     ["1.2.1","Баттерфляй","10 упражнений","c"],["1.2.2","Спина","18 упражнений","c"],
@@ -368,7 +524,7 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
 };
 
 const PARENT = {
-  s1:"home",s1_1:"s1",bt0:"s1_1",s1_2:"s1",s1_3:"s1",s1_4:"s1",
+  s1:"home",s1_1:"s1",bt0:"s1_1",sp0:"s1_1",br0:"s1_1",kr0:"s1_1",s1_2:"s1",s1_3:"s1",s1_4:"s1",
   e_bt:"s1_4",e_sp:"s1_4",e_br:"s1_4",e_kr:"s1_4",
   s2:"home",b_vy:"s2",b_sk:"s2",b_mo:"s2",b_vo:"s2",
   s3:"home",d1:"s3",d2:"s3",d3:"s3",d4:"s3",d5:"s3",
@@ -489,7 +645,7 @@ if(d.lesson){
       h += `<div class="grid-2">`;
       d.posters.forEach(p=>{
         h += `<button class="row">
-          <span style="width:44px;height:62px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(185,138,46,.07);display:flex;align-items:center;justify-content:center;color:var(--gold-dk);font-size:19px">◱</span>
+          <span style="width:44px;height:62px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(212,175,55,.07);display:flex;align-items:center;justify-content:center;color:var(--gold-dk);font-size:19px">◱</span>
           <span class="body"><span class="name">${esc(p[0])}</span><span class="note">${esc(p[1])}</span></span>
           <span class="chev">›</span>
         </button>`;
@@ -502,7 +658,7 @@ if(d.lesson){
       h += `<div class="grid-2">`;
       ["Разбор кроля","Разбор спины","Разбор брасса","Разбор баттерфляя","Старты и повороты","Вопросы и ответы"].forEach((v,i)=>{
         h += `<button class="row">
-          <span style="width:60px;height:38px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(185,138,46,.07);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px">▶</span>
+          <span style="width:60px;height:38px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(212,175,55,.07);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px">▶</span>
           <span class="body"><span class="name">${esc(v)}</span><span class="note">запись эфира</span></span>
           <span class="chev">›</span>
         </button>`;
