@@ -246,6 +246,28 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
   .wordmark{font-size:19px}
   .mark{width:36px;height:36px}
 }
+/* Суша: карточка упражнения в справочнике (статика/динамика/резина/круговые/гибкость) */
+.cat{max-width:780px}
+.cat-zone-h{margin:30px 0 4px}
+.cat-zone-note{color:var(--txt-3);font-size:13.5px;line-height:1.6;margin-bottom:14px}
+.exi{
+  background:var(--surf);border:1px solid rgba(185,138,46,.14);border-radius:var(--r);
+  padding:16px 20px;margin-bottom:10px
+}
+.exi-h{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.exi-code{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--gold-dk);flex:none}
+.exi-name{font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:var(--txt);letter-spacing:.01em}
+.exi-how{font-size:14px;line-height:1.6;color:var(--txt-2);margin-bottom:8px}
+.exi-dose{font-size:13.5px;color:var(--txt-2);margin-bottom:6px}
+.exi-dose b{color:var(--gold);font-weight:500}
+.exi-var{margin:6px 0 0;padding:0;list-style:none;font-size:13px;color:var(--txt-3)}
+.exi-var li{margin-bottom:3px}
+.exi-var b{color:var(--gold-dk);font-weight:500}
+/* Суша: список станций/упражнений внутри готовой связки (комплекса/круговой) */
+.stset{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid rgba(185,138,46,.10);font-size:14.5px;line-height:1.5;color:var(--txt-2)}
+.stset:last-child{border-bottom:0}
+.stset b{color:var(--gold-dk);font-weight:500}
+.stset span.amt{flex:none;color:var(--gold-lt);font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -265,6 +287,7 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
 <footer class="wrap">ПЛАВАТЕЛЬНЫЙ ОСТРОВ ВИП · прототип интерфейса</footer>
 
 <script src="trenirovki.js"></script>
+<script src="susha.js"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -541,8 +564,8 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     {id:"d1",n:"3.1",t:"Разминка перед водой",s:"Суставная разминка, резина, мячик, коврик",m:"21 упражнение · 15 минут"},
     {id:"d2",n:"3.2",t:"Гребковые тренировки на резине",s:"Кроль, дельфин, брасс по фазам гребка",m:"3 стиля"},
     {id:"d3",n:"3.3",t:"Кор и стабилизация",s:"Статика, динамика и комплексы",m:"45 упражнений · 11 комплексов"},
-    {id:"d4",n:"3.4",t:"Круговые тренировки",s:"Всё тело, пульс, таймер 45/15",m:"32 станции · 9 тренировок"},
-    {id:"d5",n:"3.5",t:"Гибкость",s:"Плечо, голеностоп, таз, спина",m:"34 упражнения · 5 комплексов"}
+    {id:"d4",n:"3.4",t:"Круговые тренировки",s:"Всё тело, пульс, таймер 45/15",m:"29 станций · 9 тренировок"},
+    {id:"d5",n:"3.5",t:"Гибкость",s:"Плечо, голеностоп, таз, спина",m:"34 упражнения"}
   ]},
   d1:{title:"Разминка перед водой",lede:"Упражнения идут подряд и пронумерованы. Выбирать ничего не нужно.",rows:[
     ["","Суставная разминка, сверху вниз","упражнения 1–7","c"],
@@ -681,6 +704,129 @@ Object.keys(BLOCKS).forEach(dir=>{
   });
 });
 
+/* ============================================================
+   СУША ДЛЯ ПЛОВЦА — подключение данных из susha.js
+   ------------------------------------------------------------
+   Превращает SUSHA_* объекты в обычные экраны T. Ничего в
+   вёрстке или оформлении не меняет — использует те же render-
+   ветки catalog/stations, что и остальной сайт.
+   ============================================================ */
+
+// d1 — разминка перед водой: один общий экран на все пять строк списка
+T.d1_all = {
+  title: SUSHA_WARMUP.title, lede: SUSHA_WARMUP.subtitle,
+  catalog: {
+    intro: SUSHA_WARMUP.intro, equip: SUSHA_WARMUP.equip, safety: SUSHA_WARMUP.safety,
+    blocks: SUSHA_WARMUP.parts.map(p => ({
+      type: "zone", title: p.title, note: p.note,
+      items: p.items.map(it => ({ n: it.n, name: it.name, how: it.how, benefit: it.why, watch: it.watch, table: it.table }))
+    })),
+    closing: "Вся разминка целиком — " + SUSHA_WARMUP.total
+  }
+};
+PARENT.d1_all = "d1";
+T.d1.rows.forEach(r => r[3] = "d1_all");
+
+// d2 — гребковые тренировки на резине: 6 отдельных экранов
+T.d2_setup = { title: "Как крепить резину и как стоять", lede: "", catalog: { blocks: [
+  { type:"list", title: SUSHA_BAND.setup.title, intro: SUSHA_BAND.setup.how, points: SUSHA_BAND.setup.points },
+  { type:"text", watch: SUSHA_BAND.setup.watch },
+  { type:"list", title: SUSHA_BAND.fit.title, intro: SUSHA_BAND.fit.rule, points: SUSHA_BAND.fit.points },
+  { type:"text", watch: SUSHA_BAND.fit.watch }
+] } };
+T.d2_warmup = { title: "Общая разминка", lede: SUSHA_BAND.generalWarmup.duration, catalog: { blocks: [
+  { type:"text", text: SUSHA_BAND.generalWarmup.note },
+  { type:"table", rows: SUSHA_BAND.generalWarmup.items }
+] } };
+const susha_strokePage = (key) => {
+  const S = SUSHA_BAND.strokes[key];
+  if (S.skip) return { title: S.name, lede: "", catalog: { blocks: [{ type:"text", text: S.note }] } };
+  return { title: S.name, lede: SUSHA_BAND.phaseNote, catalog: { blocks: [
+    { type:"text", text: S.note },
+    { type:"zone", title: "Фазы гребка", items: S.phases.map(ph => ({ n: ph.n, name: ph.name, dose: ph.dose, how: ph.how, watch: ph.watch, mistake: ph.mistake })) }
+  ] } };
+};
+T.d2_crawl = susha_strokePage("crawl");
+T.d2_fly = susha_strokePage("fly");
+T.d2_breast = susha_strokePage("breast");
+T.d2_series = { title: "Рабочая серия и заминка", lede: "", catalog: { blocks: [
+  { type:"table", title: SUSHA_BAND.workSeries.title, intro: SUSHA_BAND.workSeries.note, rows: [[""].concat(SUSHA_BAND.workSeries.table.head)].concat(SUSHA_BAND.workSeries.table.rows), note: SUSHA_BAND.workSeries.note2 },
+  { type:"text", watch: SUSHA_BAND.workSeries.watch },
+  { type:"list", title: SUSHA_BAND.cooldown.title + " — " + SUSHA_BAND.cooldown.duration, points: SUSHA_BAND.cooldown.items },
+  { type:"text", safety: SUSHA_BAND.safety },
+  { type:"list", title: "Короткий чек-лист перед каждым подходом", points: SUSHA_BAND.checklist }
+] } };
+["d2_setup","d2_warmup","d2_crawl","d2_fly","d2_breast","d2_series"].forEach(id => PARENT[id] = "d2");
+T.d2.rows[0][3]="d2_setup"; T.d2.rows[1][3]="d2_warmup";
+T.d2.rows[2][3]="d2_crawl"; T.d2.rows[3][3]="d2_fly"; T.d2.rows[4][3]="d2_breast";
+T.d2.rows[5][3]="d2_series";
+
+// d3 — кор и стабилизация: два каталога + список комплексов + Дрессел
+const susha_catalogFromZones = (src) => ({
+  intro: src.intro, safety: src.safety, watch: src.watch,
+  blocks: src.zones.map(z => ({ type:"zone", title: z.title, items: z.items })).concat(
+    src.howToUse ? [{ type:"text", text: src.howToUse }] : []
+  )
+});
+T.d3_static = { title: SUSHA_STATICS.title, lede: SUSHA_STATICS.subtitle, catalog: susha_catalogFromZones(SUSHA_STATICS) };
+T.d3_dynamic = { title: SUSHA_DYNAMICS.title, lede: SUSHA_DYNAMICS.subtitle, catalog: susha_catalogFromZones(SUSHA_DYNAMICS) };
+T.d3_complexes = {
+  title: "Комплексы 1–10", lede: "Десять готовых связок статики и динамики.",
+  rows: SUSHA_CORE_COMPLEXES.map(c => [String(c.n), c.title, c.tag, "d3_c" + c.n])
+};
+SUSHA_CORE_COMPLEXES.forEach(c => {
+  const id = "d3_c" + c.n;
+  T[id] = { title: c.title, lede: c.tag, desc: c.desc, stations: c.items, watch: c.watch || SUSHA_CORE_HOWTO.watch, safety: c.safety, howTo: SUSHA_CORE_HOWTO };
+  PARENT[id] = "d3_complexes";
+});
+T.d3_dressel = {
+  title: SUSHA_DRESSEL.title, lede: SUSHA_DRESSEL.tag,
+  catalog: { blocks: [
+    { type:"text", text: SUSHA_DRESSEL.about, safety: SUSHA_DRESSEL.safety },
+    { type:"list", title: "Правила выполнения", points: SUSHA_DRESSEL.rules },
+    { type:"zone", title: "Упражнения", note: SUSHA_DRESSEL.watch, items: SUSHA_DRESSEL.items },
+    { type:"table", title: "Схема — 4 раунда подряд", rows: [SUSHA_DRESSEL.table.head].concat(SUSHA_DRESSEL.table.rows), note: SUSHA_DRESSEL.table.note },
+    { type:"text", title: "Сокращённая версия", text: SUSHA_DRESSEL.short },
+    { type:"text", title: "Как часто", text: SUSHA_DRESSEL.frequency, safety: SUSHA_DRESSEL.afterSafety }
+  ] }
+};
+PARENT.d3_complexes = "d3"; PARENT.d3_dressel = "d3";
+T.d3.rows[0][3]="d3_static"; T.d3.rows[1][3]="d3_dynamic";
+T.d3.rows[2][3]="d3_complexes"; T.d3.rows[3][3]="d3_dressel";
+
+// d4 — круговые тренировки: каталог станций + список круговых 1–8 + круговая 9 отдельно
+T.d4_ex = { title: SUSHA_CIRCUIT_EX.title, lede: SUSHA_CIRCUIT_EX.subtitle, catalog: {
+  intro: SUSHA_CIRCUIT_EX.intro, equip: SUSHA_CIRCUIT_EX.equip, safety: SUSHA_CIRCUIT_EX.safety,
+  blocks: SUSHA_CIRCUIT_EX.zones.map(z => ({ type:"zone", title: z.title, items: z.items })).concat([{ type:"text", text: SUSHA_CIRCUIT_EX.note }])
+} };
+const susha_c1_8 = SUSHA_CIRCUIT_WORKOUTS.filter(w => w.n <= 8);
+const susha_c9 = SUSHA_CIRCUIT_WORKOUTS.find(w => w.n === 9);
+T.d4_workouts = {
+  title: "Круговые 1–8", lede: "Восемь готовых круговых тренировок, таймер 45/15.",
+  rows: susha_c1_8.map(c => [String(c.n), c.title, c.tag, "d4_c" + c.n])
+};
+susha_c1_8.forEach(c => {
+  const id = "d4_c" + c.n;
+  T[id] = { title: c.title, lede: c.tag, desc: c.desc, stations: c.stations, watch: c.watch, safety: c.safety, howTo: SUSHA_CIRCUIT_HOWTO };
+  PARENT[id] = "d4_workouts";
+});
+T.d4_c9 = {
+  title: susha_c9.title, lede: susha_c9.tag, desc: susha_c9.desc, stations: susha_c9.stations,
+  watch: susha_c9.watch, safety: susha_c9.safety, howTo: susha_c9.howTo
+};
+PARENT.d4_ex = "d4"; PARENT.d4_workouts = "d4"; PARENT.d4_c9 = "d4";
+T.d4.rows[0][3]="d4_ex"; T.d4.rows[1][3]="d4_workouts"; T.d4.rows[2][3]="d4_c9";
+
+// d5 — гибкость: только каталог упражнений (комплексов и тестов пока нет)
+T.d5_ex = { title: SUSHA_FLEX.title, lede: SUSHA_FLEX.subtitle, catalog: {
+  intro: SUSHA_FLEX.intro, equip: SUSHA_FLEX.equip, safety: SUSHA_FLEX.safety,
+  blocks: [{ type:"list", title: "Три правила, без которых это не работает", points: SUSHA_FLEX.rules }]
+    .concat(SUSHA_FLEX.zones.map(z => ({ type:"zone", title: z.title, note: z.intro, items: z.items })))
+} };
+PARENT.d5_ex = "d5";
+T.d5.rows[0][3] = "d5_ex";
+T.d5.rows = [T.d5.rows[0]]; // «Комплексы 1–5» и «Три теста» убраны — для них ещё нет присланных данных
+
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function crumbs(id){
@@ -808,6 +954,81 @@ if(d.lesson){
       });
       h += `</div>`;
     }
+
+    if(d.catalog){
+      const C = d.catalog;
+      h += `<div class="cat">`;
+      if(C.intro) h += `<div class="story">${esc(C.intro)}</div>`;
+      if(C.equip) h += `<div class="tipbox"><b>Что понадобится.</b> ${C.equip.map(esc).join("; ")}</div>`;
+      if(C.rules) { h += `<div class="tipbox"><b>Правила.</b><ul class="exi-var">` + C.rules.map(r=>`<li>${esc(r)}</li>`).join("") + `</ul></div>`; }
+      if(C.safety) h += `<div class="safebox"><b>Безопасность.</b> ${esc(C.safety)}</div>`;
+      if(C.watch) h += `<div class="set-hint"><b>На что смотреть.</b> ${esc(C.watch)}</div>`;
+      (C.blocks||[]).forEach(b=>{
+        if(b.type==="text"){
+          if(b.title) h += `<h2>${esc(b.title)}</h2>`;
+          if(b.text) h += `<div class="story">${esc(b.text)}</div>`;
+          if(b.watch) h += `<div class="set-hint"><b>На что смотреть.</b> ${esc(b.watch)}</div>`;
+          if(b.safety) h += `<div class="safebox"><b>Безопасность.</b> ${esc(b.safety)}</div>`;
+        }
+        if(b.type==="list"){
+          if(b.title) h += `<h2>${esc(b.title)}</h2>`;
+          if(b.intro) h += `<div class="story">${esc(b.intro)}</div>`;
+          h += `<ul class="exi-var">` + (b.points||[]).map(p=>`<li>${esc(p)}</li>`).join("") + `</ul>`;
+        }
+        if(b.type==="table"){
+          if(b.title) h += `<h2>${esc(b.title)}</h2>`;
+          if(b.intro) h += `<div class="story">${esc(b.intro)}</div>`;
+          h += `<div class="sets novol">` + (b.rows||[]).map(r=>`<div class="set"><span class="set-t">${r.map(esc).join(" — ")}</span></div>`).join("") + `</div>`;
+          if(b.note) h += `<div class="set-hint">${esc(b.note)}</div>`;
+        }
+        if(b.type==="zone"){
+          h += `<h2 class="cat-zone-h">${esc(b.title)}</h2>`;
+          if(b.note) h += `<div class="cat-zone-note">${esc(b.note)}</div>`;
+          (b.items||[]).forEach(it=>{
+            h += `<div class="exi"><div class="exi-h">`;
+            if(it.code) h += `<span class="exi-code">${esc(it.code)}</span>`;
+            h += `<span class="exi-name">${it.n?it.n+". ":""}${esc(it.name)}</span></div>`;
+            if(it.how) h += `<div class="exi-how">${esc(it.how)}</div>`;
+            if(it.benefit) h += `<div class="tipbox"><b>Что даёт в воде.</b> ${esc(it.benefit)}</div>`;
+            if(it.dose) h += `<div class="exi-dose"><b>Дозировка.</b> ${esc(it.dose)}</div>`;
+            if(it.easier||it.harder){
+              h += `<ul class="exi-var">`;
+              if(it.easier) h += `<li><b>Легче:</b> ${esc(it.easier)}</li>`;
+              if(it.harder) h += `<li><b>Сложнее:</b> ${esc(it.harder)}</li>`;
+              h += `</ul>`;
+            }
+            if(it.mistake) h += `<div class="set-hint"><b>Типичная ошибка.</b> ${esc(it.mistake)}</div>`;
+            if(it.watch) h += `<div class="set-hint"><b>На что смотреть.</b> ${esc(it.watch)}</div>`;
+            if(it.safety) h += `<div class="safebox"><b>Безопасность.</b> ${esc(it.safety)}</div>`;
+            if(it.table) h += `<div class="sets novol">` + it.table.map(r=>`<div class="set"><span class="set-t">${r.map(esc).join(" — ")}</span></div>`).join("") + `</div>`;
+            h += `</div>`;
+          });
+        }
+      });
+      if(C.closing) h += `<div class="set-hint">${esc(C.closing)}</div>`;
+      h += `</div>`;
+    }
+
+    if(d.stations){
+      h += `<div class="one">`;
+      if(d.desc) h += `<div class="story">${esc(d.desc)}</div>`;
+      h += `<div class="sets novol">` + d.stations.map(s=>{
+        const amt = s.amount || (s.intervals + (s.intervals===1?" интервал":" интервала") + (s.note?` (${s.note})`:""));
+        return `<div class="stset"><span><b>${esc(s.code)}.</b> ${esc(s.name)}</span><span class="amt">${esc(amt)}</span></div>`;
+      }).join("") + `</div>`;
+      if(d.watch) h += `<div class="set-hint"><b>На что смотреть.</b> ${esc(d.watch)}</div>`;
+      if(d.safety) h += `<div class="safebox"><b>Безопасность.</b> ${esc(d.safety)}</div>`;
+      if(d.howTo){
+        h += `<h2>${esc(d.howTo.title)}</h2><div class="story">${esc(d.howTo.intro)}</div>`;
+        if(d.howTo.points) h += `<ul class="exi-var">` + d.howTo.points.map(p=>`<li>${esc(p)}</li>`).join("") + `</ul>`;
+      }
+      if(d.table){
+        h += `<h2>Схема</h2><div class="sets novol">` + [d.table.head].concat(d.table.rows).map(r=>`<div class="set"><span class="set-t">${r.map(esc).join(" — ")}</span></div>`).join("") + `</div>`;
+        if(d.table.note) h += `<div class="set-hint">${esc(d.table.note)}</div>`;
+      }
+      h += `</div>`;
+    }
+
 
     if(d.rows){
       h += `<div class="rows">`;
