@@ -999,8 +999,10 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
      просто листает сверху вниз, ничего не собирая по вкладкам. */
   if(typeof SUSHA_BAND !== "undefined"){
     const B = SUSHA_BAND;
-    const SN = { crawl:"Кроль", breast:"Брасс", breaststroke:"Брасс", dolphin:"Дельфин", butterfly:"Дельфин" };
-    const ORDER = ["crawl","breast","breaststroke","dolphin","butterfly"];
+    // Ровно три вкладки и в этом порядке. В данных есть ещё спина,
+    // но на резине её не отрабатывают — в раздел она не идёт.
+    const ORDER = ["crawl", "breast", "breaststroke", "fly", "dolphin", "butterfly"];
+    const SN = { crawl:"Кроль", breast:"Брасс", breaststroke:"Брасс", fly:"Дельфин", dolphin:"Дельфин", butterfly:"Дельфин" };
 
     // общий кусок: заголовок раздела и его содержимое
     const chunk = (d, o)=>{
@@ -1016,10 +1018,9 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       (o.doc||[]).forEach(b=>d.push(b));
     };
 
-    const keys = Object.keys(B.strokes||{}).sort((a,b)=>{
-      const i = ORDER.indexOf(a), j = ORDER.indexOf(b);
-      return (i < 0 ? 99 : i) - (j < 0 ? 99 : j);
-    });
+    const keys = Object.keys(B.strokes||{})
+      .filter(k=>ORDER.indexOf(k) >= 0)
+      .sort((a,b)=>ORDER.indexOf(a) - ORDER.indexOf(b));
 
     const rows = keys.map(k=>{
       const S = B.strokes[k], name = S.name || SN[k] || k, d = [];
