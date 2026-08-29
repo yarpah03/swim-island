@@ -350,6 +350,16 @@ h2::after{
 }
 .doc .kv{margin:0 0 8px;font-size:14.5px;line-height:1.6;color:var(--txt-2)}
 .doc .kv b{color:var(--gold-dk);font-weight:500}
+.tbl-wrap{overflow-x:auto;margin:0 0 16px;-webkit-overflow-scrolling:touch}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:340px}
+.tbl th{
+  text-align:left;padding:10px 14px;font-weight:500;font-size:11.5px;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--gold);
+  background:rgba(185,138,46,.07);border-bottom:1px solid rgba(185,138,46,.22)
+}
+.tbl td{padding:11px 14px;color:var(--txt-2);border-bottom:1px solid rgba(185,138,46,.10);line-height:1.5}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td:first-child{color:var(--txt)}
 .doc .lead-box{
   background:var(--surf);border:1px solid rgba(185,138,46,.16);border-radius:var(--r);
   padding:18px 20px;margin-bottom:6px;color:var(--txt-2);font-size:15px;line-height:1.65
@@ -406,6 +416,7 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
 <script src="susha.js"></script>
 <script src="gibkost.js"></script>
 <script src="motivaciya.js"></script>
+<script src="rezina.js"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -658,9 +669,9 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     ["1.2.1","Баттерфляй","10 упражнений","dr_bt"],["1.2.2","Спина","18 упражнений","dr_sp"],
     ["1.2.3","Брасс","17 упражнений","dr_br"],["1.2.4","Кроль","21 упражнение","dr_kr"]
   ]},
-  s1_3:{title:"Отработка элементов",lede:"Старты, повороты и выходы разбираем отдельно от стилей.",slot:false,rows:[
-    ["1.3.1","Старты","теория, безопасность и 12 этапов обучения","st0"],
-    ["1.3.2","Повороты","11 поворотов с правилами и этапами","tn0"]
+  s1_3:{title:"Отработка элементов",lede:"Упражнения на шлифовку старта и поворотов — для тех, кто их уже делает и хочет делать лучше. Как учить с нуля — в разделе «Обучение с нуля».",slot:false,rows:[
+    ["1.3.1","Старты — упражнения","отработка стартового прыжка","st_d0"],
+    ["1.3.2","Повороты — упражнения","отработка поворотов","tn_d0"]
   ]},
   s1_4:{title:"Типичные ошибки",lede:"По каждому стилю — самые частые ошибки любителя и тренировка, которая их исправляет.",kids:[
     {id:"e_bt",n:"1.4.1",t:"Баттерфляй",s:"5 ошибок + тренировка для исправления",m:""},
@@ -873,37 +884,52 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     }, g.key));
   });
 
-  // Старты: теория по частям + упражнения
+  // Внутри сплошной страницы заголовки опускаем на уровень ниже,
+  // иначе разделы упражнения спорят с заголовком самого упражнения.
+  const demote = doc => doc.map(([t,v])=> t === "h2" ? ["h3", v] : (t === "h3" ? ["h4", v] : [t, v]));
+
+  // Обучение с нуля → Старты: вся теория одной страницей, без упражнений
   const S = UCH.starts;
   put("st0", {
     title: "Стартовый прыжок",
     lede: "Поэтапное обучение с нуля для взрослых — от первого спада в воду до старта с тумбы.",
-    pills: [S.theory.length + " частей", S.drills.length + " упражнения"],
-    slot: false,
-    rows: S.theory.map((p,i)=>["", p.title, "", "st_p" + (i+1)])
-      .concat(S.drills.map(x=>["", x.title, "Упражнение · " + x.cat, "st_d" + x.n]))
-  }, "s1_3");
-  S.theory.forEach((p,i)=>put("st_p" + (i+1), { title: p.title, doc: p.doc }, "st0"));
-  S.drills.forEach(x=>put("st_d" + x.n, {
-    title: x.title, pills: ["Старт", x.cat, x.level], doc: x.doc
-  }, "st0"));
+    pills: [plural(S.theory.length,["часть","части","частей"])],
+    doc: S.theory.reduce((acc,p)=>acc.concat([["h2", p.title]], demote(p.doc)), [])
+  }, "s1_1");
 
-  // Повороты: одиннадцать поворотов + упражнения
+  // Обучение с нуля → Повороты: список, у каждого поворота своя страница
   const V = UCH.turns;
   put("tn0", {
     title: "Повороты",
     lede: "Одиннадцать поворотов: где применяется, что говорят правила, за что снимают и как учить.",
-    pills: [V.list.length + " поворотов", V.drills.length + " упражнения"],
+    pills: [plural(V.list.length,["поворот","поворота","поворотов"])],
     slot: false,
     rows: V.list.map(x=>[String(x.n), x.title, x.note, "tn_" + x.n])
-      .concat(V.drills.map(x=>["", x.title, "Упражнение · " + x.cat, "tnd_" + x.n]))
-  }, "s1_3");
+  }, "s1_1");
   V.list.forEach(x=>put("tn_" + x.n, {
     title: x.title, pills: ["Поворот " + x.n, x.level], lead: x.lead, doc: x.doc
   }, "tn0"));
+
+  // Отработка элементов → упражнения, вынесенные из уроков
+  put("st_d0", {
+    title: "Старты — упражнения",
+    lede: "Упражнения на отработку стартового прыжка: перенос веса, отталкивание, управление телом в полёте. Теория и этапы обучения с нуля — в разделе «Обучение с нуля».",
+    pills: [nDrills(S.drills.length)], slot: false,
+    rows: S.drills.map(x=>[String(x.n), x.title, x.cat, "st_d" + x.n])
+  }, "s1_3");
+  S.drills.forEach(x=>put("st_d" + x.n, {
+    title: x.title, pills: ["Старт", x.cat, x.level], doc: x.doc
+  }, "st_d0"));
+
+  put("tn_d0", {
+    title: "Повороты — упражнения",
+    lede: "Упражнения на отработку поворотов: вращение, ориентировка в воде, поворот под нагрузкой. Разбор каждого поворота — в разделе «Обучение с нуля».",
+    pills: [nDrills(V.drills.length)], slot: false,
+    rows: V.drills.map(x=>[String(x.n), x.title, x.cat, "tnd_" + x.n])
+  }, "s1_3");
   V.drills.forEach(x=>put("tnd_" + x.n, {
     title: x.title, pills: ["Повороты", x.cat, x.level], doc: x.doc
-  }, "tn0"));
+  }, "tn_d0"));
 })();
 
 /* Раздел «Суша для пловца» из susha.js.
@@ -966,25 +992,43 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d1", { title: W.title, lede: W.subtitle, pills: [nDrills(n)], doc: d }, "s3");
   }
 
-  /* ---- 3.2 Гребковые тренировки на резине ---- */
+  /* ---- 3.2 Гребковые тренировки на резине ----
+     Три вкладки по стилям. Внутри каждой — вся тренировка целиком:
+     разминка, крепление, жёсткость, фазы гребка, рабочая серия,
+     заминка и чек-лист. Человек выбирает стиль один раз и дальше
+     просто листает сверху вниз, ничего не собирая по вкладкам. */
   if(typeof SUSHA_BAND !== "undefined"){
-    const B = SUSHA_BAND, rows = [];
-    const block = (id, o, extra)=>{
+    const B = SUSHA_BAND;
+    const SN = { crawl:"Кроль", breast:"Брасс", breaststroke:"Брасс", dolphin:"Дельфин", butterfly:"Дельфин" };
+    const ORDER = ["crawl","breast","breaststroke","dolphin","butterfly"];
+
+    // общий кусок: заголовок раздела и его содержимое
+    const chunk = (d, o)=>{
       if(!o) return;
-      const d = [];
+      h2(d, o.title);
       p(d, o.how || o.rule || o.intro);
       ul(d, o.points || o.items);
       tip(d, o.watch);
-      if(extra) extra(d);
-      put(id, { title: o.title, pills: o.duration ? [o.duration] : [], doc: d }, "d2");
-      rows.push(["", o.title, o.duration || "", id]);
     };
-    block("d2_set", B.setup);
-    block("d2_fit", B.fit);
+    const external = (d, o)=>{
+      if(typeof o === "undefined" || !o) return;
+      h2(d, o.title);
+      (o.doc||[]).forEach(b=>d.push(b));
+    };
 
-    const SN = { crawl:"Кроль", dolphin:"Дельфин", butterfly:"Дельфин", breast:"Брасс", breaststroke:"Брасс" };
-    Object.keys(B.strokes||{}).forEach(k=>{
-      const S = B.strokes[k], d = [];
+    const keys = Object.keys(B.strokes||{}).sort((a,b)=>{
+      const i = ORDER.indexOf(a), j = ORDER.indexOf(b);
+      return (i < 0 ? 99 : i) - (j < 0 ? 99 : j);
+    });
+
+    const rows = keys.map(k=>{
+      const S = B.strokes[k], name = S.name || SN[k] || k, d = [];
+
+      external(d, typeof REZINA_WARMUP !== "undefined" ? REZINA_WARMUP : null);
+      chunk(d, B.setup);
+      chunk(d, B.fit);
+
+      h2(d, "Фазы гребка");
       p(d, S.note);
       (S.phases||[]).forEach(f=>{
         d.push(["h4", f.n + ". " + f.name]);
@@ -993,25 +1037,31 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         kv(d, "На что смотреть", f.watch);
         kv(d, "Частая ошибка", f.mistake);
       });
+
+      external(d, typeof REZINA_SERIES !== "undefined" ? REZINA_SERIES : null);
+      chunk(d, B.cooldown);
+
+      if(B.checklist){ h2(d, "Короткий чек-лист"); ul(d, B.checklist); }
+      warn(d, B.safety);
+
       const id = "d2_" + k;
-      put(id, { title: S.name || SN[k] || k, pills: [(S.phases||[]).length + " фазы гребка"], doc: d }, "d2");
-      rows.push(["", S.name || SN[k] || k, (S.phases||[]).map(f=>f.name).join(", "), id]);
+      put(id, {
+        title: name + " на резине",
+        lede: S.note || "Разбираем гребок по фазам, потом собираем в рабочую серию.",
+        pills: [plural((S.phases||[]).length,["фаза гребка","фазы гребка","фаз гребка"])],
+        doc: d
+      }, "d2");
+      return ["", name, plural((S.phases||[]).length,["фаза гребка","фазы гребка","фаз гребка"]), id];
     });
-
-    block("d2_cool", B.cooldown);
-
-    if(B.checklist || B.safety){
-      const c = [];
-      ul(c, B.checklist);
-      warn(c, B.safety);
-      put("d2_check", { title: "Контрольный список", doc: c }, "d2");
-      rows.push(["", "Контрольный список", "пять пунктов, по которым себя проверяют", "d2_check"]);
-    }
 
     const d = [];
     p(d, B.intro);
     ul(d, B.equip);
-    put("d2", { title: B.title, lede: B.subtitle, slot: false, rows, doc: d }, "s3");
+    put("d2", {
+      title: B.title,
+      lede: "Выберите стиль — внутри вся тренировка целиком, от разминки до заминки.",
+      slot: false, rows, doc: d
+    }, "s3");
   }
 
   /* ---- 3.3 Кор и стабилизация ---- */
@@ -1340,6 +1390,9 @@ if(d.lesson){
         else if(type==="h3") h += `<h3>${esc(val)}</h3>`;
         else if(type==="h4") h += `<h4>${esc(val)}</h4>`;
         else if(type==="kv") h += `<div class="kv"><b>${esc(val[0])}.</b> ${esc(val[1])}</div>`;
+        else if(type==="tbl") h += `<div class="tbl-wrap"><table class="tbl">` +
+          val.map((row,i)=>`<tr>${row.map(c=>i===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("") +
+          `</table></div>`;
         else if(type==="p") h += `<p>${esc(val)}</p>`;
         else if(type==="ul") h += `<ul>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
         else if(type==="num") h += `<ol>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
