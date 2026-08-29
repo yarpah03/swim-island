@@ -217,6 +217,33 @@ h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   padding:14px 17px;font-size:14px;line-height:1.6;color:var(--txt-2);margin:22px 0 0
 }
 .safebox b{color:#D2765C;font-weight:500}
+
+/* Текстовая страница: упражнение, ошибка, поворот, часть теории */
+.doc{max-width:760px}
+.doc h3{
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:600;
+  color:var(--txt);letter-spacing:.01em;margin:28px 0 10px
+}
+.doc p{margin:0 0 12px;font-size:15px;line-height:1.7;color:var(--txt-2)}
+.doc ul,.doc ol{margin:0 0 14px;padding:0;list-style:none;counter-reset:docstep}
+.doc li{
+  position:relative;padding-left:26px;margin-bottom:10px;
+  font-size:14.5px;line-height:1.65;color:var(--txt-2)
+}
+.doc li:last-child{margin-bottom:0}
+.doc ul li::before{
+  content:"";position:absolute;left:6px;top:10px;
+  width:5px;height:5px;border-radius:50%;background:var(--gold-dk)
+}
+.doc ol li{counter-increment:docstep;padding-left:30px}
+.doc ol li::before{
+  content:counter(docstep);position:absolute;left:0;top:0;
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold-dk)
+}
+.doc .lead-box{
+  background:var(--surf);border:1px solid rgba(185,138,46,.16);border-radius:var(--r);
+  padding:18px 20px;margin-bottom:6px;color:var(--txt-2);font-size:15px;line-height:1.65
+}
 @media(max-width:600px){
   .set{gap:11px}
   .set-v{min-width:52px;font-size:15px}
@@ -246,28 +273,6 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
   .wordmark{font-size:19px}
   .mark{width:36px;height:36px}
 }
-/* Суша: карточка упражнения в справочнике (статика/динамика/резина/круговые/гибкость) */
-.cat{max-width:780px}
-.cat-zone-h{margin:30px 0 4px}
-.cat-zone-note{color:var(--txt-3);font-size:13.5px;line-height:1.6;margin-bottom:14px}
-.exi{
-  background:var(--surf);border:1px solid rgba(185,138,46,.14);border-radius:var(--r);
-  padding:16px 20px;margin-bottom:10px
-}
-.exi-h{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
-.exi-code{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--gold-dk);flex:none}
-.exi-name{font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:var(--txt);letter-spacing:.01em}
-.exi-how{font-size:14px;line-height:1.6;color:var(--txt-2);margin-bottom:8px}
-.exi-dose{font-size:13.5px;color:var(--txt-2);margin-bottom:6px}
-.exi-dose b{color:var(--gold);font-weight:500}
-.exi-var{margin:6px 0 0;padding:0;list-style:none;font-size:13px;color:var(--txt-3)}
-.exi-var li{margin-bottom:3px}
-.exi-var b{color:var(--gold-dk);font-weight:500}
-/* Суша: список станций/упражнений внутри готовой связки (комплекса/круговой) */
-.stset{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid rgba(185,138,46,.10);font-size:14.5px;line-height:1.5;color:var(--txt-2)}
-.stset:last-child{border-bottom:0}
-.stset b{color:var(--gold-dk);font-weight:500}
-.stset span.amt{flex:none;color:var(--gold-lt);font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -287,7 +292,7 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
 <footer class="wrap">ПЛАВАТЕЛЬНЫЙ ОСТРОВ ВИП · прототип интерфейса</footer>
 
 <script src="trenirovki.js"></script>
-<script src="susha.js"></script>
+<script src="obuchenie.js"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -515,16 +520,19 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     ]
   }},
 
-  s1_1:{title:"Обучение с нуля",lede:"Комплексы упражнений для освоения каждого стиля плавания.",rows:[
+  s1_1:{title:"Обучение с нуля",lede:"Комплексы упражнений для освоения каждого стиля плавания.",slot:false,rows:[
     ["1.1.1","Баттерфляй","6 упражнений с видео","bt0"],["1.1.2","Спина","8 упражнений с видео","sp0"],["1.1.3","Брасс","5 упражнений с видео","br0"],
-    ["1.1.4","Кроль","10 упражнений с видео","kr0"],["1.1.5","Старты","","c"],["1.1.6","Повороты","11 видов поворотов","c"]
+    ["1.1.4","Кроль","10 упражнений с видео","kr0"],
+    ["1.1.5","Старты","теория и 12 этапов обучения","st0"],
+    ["1.1.6","Повороты","11 поворотов с правилами и этапами","tn0"]
   ]},
-  s1_2:{title:"Совершенствование техники",lede:"Комплексы упражнений для продвинутого уровня.",rows:[
-    ["1.2.1","Баттерфляй","10 упражнений","c"],["1.2.2","Спина","18 упражнений","c"],
-    ["1.2.3","Брасс","17 упражнений","c"],["1.2.4","Кроль","21 упражнение","c"]
+  s1_2:{title:"Совершенствование техники",lede:"Комплексы упражнений для продвинутого уровня.",slot:false,rows:[
+    ["1.2.1","Баттерфляй","10 упражнений","dr_bt"],["1.2.2","Спина","18 упражнений","dr_sp"],
+    ["1.2.3","Брасс","17 упражнений","dr_br"],["1.2.4","Кроль","21 упражнение","dr_kr"]
   ]},
-  s1_3:{title:"Отработка элементов",lede:"Старты, повороты и выходы разбираем отдельно от стилей.",rows:[
-    ["1.3.1","Старты","теория и этапы стартового прыжка","c"],["1.3.2","Повороты","11 поворотов с правилами и этапами","c"]
+  s1_3:{title:"Отработка элементов",lede:"Старты, повороты и выходы разбираем отдельно от стилей.",slot:false,rows:[
+    ["1.3.1","Старты","теория, безопасность и 12 этапов обучения","st0"],
+    ["1.3.2","Повороты","11 поворотов с правилами и этапами","tn0"]
   ]},
   s1_4:{title:"Типичные ошибки",lede:"По каждому стилю — самые частые ошибки любителя и тренировка, которая их исправляет.",kids:[
     {id:"e_bt",n:"1.4.1",t:"Баттерфляй",s:"5 ошибок + тренировка для исправления",m:""},
@@ -532,22 +540,6 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     {id:"e_br",n:"1.4.3",t:"Брасс",s:"5 ошибок + тренировка для исправления",m:""},
     {id:"e_kr",n:"1.4.4",t:"Кроль",s:"6 ошибок + тренировка для исправления",m:""}
   ]},
-  e_bt:{title:"Ошибки в баттерфляе",errs:[
-    "Сразу начинать гребок после вкладывания","Вкладывать руки слишком широко","Разводить колени в стороны",
-    "Вкладывать сначала руки, а потом убирать голову","Не попадать руками в ноги"],
-    fix:"Тренировка для исправления ошибок"},
-  e_sp:{title:"Ошибки на спине",errs:[
-    "Плыть с поднятой головой","Вкладывать не плечом на ухо, а в сторону","Не догребать",
-    "Не добавлять ротацию корпуса","Сгибать колени"],
-    fix:"Тренировка для исправления ошибок"},
-  e_br:{title:"Ошибки в брассе",errs:[
-    "Сразу начинать следующий гребок, не скользить","Не разворачивать стопы во время отталкивания",
-    "Заводить руки слишком далеко вниз во время гребка","Плыть с поднятой головой","Проваливать локоть во время гребка"],
-    fix:"Тренировка для исправления ошибок"},
-  e_kr:{title:"Ошибки в кроле",errs:[
-    "Раньше времени начинать гребок, теряя опору","Сгибать колени","Задирать голову во время вдоха",
-    "Плыть ёлочкой","Не догребать","Проваливать локоть во время первой фазы гребка"],
-    fix:"Тренировка для исправления ошибок"},
 
   s2:{title:"Готовые тренировки на воде",lede:"Четыре блока с разной направленностью. В каждом — три уровня и по пятнадцать тренировок.",kids:[
     {id:"b_vy",n:"2.1",t:"Выносливость",s:"Аэробная база, длинные серии, ровный пульс",m:"3 уровня · 5 блоков · 75 тренировок"},
@@ -564,8 +556,8 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     {id:"d1",n:"3.1",t:"Разминка перед водой",s:"Суставная разминка, резина, мячик, коврик",m:"21 упражнение · 15 минут"},
     {id:"d2",n:"3.2",t:"Гребковые тренировки на резине",s:"Кроль, дельфин, брасс по фазам гребка",m:"3 стиля"},
     {id:"d3",n:"3.3",t:"Кор и стабилизация",s:"Статика, динамика и комплексы",m:"45 упражнений · 11 комплексов"},
-    {id:"d4",n:"3.4",t:"Круговые тренировки",s:"Всё тело, пульс, таймер 45/15",m:"29 станций · 9 тренировок"},
-    {id:"d5",n:"3.5",t:"Гибкость",s:"Плечо, голеностоп, таз, спина",m:"34 упражнения"}
+    {id:"d4",n:"3.4",t:"Круговые тренировки",s:"Всё тело, пульс, таймер 45/15",m:"32 станции · 9 тренировок"},
+    {id:"d5",n:"3.5",t:"Гибкость",s:"Плечо, голеностоп, таз, спина",m:"34 упражнения · 5 комплексов"}
   ]},
   d1:{title:"Разминка перед водой",lede:"Упражнения идут подряд и пронумерованы. Выбирать ничего не нужно.",rows:[
     ["","Суставная разминка, сверху вниз","упражнения 1–7","c"],
@@ -704,128 +696,87 @@ Object.keys(BLOCKS).forEach(dir=>{
   });
 });
 
-/* ============================================================
-   СУША ДЛЯ ПЛОВЦА — подключение данных из susha.js
-   ------------------------------------------------------------
-   Превращает SUSHA_* объекты в обычные экраны T. Ничего в
-   вёрстке или оформлении не меняет — использует те же render-
-   ветки catalog/stations, что и остальной сайт.
-   ============================================================ */
+/* Раздел «Обучение»: упражнения по стилям, типичные ошибки,
+   старты и повороты. Экраны собираются из obuchenie.js. */
+(function(){
+  const put = (id, screen, parent)=>{ T[id] = screen; if(parent) PARENT[id] = parent; };
 
-// d1 — разминка перед водой: один общий экран на все пять строк списка
-T.d1_all = {
-  title: SUSHA_WARMUP.title, lede: SUSHA_WARMUP.subtitle,
-  catalog: {
-    intro: SUSHA_WARMUP.intro, equip: SUSHA_WARMUP.equip, safety: SUSHA_WARMUP.safety,
-    blocks: SUSHA_WARMUP.parts.map(p => ({
-      type: "zone", title: p.title, note: p.note,
-      items: p.items.map(it => ({ n: it.n, name: it.name, how: it.how, benefit: it.why, watch: it.watch, table: it.table }))
-    })),
-    closing: "Вся разминка целиком — " + SUSHA_WARMUP.total
-  }
-};
-PARENT.d1_all = "d1";
-T.d1.rows.forEach(r => r[3] = "d1_all");
+  // «21 упражнение», но «22 упражнения» и «18 упражнений» — считаем сами,
+  // чтобы подписи не разъезжались с содержимым при любой правке данных.
+  const plural = (n, forms)=>{
+    const a = Math.abs(n) % 100, b = a % 10;
+    if(a > 10 && a < 20) return n + " " + forms[2];
+    if(b > 1 && b < 5) return n + " " + forms[1];
+    if(b === 1) return n + " " + forms[0];
+    return n + " " + forms[2];
+  };
+  const nDrills = n => plural(n, ["упражнение","упражнения","упражнений"]);
+  const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
 
-// d2 — гребковые тренировки на резине: 6 отдельных экранов
-T.d2_setup = { title: "Как крепить резину и как стоять", lede: "", catalog: { blocks: [
-  { type:"list", title: SUSHA_BAND.setup.title, intro: SUSHA_BAND.setup.how, points: SUSHA_BAND.setup.points },
-  { type:"text", watch: SUSHA_BAND.setup.watch },
-  { type:"list", title: SUSHA_BAND.fit.title, intro: SUSHA_BAND.fit.rule, points: SUSHA_BAND.fit.points },
-  { type:"text", watch: SUSHA_BAND.fit.watch }
-] } };
-T.d2_warmup = { title: "Общая разминка", lede: SUSHA_BAND.generalWarmup.duration, catalog: { blocks: [
-  { type:"text", text: SUSHA_BAND.generalWarmup.note },
-  { type:"table", rows: SUSHA_BAND.generalWarmup.items }
-] } };
-const susha_strokePage = (key) => {
-  const S = SUSHA_BAND.strokes[key];
-  if (S.skip) return { title: S.name, lede: "", catalog: { blocks: [{ type:"text", text: S.note }] } };
-  return { title: S.name, lede: SUSHA_BAND.phaseNote, catalog: { blocks: [
-    { type:"text", text: S.note },
-    { type:"zone", title: "Фазы гребка", items: S.phases.map(ph => ({ n: ph.n, name: ph.name, dose: ph.dose, how: ph.how, watch: ph.watch, mistake: ph.mistake })) }
-  ] } };
-};
-T.d2_crawl = susha_strokePage("crawl");
-T.d2_fly = susha_strokePage("fly");
-T.d2_breast = susha_strokePage("breast");
-T.d2_series = { title: "Рабочая серия и заминка", lede: "", catalog: { blocks: [
-  { type:"table", title: SUSHA_BAND.workSeries.title, intro: SUSHA_BAND.workSeries.note, rows: [[""].concat(SUSHA_BAND.workSeries.table.head)].concat(SUSHA_BAND.workSeries.table.rows), note: SUSHA_BAND.workSeries.note2 },
-  { type:"text", watch: SUSHA_BAND.workSeries.watch },
-  { type:"list", title: SUSHA_BAND.cooldown.title + " — " + SUSHA_BAND.cooldown.duration, points: SUSHA_BAND.cooldown.items },
-  { type:"text", safety: SUSHA_BAND.safety },
-  { type:"list", title: "Короткий чек-лист перед каждым подходом", points: SUSHA_BAND.checklist }
-] } };
-["d2_setup","d2_warmup","d2_crawl","d2_fly","d2_breast","d2_series"].forEach(id => PARENT[id] = "d2");
-T.d2.rows[0][3]="d2_setup"; T.d2.rows[1][3]="d2_warmup";
-T.d2.rows[2][3]="d2_crawl"; T.d2.rows[3][3]="d2_fly"; T.d2.rows[4][3]="d2_breast";
-T.d2.rows[5][3]="d2_series";
+  // Совершенствование техники: стиль → список упражнений → упражнение
+  T.s1_2.rows = [];
+  UCH.drills.forEach((g,i)=>{
+    T.s1_2.rows.push(["1.2." + (i+1), g.name, nDrills(g.items.length), g.key]);
+    put(g.key, {
+      title: g.name + ". Упражнения",
+      lede: "Техническая работа для тех, кто уже держится на воде и хочет плыть длиннее и легче.",
+      pills: [nDrills(g.items.length)],
+      slot: false,
+      rows: g.items.map(x=>[String(x.n), x.title, x.cat, g.key + "_" + x.n])
+    }, "s1_2");
+    g.items.forEach(x=>put(g.key + "_" + x.n, {
+      title: x.title, pills: [g.name, x.cat, x.level], doc: x.doc
+    }, g.key));
+  });
 
-// d3 — кор и стабилизация: два каталога + список комплексов + Дрессел
-const susha_catalogFromZones = (src) => ({
-  intro: src.intro, safety: src.safety, watch: src.watch,
-  blocks: src.zones.map(z => ({ type:"zone", title: z.title, items: z.items })).concat(
-    src.howToUse ? [{ type:"text", text: src.howToUse }] : []
-  )
-});
-T.d3_static = { title: SUSHA_STATICS.title, lede: SUSHA_STATICS.subtitle, catalog: susha_catalogFromZones(SUSHA_STATICS) };
-T.d3_dynamic = { title: SUSHA_DYNAMICS.title, lede: SUSHA_DYNAMICS.subtitle, catalog: susha_catalogFromZones(SUSHA_DYNAMICS) };
-T.d3_complexes = {
-  title: "Комплексы 1–10", lede: "Десять готовых связок статики и динамики.",
-  rows: SUSHA_CORE_COMPLEXES.map(c => [String(c.n), c.title, c.tag, "d3_c" + c.n])
-};
-SUSHA_CORE_COMPLEXES.forEach(c => {
-  const id = "d3_c" + c.n;
-  T[id] = { title: c.title, lede: c.tag, desc: c.desc, stations: c.items, watch: c.watch || SUSHA_CORE_HOWTO.watch, safety: c.safety, howTo: SUSHA_CORE_HOWTO };
-  PARENT[id] = "d3_complexes";
-});
-T.d3_dressel = {
-  title: SUSHA_DRESSEL.title, lede: SUSHA_DRESSEL.tag,
-  catalog: { blocks: [
-    { type:"text", text: SUSHA_DRESSEL.about, safety: SUSHA_DRESSEL.safety },
-    { type:"list", title: "Правила выполнения", points: SUSHA_DRESSEL.rules },
-    { type:"zone", title: "Упражнения", note: SUSHA_DRESSEL.watch, items: SUSHA_DRESSEL.items },
-    { type:"table", title: "Схема — 4 раунда подряд", rows: [SUSHA_DRESSEL.table.head].concat(SUSHA_DRESSEL.table.rows), note: SUSHA_DRESSEL.table.note },
-    { type:"text", title: "Сокращённая версия", text: SUSHA_DRESSEL.short },
-    { type:"text", title: "Как часто", text: SUSHA_DRESSEL.frequency, safety: SUSHA_DRESSEL.afterSafety }
-  ] }
-};
-PARENT.d3_complexes = "d3"; PARENT.d3_dressel = "d3";
-T.d3.rows[0][3]="d3_static"; T.d3.rows[1][3]="d3_dynamic";
-T.d3.rows[2][3]="d3_complexes"; T.d3.rows[3][3]="d3_dressel";
+  // Типичные ошибки: стиль → список ошибок → разбор ошибки
+  UCH.errors.forEach((g,i)=>{
+    const k = T.s1_4.kids[i];
+    if(k){ k.s = nErrors(g.items.length) + " с разбором"; k.m = ""; }
+    put(g.key, {
+      title: "Ошибки: " + g.name.toLowerCase(),
+      lede: "Самые частые ошибки любителя. У каждой — почему она возникает и чем её исправить.",
+      pills: [nErrors(g.items.length)],
+      slot: false,
+      rows: g.items.map(x=>[String(x.n), x.title, "", g.key + "_" + x.n])
+    }, "s1_4");
+    g.items.forEach(x=>put(g.key + "_" + x.n, {
+      title: x.title, pills: [g.name, "Ошибка " + x.n], lead: x.lead, doc: x.doc
+    }, g.key));
+  });
 
-// d4 — круговые тренировки: каталог станций + список круговых 1–8 + круговая 9 отдельно
-T.d4_ex = { title: SUSHA_CIRCUIT_EX.title, lede: SUSHA_CIRCUIT_EX.subtitle, catalog: {
-  intro: SUSHA_CIRCUIT_EX.intro, equip: SUSHA_CIRCUIT_EX.equip, safety: SUSHA_CIRCUIT_EX.safety,
-  blocks: SUSHA_CIRCUIT_EX.zones.map(z => ({ type:"zone", title: z.title, items: z.items })).concat([{ type:"text", text: SUSHA_CIRCUIT_EX.note }])
-} };
-const susha_c1_8 = SUSHA_CIRCUIT_WORKOUTS.filter(w => w.n <= 8);
-const susha_c9 = SUSHA_CIRCUIT_WORKOUTS.find(w => w.n === 9);
-T.d4_workouts = {
-  title: "Круговые 1–8", lede: "Восемь готовых круговых тренировок, таймер 45/15.",
-  rows: susha_c1_8.map(c => [String(c.n), c.title, c.tag, "d4_c" + c.n])
-};
-susha_c1_8.forEach(c => {
-  const id = "d4_c" + c.n;
-  T[id] = { title: c.title, lede: c.tag, desc: c.desc, stations: c.stations, watch: c.watch, safety: c.safety, howTo: SUSHA_CIRCUIT_HOWTO };
-  PARENT[id] = "d4_workouts";
-});
-T.d4_c9 = {
-  title: susha_c9.title, lede: susha_c9.tag, desc: susha_c9.desc, stations: susha_c9.stations,
-  watch: susha_c9.watch, safety: susha_c9.safety, howTo: susha_c9.howTo
-};
-PARENT.d4_ex = "d4"; PARENT.d4_workouts = "d4"; PARENT.d4_c9 = "d4";
-T.d4.rows[0][3]="d4_ex"; T.d4.rows[1][3]="d4_workouts"; T.d4.rows[2][3]="d4_c9";
+  // Старты: теория по частям + упражнения
+  const S = UCH.starts;
+  put("st0", {
+    title: "Стартовый прыжок",
+    lede: "Поэтапное обучение с нуля для взрослых — от первого спада в воду до старта с тумбы.",
+    pills: [S.theory.length + " частей", S.drills.length + " упражнения"],
+    slot: false,
+    rows: S.theory.map((p,i)=>["", p.title, "", "st_p" + (i+1)])
+      .concat(S.drills.map(x=>["", x.title, "Упражнение · " + x.cat, "st_d" + x.n]))
+  }, "s1_3");
+  S.theory.forEach((p,i)=>put("st_p" + (i+1), { title: p.title, doc: p.doc }, "st0"));
+  S.drills.forEach(x=>put("st_d" + x.n, {
+    title: x.title, pills: ["Старт", x.cat, x.level], doc: x.doc
+  }, "st0"));
 
-// d5 — гибкость: только каталог упражнений (комплексов и тестов пока нет)
-T.d5_ex = { title: SUSHA_FLEX.title, lede: SUSHA_FLEX.subtitle, catalog: {
-  intro: SUSHA_FLEX.intro, equip: SUSHA_FLEX.equip, safety: SUSHA_FLEX.safety,
-  blocks: [{ type:"list", title: "Три правила, без которых это не работает", points: SUSHA_FLEX.rules }]
-    .concat(SUSHA_FLEX.zones.map(z => ({ type:"zone", title: z.title, note: z.intro, items: z.items })))
-} };
-PARENT.d5_ex = "d5";
-T.d5.rows[0][3] = "d5_ex";
-T.d5.rows = [T.d5.rows[0]]; // «Комплексы 1–5» и «Три теста» убраны — для них ещё нет присланных данных
+  // Повороты: одиннадцать поворотов + упражнения
+  const V = UCH.turns;
+  put("tn0", {
+    title: "Повороты",
+    lede: "Одиннадцать поворотов: где применяется, что говорят правила, за что снимают и как учить.",
+    pills: [V.list.length + " поворотов", V.drills.length + " упражнения"],
+    slot: false,
+    rows: V.list.map(x=>[String(x.n), x.title, x.note, "tn_" + x.n])
+      .concat(V.drills.map(x=>["", x.title, "Упражнение · " + x.cat, "tnd_" + x.n]))
+  }, "s1_3");
+  V.list.forEach(x=>put("tn_" + x.n, {
+    title: x.title, pills: ["Поворот " + x.n, x.level], lead: x.lead, doc: x.doc
+  }, "tn0"));
+  V.drills.forEach(x=>put("tnd_" + x.n, {
+    title: x.title, pills: ["Повороты", x.cat, x.level], doc: x.doc
+  }, "tn0"));
+})();
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -916,6 +867,21 @@ if(d.lesson){
       h += `</div></div>`;
     }
 
+    if(d.doc){
+      h += `<div class="doc">`;
+      if(d.lead) h += `<div class="lead-box">${esc(d.lead)}</div>`;
+      d.doc.forEach(([type,val])=>{
+        if(type==="h2") h += `<h2>${esc(val)}</h2>`;
+        else if(type==="h3") h += `<h3>${esc(val)}</h3>`;
+        else if(type==="p") h += `<p>${esc(val)}</p>`;
+        else if(type==="ul") h += `<ul>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+        else if(type==="num") h += `<ol>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
+        else if(type==="tip") h += `<div class="tipbox"><b>Совет.</b> ${esc(val)}</div>`;
+        else if(type==="warn") h += `<div class="safebox"><b>Безопасность.</b> ${esc(val)}</div>`;
+      });
+      h += `</div>`;
+    }
+
     if(d.one){
       const W = d.one;
       // Пункт серии: [объём, текст, подсказка]. Объёма может не быть —
@@ -954,81 +920,6 @@ if(d.lesson){
       });
       h += `</div>`;
     }
-
-    if(d.catalog){
-      const C = d.catalog;
-      h += `<div class="cat">`;
-      if(C.intro) h += `<div class="story">${esc(C.intro)}</div>`;
-      if(C.equip) h += `<div class="tipbox"><b>Что понадобится.</b> ${C.equip.map(esc).join("; ")}</div>`;
-      if(C.rules) { h += `<div class="tipbox"><b>Правила.</b><ul class="exi-var">` + C.rules.map(r=>`<li>${esc(r)}</li>`).join("") + `</ul></div>`; }
-      if(C.safety) h += `<div class="safebox"><b>Безопасность.</b> ${esc(C.safety)}</div>`;
-      if(C.watch) h += `<div class="set-hint"><b>На что смотреть.</b> ${esc(C.watch)}</div>`;
-      (C.blocks||[]).forEach(b=>{
-        if(b.type==="text"){
-          if(b.title) h += `<h2>${esc(b.title)}</h2>`;
-          if(b.text) h += `<div class="story">${esc(b.text)}</div>`;
-          if(b.watch) h += `<div class="set-hint"><b>На что смотреть.</b> ${esc(b.watch)}</div>`;
-          if(b.safety) h += `<div class="safebox"><b>Безопасность.</b> ${esc(b.safety)}</div>`;
-        }
-        if(b.type==="list"){
-          if(b.title) h += `<h2>${esc(b.title)}</h2>`;
-          if(b.intro) h += `<div class="story">${esc(b.intro)}</div>`;
-          h += `<ul class="exi-var">` + (b.points||[]).map(p=>`<li>${esc(p)}</li>`).join("") + `</ul>`;
-        }
-        if(b.type==="table"){
-          if(b.title) h += `<h2>${esc(b.title)}</h2>`;
-          if(b.intro) h += `<div class="story">${esc(b.intro)}</div>`;
-          h += `<div class="sets novol">` + (b.rows||[]).map(r=>`<div class="set"><span class="set-t">${r.map(esc).join(" — ")}</span></div>`).join("") + `</div>`;
-          if(b.note) h += `<div class="set-hint">${esc(b.note)}</div>`;
-        }
-        if(b.type==="zone"){
-          h += `<h2 class="cat-zone-h">${esc(b.title)}</h2>`;
-          if(b.note) h += `<div class="cat-zone-note">${esc(b.note)}</div>`;
-          (b.items||[]).forEach(it=>{
-            h += `<div class="exi"><div class="exi-h">`;
-            if(it.code) h += `<span class="exi-code">${esc(it.code)}</span>`;
-            h += `<span class="exi-name">${it.n?it.n+". ":""}${esc(it.name)}</span></div>`;
-            if(it.how) h += `<div class="exi-how">${esc(it.how)}</div>`;
-            if(it.benefit) h += `<div class="tipbox"><b>Что даёт в воде.</b> ${esc(it.benefit)}</div>`;
-            if(it.dose) h += `<div class="exi-dose"><b>Дозировка.</b> ${esc(it.dose)}</div>`;
-            if(it.easier||it.harder){
-              h += `<ul class="exi-var">`;
-              if(it.easier) h += `<li><b>Легче:</b> ${esc(it.easier)}</li>`;
-              if(it.harder) h += `<li><b>Сложнее:</b> ${esc(it.harder)}</li>`;
-              h += `</ul>`;
-            }
-            if(it.mistake) h += `<div class="set-hint"><b>Типичная ошибка.</b> ${esc(it.mistake)}</div>`;
-            if(it.watch) h += `<div class="set-hint"><b>На что смотреть.</b> ${esc(it.watch)}</div>`;
-            if(it.safety) h += `<div class="safebox"><b>Безопасность.</b> ${esc(it.safety)}</div>`;
-            if(it.table) h += `<div class="sets novol">` + it.table.map(r=>`<div class="set"><span class="set-t">${r.map(esc).join(" — ")}</span></div>`).join("") + `</div>`;
-            h += `</div>`;
-          });
-        }
-      });
-      if(C.closing) h += `<div class="set-hint">${esc(C.closing)}</div>`;
-      h += `</div>`;
-    }
-
-    if(d.stations){
-      h += `<div class="one">`;
-      if(d.desc) h += `<div class="story">${esc(d.desc)}</div>`;
-      h += `<div class="sets novol">` + d.stations.map(s=>{
-        const amt = s.amount || (s.intervals + (s.intervals===1?" интервал":" интервала") + (s.note?` (${s.note})`:""));
-        return `<div class="stset"><span><b>${esc(s.code)}.</b> ${esc(s.name)}</span><span class="amt">${esc(amt)}</span></div>`;
-      }).join("") + `</div>`;
-      if(d.watch) h += `<div class="set-hint"><b>На что смотреть.</b> ${esc(d.watch)}</div>`;
-      if(d.safety) h += `<div class="safebox"><b>Безопасность.</b> ${esc(d.safety)}</div>`;
-      if(d.howTo){
-        h += `<h2>${esc(d.howTo.title)}</h2><div class="story">${esc(d.howTo.intro)}</div>`;
-        if(d.howTo.points) h += `<ul class="exi-var">` + d.howTo.points.map(p=>`<li>${esc(p)}</li>`).join("") + `</ul>`;
-      }
-      if(d.table){
-        h += `<h2>Схема</h2><div class="sets novol">` + [d.table.head].concat(d.table.rows).map(r=>`<div class="set"><span class="set-t">${r.map(esc).join(" — ")}</span></div>`).join("") + `</div>`;
-        if(d.table.note) h += `<div class="set-hint">${esc(d.table.note)}</div>`;
-      }
-      h += `</div>`;
-    }
-
 
     if(d.rows){
       h += `<div class="rows">`;
