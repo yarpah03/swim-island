@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Плавательный остров ВИП</title>
+<title>Плавательный остров VIP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -17,9 +17,20 @@
   --bg:#080807;
   --surf:#111110;
   --surf-2:#191817;
+  /* Золото читается металлом только на переходе: светлая кромка сверху,
+     тёмная снизу. Один плоский цвет мозг видит как горчичный. */
+  --gold-metal:linear-gradient(180deg,#F0D488 0%,#C79A3C 55%,#8A671F 100%);
+  --gold-metal-dim:linear-gradient(180deg,#C9A24E 0%,#6E521B 100%);
+  /* Кромка карточки: блик в верхнем левом углу, затухание к нижнему правому */
+  --edge:linear-gradient(160deg,rgba(240,212,136,.42) 0%,rgba(185,138,46,.16) 38%,rgba(185,138,46,.05) 100%);
+  --edge-soft:linear-gradient(160deg,rgba(240,212,136,.26) 0%,rgba(185,138,46,.11) 40%,rgba(185,138,46,.04) 100%);
+  --card-fill:linear-gradient(165deg,#191712 0%,#121110 55%,#0e0d0c 100%);
   --txt:#F2EFE8;
   --txt-2:#A8A296;
   --txt-3:#6E6A62;
+  /* Подписи под названиями: приглушённое золото вместо серого.
+     Только для подписей — длинный текст этим цветом набирать нельзя. */
+  --txt-sub:#B09563;
   --r:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -31,6 +42,25 @@ body{
   padding-bottom:64px;
   -webkit-font-smoothing:antialiased;
 }
+/* Тёплое свечение сверху: контент лежит в свете, а не висит в пустоте.
+   Отдельным слоем, чтобы не тянуться за прокруткой. */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(120% 70% at 50% -12%, #17150f 0%, #0d0c0a 42%, #080807 100%);
+}
+/* Металлический перелив для коротких надписей и цифр */
+.gold-metal{
+  background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+}
+/* Если браузер не умеет обрезать фон по буквам, текст стал бы невидимым.
+   Возвращаем ему обычный золотой цвет. */
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .gold-metal,.wordmark,h2,.card .num,.row .idx{
+    background:none;color:var(--gold);-webkit-text-fill-color:var(--gold)
+  }
+  .card .num,.row .idx{color:var(--gold-dk);-webkit-text-fill-color:var(--gold-dk)}
+}
 .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
 
 header{
@@ -40,7 +70,11 @@ header{
 }
 .hd{display:flex;align-items:center;gap:14px;padding:16px 0}
 .mark{width:42px;height:42px;flex:none}
-.wordmark{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;font-weight:600;letter-spacing:.10em;color:var(--gold);line-height:1.1}
+.wordmark{
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;font-weight:600;letter-spacing:.10em;line-height:1.1;
+  background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent
+}
 .wordmark small{display:block;font-family:'Inter',sans-serif;font-size:10px;font-weight:500;letter-spacing:.28em;color:var(--txt-3);margin-top:3px}
 .hd-spacer{flex:1}
 .acct{width:38px;height:38px;border:1px solid var(--gold-line);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:13px;font-weight:500;flex:none}
@@ -51,8 +85,17 @@ header{
 .crumb span.sep{color:var(--txt-3)}
 
 h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;font-weight:600;letter-spacing:.01em;line-height:1.15;margin:6px 0 10px}
-.lede{color:var(--txt-2);font-size:16px;max-width:660px;margin-bottom:30px}
-h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:38px 0 16px}
+.lede{color:var(--txt-sub);font-size:16px;max-width:660px;margin-bottom:30px}
+h2{
+  font-size:12.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  margin:38px 0 16px;display:flex;align-items:center;gap:10px;
+  background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent
+}
+h2::after{
+  content:"";flex:1;height:1px;
+  background:linear-gradient(90deg,rgba(185,138,46,.35),transparent)
+}
 
 .hero{position:relative;padding:0;border:0;margin:0 -20px 8px;overflow:hidden}
 .hero-in{position:relative;padding:64px 20px 30px;z-index:2}
@@ -69,7 +112,7 @@ h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
 .hero-waves{position:absolute;left:0;right:0;bottom:0;height:120px;z-index:2;pointer-events:none}
 .hero .mark-big{width:70px;height:70px;margin-bottom:18px;display:block}
 .hero h1{font-size:46px;margin-bottom:12px}
-.hero .lede{margin-bottom:24px}
+.hero .lede{margin-bottom:24px;color:var(--txt-2)}
 .hero-note{font-size:11px;letter-spacing:.14em;color:var(--txt-3);margin-bottom:14px}
 @media(max-width:600px){
   .hero{margin:0 -15px 8px}
@@ -78,32 +121,93 @@ h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   .hero .mark-big{width:54px;height:54px}
 }
 
+/* Описание клуба на главной */
+.about{max-width:700px;margin-bottom:8px}
+.about p{margin:0 0 14px;font-size:15.5px;line-height:1.7;color:var(--txt-2)}
+.facts{display:flex;flex-direction:column;gap:2px}
+.fact{
+  display:flex;align-items:center;gap:20px;
+  padding:17px 0;border-bottom:1px solid rgba(185,138,46,.12)
+}
+.fact:last-child{border-bottom:0}
+.fact-n{
+  font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;
+  font-size:48px;line-height:1.15;letter-spacing:0;
+  min-width:118px;flex:none;text-align:right;white-space:nowrap;
+  background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent
+}
+.fact-t{flex:1;font-size:15px;line-height:1.55;color:var(--txt-2)}
+@media(max-width:600px){
+  .about p{font-size:15px}
+  .fact{gap:14px;padding:14px 0}
+  .fact-n{font-size:36px;min-width:88px}
+  .fact-t{font-size:14px}
+}
+
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 .grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 
 .card{
-  background:var(--surf);border:1px solid rgba(185,138,46,.18);border-radius:var(--r);
-  padding:20px 20px 18px;cursor:pointer;transition:border-color .18s,background .18s,transform .18s;
-  display:flex;flex-direction:column;gap:8px;text-align:left;color:inherit;font:inherit;width:100%;
+  border:1px solid transparent;border-radius:var(--r);
+  background:var(--card-fill) padding-box, var(--edge) border-box;
+  padding:20px 20px 18px;cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  display:flex;flex-direction:column;gap:7px;text-align:left;color:inherit;font:inherit;width:100%;
 }
-.card:hover{border-color:var(--gold);background:var(--surf-2);transform:translateY(-2px)}
-.card .num{font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;color:var(--gold-dk);letter-spacing:.06em}
-.card .ttl{font-size:18px;font-weight:500;color:var(--txt);letter-spacing:.01em}
-.card .sub{font-size:13.5px;color:var(--txt-2);line-height:1.5}
-.card .meta{margin-top:6px;font-size:12px;color:var(--txt-3);letter-spacing:.04em}
+.card:hover{
+  transform:translateY(-2px);
+  background:var(--card-fill) padding-box, linear-gradient(160deg,rgba(240,212,136,.75) 0%,rgba(185,138,46,.28) 40%,rgba(185,138,46,.10) 100%) border-box;
+  box-shadow:0 10px 26px rgba(0,0,0,.45)
+}
+.card:active{transform:translateY(0) scale(.985)}
+.card .num{
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;line-height:1;letter-spacing:.02em;
+  background:var(--gold-metal-dim);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent
+}
+.card .ttl{
+  font-size:16px;font-weight:500;color:#FBF7EE;margin-top:4px;
+  text-transform:uppercase;letter-spacing:.09em;line-height:1.35
+}
+.card .sub{font-size:13.5px;color:var(--txt-sub);line-height:1.55}
+.card .meta{
+  align-self:flex-start;margin-top:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:#C79A3C;background:rgba(185,138,46,.12);border-radius:20px;padding:4px 11px
+}
 
 .row{
-  display:flex;align-items:center;gap:14px;
-  background:var(--surf);border:1px solid rgba(185,138,46,.14);border-radius:10px;
-  padding:15px 17px;cursor:pointer;transition:border-color .18s,background .18s;
+  display:flex;align-items:center;gap:18px;
+  border:1px solid transparent;border-radius:10px;
+  background:var(--card-fill) padding-box, var(--edge-soft) border-box;
+  padding:16px 20px;cursor:pointer;transition:transform .16s ease, background .18s ease;
   text-align:left;color:inherit;font:inherit;width:100%;
 }
-.row:hover{border-color:var(--gold-line);background:var(--surf-2)}
-.row .idx{font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold);min-width:34px;letter-spacing:.04em}
+.row:hover{background:var(--card-fill) padding-box, var(--edge) border-box}
+.row:active{transform:scale(.99)}
+/* Номер — часть оформления, а не подпись: крупная приглушённая цифра */
+.row .idx{
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;line-height:1;
+  min-width:42px;flex:none;letter-spacing:.02em;
+  background:var(--gold-metal-dim);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;opacity:.75
+}
+.row .idx.small{font-size:19px;color:rgba(185,138,46,.45);min-width:auto}
 .row .body{flex:1;min-width:0}
-.row .name{font-size:15.5px;font-weight:500}
-.row .note{font-size:13px;color:var(--txt-2);margin-top:2px}
-.row .chev{color:var(--gold-dk);font-size:18px;line-height:1}
+.row .name{font-size:16.5px;font-weight:500;letter-spacing:.01em}
+/* Короткая справка идёт прописными и не спорит с названием.
+   Длинную оставляем обычным набором — капитель на фразу нечитаема. */
+.row .note{
+  display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--gold-dk);margin-top:5px;line-height:1.45
+}
+.row .note.long{text-transform:none;letter-spacing:.01em;font-size:13px;color:var(--txt-sub);line-height:1.5}
+.row .chev{color:var(--gold-dk);font-size:18px;line-height:1;flex:none}
+@media(max-width:600px){
+  .row{gap:14px;padding:15px 16px}
+  .row .idx{font-size:28px;min-width:34px}
+  .row .name{font-size:15.5px}
+}
 .rows{display:flex;flex-direction:column;gap:8px}
 
 .pill{display:inline-block;font-size:11.5px;letter-spacing:.06em;color:var(--gold);background:var(--gold-dim);border-radius:20px;padding:4px 12px}
@@ -287,7 +391,7 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
 <header>
   <div class="wrap hd">
     <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><g transform="translate(0,512) scale(0.1,-0.1)" fill="#B98A2E"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></svg>
-    <div class="wordmark">ПЛАВАТЕЛЬНЫЙ ОСТРОВ<small>ВИП</small></div>
+    <div class="wordmark">ПЛАВАТЕЛЬНЫЙ ОСТРОВ<small>VIP</small></div>
     <div class="hd-spacer"></div>
     <div class="acct">ЯП</div>
   </div>
@@ -295,12 +399,13 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
 
 <main class="wrap" id="app"></main>
 
-<footer class="wrap">ПЛАВАТЕЛЬНЫЙ ОСТРОВ ВИП · прототип интерфейса</footer>
+<footer class="wrap">ПЛАВАТЕЛЬНЫЙ ОСТРОВ VIP · прототип интерфейса</footer>
 
 <script src="trenirovki.js"></script>
 <script src="obuchenie.js"></script>
 <script src="susha.js"></script>
 <script src="gibkost.js"></script>
+<script src="motivaciya.js"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -347,14 +452,29 @@ const KINESCOPE = {
 };
 
 const T = {
-  home:{title:"Плавательный остров ВИП",lede:"Всё для пловца-любителя: обучение с нуля, готовые тренировки на воде и на суше, разборы техники и книги.",kids:[
-    {id:"s1",n:"01",t:"Обучение",s:"Стили с нуля, совершенствование техники, старты и повороты, типичные ошибки",m:"4 подраздела"},
-    {id:"s2",n:"02",t:"Готовые тренировки на воде",s:"Блоки с разной направленностью: выносливость, скорость, мощность, восстановление",m:"4 блока · 3 уровня"},
-    {id:"s3",n:"03",t:"Суша для пловца",s:"Разминка, резина, кор, круговые, гибкость",m:"5 разделов"},
-    {id:"s4",n:"04",t:"Прямой эфир",s:"Записи эфиров с разбором техники по стилям",m:"видео"},
-    {id:"s5",n:"05",t:"Мотивация",s:"Фильмы, книги и документальное кино о спорте",m:"45 позиций"},
-    {id:"s6",n:"06",t:"Спортивная литература",s:"Анатомия, техника, упражнения, ОФП",m:"6 тем"},
-    {id:"s7",n:"07",t:"Сервис",s:"Подписка, подарки, реферальная система",m:"3 пункта"}
+  home:{title:"Плавательный остров VIP",
+    lede:"Закрытый клуб для тех, кто плавает для себя — но хочет плавать хорошо.",
+    about:{
+      text:[
+        "Внутри собрано то, что обычно приходится добывать по кускам: как освоить стиль с нуля, что именно делать в воде на каждой тренировке, как разобрать собственные ошибки и чем заниматься на суше, чтобы плечо не заболело через год.",
+        "Ничего не нужно придумывать самому. Открыли, выбрали тренировку под свой уровень и задачу, поплыли."
+      ],
+      // Числа подставляются из данных — см. ниже по файлу
+      points:[
+        ["{trainings|100}+", "готовых тренировок на воде: выносливость, скорость, мощность и восстановление, в трёх уровнях"],
+        ["{dry|10}+", "упражнений на суше: разминка перед водой, резина, кор, круговые и гибкость"],
+        ["{drills|10}+", "технических упражнений по четырём стилям — с разбором, дозировкой и видео"],
+        ["{errors|10}+", "типичных ошибок любителя: почему возникает, как выглядит правильно и чем лечится"]
+      ]
+    },
+    kids:[
+    {id:"s1",n:"01",t:"Обучение",s:"Стили с нуля, совершенствование техники, старты и повороты, типичные ошибки"},
+    {id:"s2",n:"02",t:"Готовые тренировки на воде",s:"Блоки с разной направленностью: выносливость, скорость, мощность, восстановление"},
+    {id:"s3",n:"03",t:"Суша для пловца",s:"Разминка, резина, кор, круговые, гибкость"},
+    {id:"s4",n:"04",t:"Прямой эфир",s:"Записи эфиров с разбором техники по стилям"},
+    {id:"s5",n:"05",t:"Мотивация",s:"Фильмы, книги и документальное кино о спорте"},
+    {id:"s6",n:"06",t:"Спортивная литература",s:"Анатомия, техника, упражнения, ОФП"},
+    {id:"s7",n:"07",t:"Сервис",s:"Подписка, подарки, реферальная система"}
   ]},
 
   s1:{title:"Обучение",lede:"От первого занятия до разбора собственных ошибок.",kids:[
@@ -902,7 +1022,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     rows.push(["", SUSHA_STATICS.title, nDrills(nSt), "d3_st"]);
     rows.push(["", SUSHA_DYNAMICS.title, nDrills(nDy), "d3_dy"]);
 
-    (SUSHA_CORE_COMPLEXES||[]).forEach(c=>{
+    (typeof SUSHA_CORE_COMPLEXES !== "undefined" ? SUSHA_CORE_COMPLEXES : []).forEach(c=>{
       const d = [];
       p(d, c.desc);
       h2(d, "Что делаем");
@@ -950,7 +1070,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     const nEx = catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка и варианты полегче.");
     rows.push(["", SUSHA_CIRCUIT_EX.title, nDrills(nEx), "d4_ex"]);
 
-    (SUSHA_CIRCUIT_WORKOUTS||[]).forEach(c=>{
+    (typeof SUSHA_CIRCUIT_WORKOUTS !== "undefined" ? SUSHA_CIRCUIT_WORKOUTS : []).forEach(c=>{
       const d = [];
       p(d, c.desc);
       h2(d, "Станции");
@@ -1002,7 +1122,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       rows.push(["", E.title, nDrills(n), "d5_ex"]);
     }
 
-    (SUSHA_FLEX_COMPLEXES||[]).forEach(c=>{
+    (typeof SUSHA_FLEX_COMPLEXES !== "undefined" ? SUSHA_FLEX_COMPLEXES : []).forEach(c=>{
       const d = [];
       p(d, c.lead);
       h2(d, "Что делаем");
@@ -1047,6 +1167,68 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   }
 })();
 
+/* Числа в описании на главной подставляем из самих данных: сколько
+   в файлах реально лежит, столько и обещаем. Разойтись не может. */
+(function(){
+  const A = T.home.about;
+  if(!A) return;
+  const zc = o => (typeof o !== "undefined" && o && o.zones) ? o.zones.reduce((s,z)=>s+(z.items||[]).length,0) : 0;
+  const N = {};
+
+  if(typeof AERO !== "undefined" && typeof BLOCKS !== "undefined"){
+    let n = 0;
+    Object.values(AERO).forEach(L=>L.blocks.forEach(b=>n += b.w.length));
+    Object.values(BLOCKS).forEach(D=>Object.values(D.levels).forEach(L=>n += L.w.length));
+    N.trainings = n;
+  }
+  if(typeof UCH !== "undefined"){
+    N.drills = UCH.drills.reduce((s,g)=>s+g.items.length,0);
+    N.errors = UCH.errors.reduce((s,g)=>s+g.items.length,0);
+    N.turns  = UCH.turns.list.length;
+  }
+  N.dry = zc(typeof SUSHA_STATICS !== "undefined" ? SUSHA_STATICS : null)
+        + zc(typeof SUSHA_DYNAMICS !== "undefined" ? SUSHA_DYNAMICS : null)
+        + zc(typeof SUSHA_CIRCUIT_EX !== "undefined" ? SUSHA_CIRCUIT_EX : null)
+        + zc(typeof SUSHA_FLEX_EX !== "undefined" ? SUSHA_FLEX_EX : null)
+        + (typeof SUSHA_WARMUP !== "undefined" ? (SUSHA_WARMUP.parts||[]).reduce((s,p)=>s+(p.items||[]).length,0) : 0);
+
+  // «{dry}+» — округляем вниз до десятков и оставляем плюс: обещаем меньше,
+  // чем есть. Строку с неизвестным числом убираем, а не показываем «{drills}».
+  A.points = A.points
+    .map(([num, text])=>{
+      const plus = String(num).endsWith("+");
+      const m = String(num).match(/^\{([a-z]+)(?:\|(\d+))?\}/);
+      if(!m || !N[m[1]]) return null;
+      // шаг округления задан в самой строке: 210 при шаге 100 даёт «200+»
+      const step = m[2] ? +m[2] : 1;
+      const v = Math.floor(N[m[1]] / step) * step;
+      return [v + (plus ? "+" : ""), text];
+    })
+    .filter(Boolean);
+})();
+
+/* Мотивация: на сайте лежало по 12 позиций из 15 и без описаний.
+   Собираем все 45 из данных, у каждой — своя страница. */
+if(typeof MOTIV !== "undefined"){
+  MOTIV.forEach(g=>{
+    T[g.key] = {
+      title: g.title, lede: g.lede,
+      pills: [plural(g.items.length,["позиция","позиции","позиций"])],
+      slot: false,
+      rows: g.items.map(x=>[String(x.n), x.title, x.year, g.key + "_" + x.n])
+    };
+    g.items.forEach(x=>{
+      T[g.key + "_" + x.n] = {
+        title: x.title,
+        pills: [g.title, x.year],
+        lead: x.about,
+        doc: [["h2","Зачем это пловцу"],["p", x.why]]
+      };
+      PARENT[g.key + "_" + x.n] = g.key;
+    });
+  });
+}
+
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function crumbs(id){
@@ -1080,6 +1262,20 @@ function render(id){
         <p class="lede">${esc(d.lede)}</p>
       </div>
     </div>`;
+    if(d.about){
+      const A = d.about;
+      h += `<div class="about">`;
+      (A.text||[]).forEach(t=>{ h += `<p>${esc(t)}</p>`; });
+      if(A.points && A.points.length){
+        h += `<h2>Что внутри</h2><div class="facts">`;
+        A.points.forEach(([num, text])=>{
+          h += `<div class="fact"><span class="fact-n">${esc(num)}</span><span class="fact-t">${esc(text)}</span></div>`;
+        });
+        h += `</div>`;
+      }
+      h += `</div>`;
+    }
+
     h += `<h2>Разделы</h2><div class="grid">`;
     d.kids.forEach(k=>{
       h += `<button class="card" onclick="go('${k.id}')">
@@ -1193,12 +1389,22 @@ if(d.lesson){
     }
 
     if(d.rows){
+      // Капитель решаем на весь список разом: если хоть одна подпись
+      // длинная, обычным набором идут все. Вперемешку выглядит неряшливо.
+      const longNotes = d.rows.some(r=>r[2] && String(r[2]).length > 44);
       h += `<div class="rows">`;
       d.rows.forEach(r=>{
         const go2 = (r[3] && T[r[3]]) ? ` onclick="go('${r[3]}')"` : "";
+        // Простой номер набираем крупно и с ведущим нулём, составной
+        // («1.2.1») — мельче, иначе он лезет на название. Нет номера —
+        // колонки нет вовсе, чтобы слева не зияла пустота.
+        const raw = r[0] == null ? "" : String(r[0]);
+        const plainNum = /^\d+$/.test(raw);
+        const idx = raw ? `<span class="idx${plainNum ? "" : " small"}">${esc(plainNum ? raw.padStart(2,"0") : raw)}</span>` : "";
+        const note = r[2] ? `<span class="note${longNotes ? " long" : ""}">${esc(r[2])}</span>` : "";
         h += `<button class="row"${go2}>
-          ${r[0]?`<span class="idx">${esc(r[0])}</span>`:`<span class="idx">—</span>`}
-          <span class="body"><span class="name">${esc(r[1])}</span>${r[2]?`<span class="note">${esc(r[2])}</span>`:""}</span>
+          ${idx}
+          <span class="body"><span class="name">${esc(r[1])}</span>${note}</span>
           <span class="chev">›</span>
         </button>`;
       });
