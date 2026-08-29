@@ -240,6 +240,12 @@ h2{font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   content:counter(docstep);position:absolute;left:0;top:0;
   font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold-dk)
 }
+.doc h4{
+  font-size:16.5px;font-weight:500;color:var(--gold-lt);
+  letter-spacing:.01em;margin:22px 0 8px
+}
+.doc .kv{margin:0 0 8px;font-size:14.5px;line-height:1.6;color:var(--txt-2)}
+.doc .kv b{color:var(--gold-dk);font-weight:500}
 .doc .lead-box{
   background:var(--surf);border:1px solid rgba(185,138,46,.16);border-radius:var(--r);
   padding:18px 20px;margin-bottom:6px;color:var(--txt-2);font-size:15px;line-height:1.65
@@ -293,6 +299,8 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
 
 <script src="trenirovki.js"></script>
 <script src="obuchenie.js"></script>
+<script src="susha.js"></script>
+<script src="gibkost.js"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -698,20 +706,20 @@ Object.keys(BLOCKS).forEach(dir=>{
 
 /* Раздел «Обучение»: упражнения по стилям, типичные ошибки,
    старты и повороты. Экраны собираются из obuchenie.js. */
+// «21 упражнение», но «22 упражнения» и «18 упражнений» — считаем сами,
+// чтобы подписи не разъезжались с содержимым при любой правке данных.
+function plural(n, forms){
+  const a = Math.abs(n) % 100, b = a % 10;
+  if(a > 10 && a < 20) return n + " " + forms[2];
+  if(b > 1 && b < 5) return n + " " + forms[1];
+  if(b === 1) return n + " " + forms[0];
+  return n + " " + forms[2];
+}
+const nDrills = n => plural(n, ["упражнение","упражнения","упражнений"]);
+const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
+
 (function(){
   const put = (id, screen, parent)=>{ T[id] = screen; if(parent) PARENT[id] = parent; };
-
-  // «21 упражнение», но «22 упражнения» и «18 упражнений» — считаем сами,
-  // чтобы подписи не разъезжались с содержимым при любой правке данных.
-  const plural = (n, forms)=>{
-    const a = Math.abs(n) % 100, b = a % 10;
-    if(a > 10 && a < 20) return n + " " + forms[2];
-    if(b > 1 && b < 5) return n + " " + forms[1];
-    if(b === 1) return n + " " + forms[0];
-    return n + " " + forms[2];
-  };
-  const nDrills = n => plural(n, ["упражнение","упражнения","упражнений"]);
-  const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
 
   // Совершенствование техники: стиль → список упражнений → упражнение
   T.s1_2.rows = [];
@@ -776,6 +784,267 @@ Object.keys(BLOCKS).forEach(dir=>{
   V.drills.forEach(x=>put("tnd_" + x.n, {
     title: x.title, pills: ["Повороты", x.cat, x.level], doc: x.doc
   }, "tn0"));
+})();
+
+/* Раздел «Суша для пловца» из susha.js.
+   Файл писал не я, поэтому собираю бережно: беру только те поля,
+   которые в данных реально есть, и ничего не додумываю. */
+(function(){
+  // Каждая вкладка собирается независимо: нет файла с данными —
+  // остаётся заглушка, но остальные вкладки от этого не страдают.
+  const put = (id, screen, parent)=>{ T[id] = screen; if(parent) PARENT[id] = parent; };
+  const D = [];
+  const p  = (d,t)=>{ if(t) d.push(["p", t]); };
+  const ul = (d,a)=>{ if(a && a.length) d.push(["ul", a]); };
+  const kv = (d,label,t)=>{ if(t) d.push(["kv", [label, t]]); };
+  const warn = (d,t)=>{ if(t) d.push(["warn", t]); };
+  const tip  = (d,t)=>{ if(t) d.push(["tip", t]); };
+  const h2 = (d,t)=>{ if(t) d.push(["h2", t]); };
+  const h3 = (d,t)=>{ if(t) d.push(["h3", t]); };
+
+  // Карточка упражнения из каталога: код, название и всё, что к нему приложено
+  const exBlocks = (d, x)=>{
+    d.push(["h4", (x.code ? x.code + ". " : (x.n ? x.n + ". " : "")) + x.name]);
+    kv(d, "Как выполнять", x.how);
+    kv(d, "Что даёт в воде", x.benefit || x.why);
+    kv(d, "Дозировка", x.dose);
+    kv(d, "Легче", x.easier);
+    kv(d, "Сложнее", x.harder);
+    kv(d, "На что смотреть", x.watch);
+  };
+
+  // Каталог: зоны с упражнениями на одной странице
+  const catalogue = (id, src, parent, lede)=>{
+    const d = [];
+    p(d, src.intro);
+    (src.zones||[]).forEach(z=>{ h3(d, z.title); (z.items||[]).forEach(x=>exBlocks(d, x)); });
+    tip(d, src.watch);
+    warn(d, src.safety);
+    const n = (src.zones||[]).reduce((s,z)=>s+(z.items||[]).length,0);
+    put(id, { title: src.title, lede, pills: [nDrills(n)], doc: d }, parent);
+    return n;
+  };
+
+  /* ---- 3.1 Разминка перед водой ---- */
+  if(typeof SUSHA_WARMUP !== "undefined"){
+    const W = SUSHA_WARMUP, d = [];
+    p(d, W.intro);
+    ul(d, W.equip);
+    (W.parts||[]).forEach(part=>{
+      h3(d, part.title);
+      p(d, part.note);
+      (part.items||[]).forEach(x=>{
+        d.push(["h4", x.n + ". " + x.name]);
+        kv(d, "Как выполнять", x.how);
+        kv(d, "Зачем", x.why);
+        kv(d, "На что смотреть", x.watch);
+      });
+    });
+    tip(d, W.total);
+    warn(d, W.safety);
+    const n = (W.parts||[]).reduce((s,x)=>s+(x.items||[]).length,0);
+    put("d1", { title: W.title, lede: W.subtitle, pills: [nDrills(n)], doc: d }, "s3");
+  }
+
+  /* ---- 3.2 Гребковые тренировки на резине ---- */
+  if(typeof SUSHA_BAND !== "undefined"){
+    const B = SUSHA_BAND, rows = [];
+    const block = (id, o, extra)=>{
+      if(!o) return;
+      const d = [];
+      p(d, o.how || o.rule || o.intro);
+      ul(d, o.points || o.items);
+      tip(d, o.watch);
+      if(extra) extra(d);
+      put(id, { title: o.title, pills: o.duration ? [o.duration] : [], doc: d }, "d2");
+      rows.push(["", o.title, o.duration || "", id]);
+    };
+    block("d2_set", B.setup);
+    block("d2_fit", B.fit);
+
+    const SN = { crawl:"Кроль", dolphin:"Дельфин", butterfly:"Дельфин", breast:"Брасс", breaststroke:"Брасс" };
+    Object.keys(B.strokes||{}).forEach(k=>{
+      const S = B.strokes[k], d = [];
+      p(d, S.note);
+      (S.phases||[]).forEach(f=>{
+        d.push(["h4", f.n + ". " + f.name]);
+        kv(d, "Дозировка", f.dose);
+        kv(d, "Как выполнять", f.how);
+        kv(d, "На что смотреть", f.watch);
+        kv(d, "Частая ошибка", f.mistake);
+      });
+      const id = "d2_" + k;
+      put(id, { title: S.name || SN[k] || k, pills: [(S.phases||[]).length + " фазы гребка"], doc: d }, "d2");
+      rows.push(["", S.name || SN[k] || k, (S.phases||[]).map(f=>f.name).join(", "), id]);
+    });
+
+    block("d2_cool", B.cooldown);
+
+    if(B.checklist || B.safety){
+      const c = [];
+      ul(c, B.checklist);
+      warn(c, B.safety);
+      put("d2_check", { title: "Контрольный список", doc: c }, "d2");
+      rows.push(["", "Контрольный список", "пять пунктов, по которым себя проверяют", "d2_check"]);
+    }
+
+    const d = [];
+    p(d, B.intro);
+    ul(d, B.equip);
+    put("d2", { title: B.title, lede: B.subtitle, slot: false, rows, doc: d }, "s3");
+  }
+
+  /* ---- 3.3 Кор и стабилизация ---- */
+  if(typeof SUSHA_STATICS !== "undefined"){
+    const rows = [];
+    const nSt = catalogue("d3_st", SUSHA_STATICS, "d3", "Удержания: справочник с техникой и дозировкой.");
+    const nDy = catalogue("d3_dy", SUSHA_DYNAMICS, "d3", "Движения: справочник с техникой и дозировкой.");
+    rows.push(["", SUSHA_STATICS.title, nDrills(nSt), "d3_st"]);
+    rows.push(["", SUSHA_DYNAMICS.title, nDrills(nDy), "d3_dy"]);
+
+    (SUSHA_CORE_COMPLEXES||[]).forEach(c=>{
+      const d = [];
+      p(d, c.desc);
+      h2(d, "Что делаем");
+      (c.items||[]).forEach(x=>d.push(["kv", [x.code + ". " + x.name,
+        (x.intervals ? x.intervals + (x.intervals === 1 ? " интервал" : " интервала") : "") + (x.note ? " — " + x.note : "")]]));
+      tip(d, c.watch);
+      const id = "d3_c" + c.n;
+      put(id, { title: c.title, lede: c.tag, doc: d }, "d3");
+      rows.push([String(c.n), c.title, c.tag, id]);
+    });
+
+    if(typeof SUSHA_DRESSEL !== "undefined"){
+      const R = SUSHA_DRESSEL, d = [];
+      p(d, R.about);
+      ul(d, R.rules);
+      h2(d, "Упражнения");
+      (R.items||[]).forEach(x=>exBlocks(d, x));
+      if(R.table){
+        h2(d, "Схема раундов");
+        (R.table.rows||[]).forEach(r=>d.push(["kv", [r[0], R.table.head.slice(1).map((hd,i)=>hd + ": " + r[i+1]).join(" · ")]]));
+      }
+      kv(d, "Коротко", R.short);
+      kv(d, "Как часто", R.frequency);
+      tip(d, R.watch);
+      warn(d, R.safety);
+      put("d3_dr", { title: R.title, lede: R.tag, doc: d }, "d3");
+      rows.push(["", R.title, R.short || R.tag, "d3_dr"]);
+    }
+
+    if(typeof SUSHA_CORE_HOWTO !== "undefined"){
+      const H = SUSHA_CORE_HOWTO, d = [];
+      p(d, H.intro); ul(d, H.points); tip(d, H.watch); p(d, H.scale); warn(d, H.safety);
+      put("d3_how", { title: H.title, doc: d }, "d3");
+      rows.push(["", H.title, "таймер, дозировка и как менять сложность", "d3_how"]);
+    }
+
+    put("d3", { title: "Кор и стабилизация",
+      lede: "Справочник удержаний и движений плюс готовые комплексы по таймеру.",
+      slot: false, rows }, "s3");
+  }
+
+  /* ---- 3.4 Круговые тренировки ---- */
+  if(typeof SUSHA_CIRCUIT_EX !== "undefined"){
+    const rows = [];
+    const nEx = catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка и варианты полегче.");
+    rows.push(["", SUSHA_CIRCUIT_EX.title, nDrills(nEx), "d4_ex"]);
+
+    (SUSHA_CIRCUIT_WORKOUTS||[]).forEach(c=>{
+      const d = [];
+      p(d, c.desc);
+      h2(d, "Станции");
+      (c.stations||[]).forEach(x=>d.push(["kv", [x.code + ". " + x.name, x.amount || ""]]));
+      tip(d, c.watch);
+      const id = "d4_w" + c.n;
+      put(id, { title: c.title, lede: c.tag, doc: d }, "d4");
+      rows.push([String(c.n), c.title, c.tag, id]);
+    });
+
+    if(typeof SUSHA_CIRCUIT_HOWTO !== "undefined"){
+      const H = SUSHA_CIRCUIT_HOWTO, d = [];
+      p(d, H.intro); ul(d, H.points);
+      kv(d, "Разминка", H.warmup);
+      kv(d, "Заминка", H.cooldown);
+      p(d, H.scale); warn(d, H.safety);
+      put("d4_how", { title: H.title, doc: d }, "d4");
+      rows.push(["", H.title, "таймер, разминка и заминка", "d4_how"]);
+    }
+
+    put("d4", { title: "Круговые тренировки",
+      lede: "Общая физподготовка: всё тело, высокий пульс, около тридцати минут.",
+      slot: false, rows }, "s3");
+  }
+
+  /* ---- 3.5 Гибкость ---- */
+  if(typeof SUSHA_FLEX_EX !== "undefined"){
+    const rows = [];
+
+    // справочник: зоны с упражнениями
+    {
+      const E = SUSHA_FLEX_EX, d = [];
+      p(d, E.intro);
+      ul(d, E.equip);
+      (E.pre||[]).forEach(z=>{ h3(d, z.title); p(d, z.note); tip(d, z.tip); warn(d, z.safety); });
+      (E.zones||[]).forEach(z=>{
+        h3(d, z.title);
+        p(d, z.note);
+        (z.items||[]).forEach(x=>{
+          d.push(["h4", x.code + ". " + x.name]);
+          kv(d, "Как выполнять", x.how);
+          kv(d, "Зачем это пловцу", x.benefit);
+          kv(d, "На что смотреть", x.watch);
+          if(x.safety) d.push(["warn", x.safety]);
+        });
+      });
+      const n = (E.zones||[]).reduce((s,z)=>s+(z.items||[]).length,0);
+      put("d5_ex", { title: E.title, lede: E.subtitle, pills: [nDrills(n)], doc: d }, "d5");
+      rows.push(["", E.title, nDrills(n), "d5_ex"]);
+    }
+
+    (SUSHA_FLEX_COMPLEXES||[]).forEach(c=>{
+      const d = [];
+      p(d, c.lead);
+      h2(d, "Что делаем");
+      (c.items||[]).forEach(x=>d.push(["kv", [x.code + ". " + x.name, x.amount]]));
+      p(d, c.desc);
+      tip(d, c.watch);
+      warn(d, c.safety);
+      const id = "d5_c" + c.n;
+      put(id, { title: c.title, lede: c.tag, pills: [plural(c.items.length, ["позиция","позиции","позиций"])], doc: d }, "d5");
+      rows.push([String(c.n), c.title, c.tag, id]);
+    });
+
+    if(typeof SUSHA_FLEX_HOWTO !== "undefined"){
+      const H = SUSHA_FLEX_HOWTO, d = [];
+      p(d, H.intro); ul(d, H.points); p(d, H.timer);
+      h2(d, H.whenTitle); ul(d, H.when);
+      h2(d, H.scaleTitle); ul(d, H.scale);
+      h2(d, "Если есть партнёр"); p(d, H.partner);
+      tip(d, H.watch); warn(d, H.safety);
+      put("d5_how", { title: H.title, doc: d }, "d5");
+      rows.push(["", H.title, "сколько держать, когда делать и чего не делать", "d5_how"]);
+    }
+
+    if(typeof SUSHA_FLEX_TESTS !== "undefined"){
+      const S = SUSHA_FLEX_TESTS, d = [];
+      p(d, S.intro);
+      (S.rows||[]).forEach(r=>{
+        d.push(["h4", r[0]]);
+        kv(d, "Как мерить", r[1]);
+        kv(d, "Ориентир", r[2]);
+      });
+      p(d, S.after);
+      h2(d, "Сколько раз в неделю");
+      p(d, S.frequency);
+      put("d5_tests", { title: S.title, lede: "Гибкость меняется медленно — без замера результат не увидеть.", doc: d }, "d5");
+      rows.push(["", S.title, "стрелка, носок, наклон", "d5_tests"]);
+    }
+
+    put("d5", { title: "Гибкость",
+      lede: "Единственная вкладка раздела, где работа идёт не над мышцами, а над тем, что мешает им работать.",
+      slot: false, rows }, "s3");
+  }
 })();
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -873,6 +1142,8 @@ if(d.lesson){
       d.doc.forEach(([type,val])=>{
         if(type==="h2") h += `<h2>${esc(val)}</h2>`;
         else if(type==="h3") h += `<h3>${esc(val)}</h3>`;
+        else if(type==="h4") h += `<h4>${esc(val)}</h4>`;
+        else if(type==="kv") h += `<div class="kv"><b>${esc(val[0])}.</b> ${esc(val[1])}</div>`;
         else if(type==="p") h += `<p>${esc(val)}</p>`;
         else if(type==="ul") h += `<ul>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
         else if(type==="num") h += `<ol>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
