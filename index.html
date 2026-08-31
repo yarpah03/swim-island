@@ -1104,11 +1104,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     (typeof SUSHA_CORE_COMPLEXES !== "undefined" ? SUSHA_CORE_COMPLEXES : []).forEach(c=>{
       const d = [];
       p(d, c.desc);
+      howto(d);
       h2(d, "Что делаем");
       (c.items||[]).forEach(x=>d.push(["kv", [x.code + ". " + x.name,
         (x.intervals ? plural(x.intervals,["интервал","интервала","интервалов"]) : "") + (x.note ? " — " + x.note : "")]]));
       tip(d, c.watch);
-      howto(d);
       const id = "d3_c" + c.n;
       put(id, { title: c.title, lede: c.tag, doc: d }, "d3_cx");
       cx.push([String(c.n), c.title, c.tag, id]);
@@ -1149,106 +1149,107 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     }, "s3");
   }
 
-  /* ---- 3.4 Круговые тренировки ---- */
+  /* ---- 3.4 Круговые тренировки ----
+     Две вкладки: станции и сами тренировки. Правила с таймером стоят
+     в начале каждой тренировки — их читают до того, как встают на коврик,
+     а не после списка станций. */
   if(typeof SUSHA_CIRCUIT_EX !== "undefined"){
-    const rows = [];
-    const nEx = catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка и варианты полегче.");
-    rows.push(["", SUSHA_CIRCUIT_EX.title, nDrills(nEx), "d4_ex"]);
 
+    const howto = d=>{
+      if(typeof SUSHA_CIRCUIT_HOWTO === "undefined") return;
+      const H = SUSHA_CIRCUIT_HOWTO;
+      h2(d, H.title || "Как выполнять");
+      p(d, H.intro);
+      ul(d, H.points);
+      kv(d, "Разминка", H.warmup);
+      kv(d, "Заминка", H.cooldown);
+      p(d, H.scale);
+      warn(d, H.safety);
+    };
+
+    const nEx = catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка и варианты полегче.");
+
+    const w = [];
     (typeof SUSHA_CIRCUIT_WORKOUTS !== "undefined" ? SUSHA_CIRCUIT_WORKOUTS : []).forEach(c=>{
       const d = [];
       p(d, c.desc);
+      howto(d);
       h2(d, "Станции");
       (c.stations||[]).forEach(x=>d.push(["kv", [x.code + ". " + x.name, x.amount || ""]]));
       tip(d, c.watch);
       const id = "d4_w" + c.n;
-      put(id, { title: c.title, lede: c.tag, doc: d }, "d4");
-      rows.push([String(c.n), c.title, c.tag, id]);
+      put(id, { title: c.title, lede: c.tag, doc: d }, "d4_cx");
+      w.push([String(c.n), c.title, c.tag, id]);
     });
 
-    if(typeof SUSHA_CIRCUIT_HOWTO !== "undefined"){
-      const H = SUSHA_CIRCUIT_HOWTO, d = [];
-      p(d, H.intro); ul(d, H.points);
-      kv(d, "Разминка", H.warmup);
-      kv(d, "Заминка", H.cooldown);
-      p(d, H.scale); warn(d, H.safety);
-      put("d4_how", { title: H.title, doc: d }, "d4");
-      rows.push(["", H.title, "таймер, разминка и заминка", "d4_how"]);
-    }
+    put("d4_cx", {
+      title: "Круговые тренировки",
+      lede: "Готовые круги по станциям. В каждой тренировке сразу написано, как её выполнять.",
+      pills: [plural(w.length,["тренировка","тренировки","тренировок"])],
+      slot: false, rows: w
+    }, "d4");
 
     put("d4", { title: "Круговые тренировки",
       lede: "Общая физподготовка: всё тело, высокий пульс, около тридцати минут.",
-      slot: false, rows }, "s3");
+      slot: false,
+      rows: [
+        ["", "Упражнения", nDrills(nEx) + " · техника и дозировка", "d4_ex"],
+        ["", "Круговые тренировки", plural(w.length,["тренировка","тренировки","тренировок"]) + " · таймер 45/15", "d4_cx"]
+      ]
+    }, "s3");
   }
 
-  /* ---- 3.5 Гибкость ---- */
+  /* ---- 3.5 Гибкость ----
+     Одна сплошная страница, как разминка перед водой: правила сверху,
+     дальше упражнения подряд. Зоны идут в том порядке, в котором их
+     разумно выполнять — сверху вниз по телу. */
   if(typeof SUSHA_FLEX_EX !== "undefined"){
-    const rows = [];
+    const E = SUSHA_FLEX_EX, d = [];
 
-    // справочник: зоны с упражнениями
-    {
-      const E = SUSHA_FLEX_EX, d = [];
-      p(d, E.intro);
-      ul(d, E.equip);
-      (E.pre||[]).forEach(z=>{ h3(d, z.title); p(d, z.note); tip(d, z.tip); warn(d, z.safety); });
-      (E.zones||[]).forEach(z=>{
-        h3(d, z.title);
-        p(d, z.note);
-        (z.items||[]).forEach(x=>{
-          d.push(["h4", x.code + ". " + x.name]);
-          kv(d, "Как выполнять", x.how);
-          kv(d, "Зачем это пловцу", x.benefit);
-          kv(d, "На что смотреть", x.watch);
-          if(x.safety) d.push(["warn", x.safety]);
-        });
-      });
-      const n = (E.zones||[]).reduce((s,z)=>s+(z.items||[]).length,0);
-      put("d5_ex", { title: E.title, lede: E.subtitle, pills: [nDrills(n)], doc: d }, "d5");
-      rows.push(["", E.title, nDrills(n), "d5_ex"]);
-    }
-
-    (typeof SUSHA_FLEX_COMPLEXES !== "undefined" ? SUSHA_FLEX_COMPLEXES : []).forEach(c=>{
-      const d = [];
-      p(d, c.lead);
-      h2(d, "Что делаем");
-      (c.items||[]).forEach(x=>d.push(["kv", [x.code + ". " + x.name, x.amount]]));
-      p(d, c.desc);
-      tip(d, c.watch);
-      warn(d, c.safety);
-      const id = "d5_c" + c.n;
-      put(id, { title: c.title, lede: c.tag, pills: [plural(c.items.length, ["позиция","позиции","позиций"])], doc: d }, "d5");
-      rows.push([String(c.n), c.title, c.tag, id]);
-    });
+    p(d, E.intro);
+    ul(d, E.equip);
 
     if(typeof SUSHA_FLEX_HOWTO !== "undefined"){
-      const H = SUSHA_FLEX_HOWTO, d = [];
+      const H = SUSHA_FLEX_HOWTO;
+      h2(d, H.title || "Как выполнять");
       p(d, H.intro); ul(d, H.points); p(d, H.timer);
-      h2(d, H.whenTitle); ul(d, H.when);
-      h2(d, H.scaleTitle); ul(d, H.scale);
-      h2(d, "Если есть партнёр"); p(d, H.partner);
-      tip(d, H.watch); warn(d, H.safety);
-      put("d5_how", { title: H.title, doc: d }, "d5");
-      rows.push(["", H.title, "сколько держать, когда делать и чего не делать", "d5_how"]);
+      h3(d, H.whenTitle); ul(d, H.when);
+      h3(d, H.scaleTitle); ul(d, H.scale);
+      tip(d, H.watch);
+      warn(d, H.safety);
     }
 
-    if(typeof SUSHA_FLEX_TESTS !== "undefined"){
-      const S = SUSHA_FLEX_TESTS, d = [];
-      p(d, S.intro);
-      (S.rows||[]).forEach(r=>{
-        d.push(["h4", r[0]]);
-        kv(d, "Как мерить", r[1]);
-        kv(d, "Ориентир", r[2]);
+    (E.pre||[]).forEach(z=>{ h3(d, z.title); p(d, z.note); tip(d, z.tip); warn(d, z.safety); });
+
+    // Сверху вниз: сначала спина и шея, потом плечо, таз, задняя
+    // поверхность и стопа. Парные упражнения последними — партнёр есть
+    // не всегда, и без них последовательность остаётся целой.
+    const ORDER = ["Шея и спина", "Плечо и грудной отдел", "Таз",
+                   "Задняя поверхность", "Голеностоп и стопа", "В паре"];
+    const zones = (E.zones||[]).slice().sort((a,b)=>{
+      const i = ORDER.indexOf(a.title), j = ORDER.indexOf(b.title);
+      return (i < 0 ? 99 : i) - (j < 0 ? 99 : j);
+    });
+
+    zones.forEach(z=>{
+      h2(d, z.title);
+      p(d, z.note);
+      (z.items||[]).forEach(x=>{
+        d.push(["h4", x.code + ". " + x.name]);
+        kv(d, "Как выполнять", x.how);
+        kv(d, "Зачем это пловцу", x.benefit);
+        kv(d, "На что смотреть", x.watch);
+        if(x.safety) d.push(["warn", x.safety]);
       });
-      p(d, S.after);
-      h2(d, "Сколько раз в неделю");
-      p(d, S.frequency);
-      put("d5_tests", { title: S.title, lede: "Гибкость меняется медленно — без замера результат не увидеть.", doc: d }, "d5");
-      rows.push(["", S.title, "стрелка, носок, наклон", "d5_tests"]);
-    }
+    });
 
-    put("d5", { title: "Гибкость",
-      lede: "Единственная вкладка раздела, где работа идёт не над мышцами, а над тем, что мешает им работать.",
-      slot: false, rows }, "s3");
+    const n = zones.reduce((s,z)=>s+(z.items||[]).length,0);
+    put("d5", {
+      title: "Гибкость",
+      lede: "Упражнения идут подряд и в том порядке, в котором их выполняют — сверху вниз по телу.",
+      pills: [nDrills(n)],
+      doc: d
+    }, "s3");
   }
 })();
 
