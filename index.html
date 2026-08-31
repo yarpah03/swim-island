@@ -1291,14 +1291,16 @@ if(typeof MOTIV !== "undefined"){
       title: g.title, lede: g.lede,
       pills: [plural(g.items.length,["позиция","позиции","позиций"])],
       slot: false,
-      rows: g.items.map(x=>[String(x.n), x.title, x.year, g.key + "_" + x.n])
+      rows: g.items.map(x=>[String(x.n), x.title,
+        [x.author, x.year].filter(Boolean).join(" · "), g.key + "_" + x.n])
     };
     g.items.forEach(x=>{
       T[g.key + "_" + x.n] = {
         title: x.title,
-        pills: [g.title, x.year],
+        pills: [x.author || g.title, x.year].filter(Boolean),
         lead: x.about,
-        doc: [["h2","Зачем это пловцу"],["p", x.why]]
+        doc: [["h2","Чем берёт"],["p", x.why]]
+          .concat(x.orig ? [["kv",["Оригинальное название", x.orig]]] : [])
       };
       PARENT[g.key + "_" + x.n] = g.key;
     });
