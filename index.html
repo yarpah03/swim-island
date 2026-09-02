@@ -1543,7 +1543,9 @@ if(d.lesson){
       ].filter(x=>x[1]);
       h += `<div class="book">
         <div class="book-top">
-          ${B.cover ? `<img class="book-cover" src="${esc(B.cover)}" alt="Обложка книги «${esc(B.t)}»" loading="lazy">` : ""}
+          ${/* Если обложка не долетела на сервер, убираем картинку целиком:
+                битый значок выглядит как поломка страницы. */""}
+          ${B.cover ? `<img class="book-cover" src="${esc(B.cover)}" alt="Обложка книги «${esc(B.t)}»" loading="lazy" onerror="this.remove()">` : ""}
           <div class="book-meta">
             ${meta.map(m=>`<div class="book-m"><span>${esc(m[0])}</span><b>${esc(m[1])}</b></div>`).join("")}
           </div>
