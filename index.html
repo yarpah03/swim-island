@@ -219,6 +219,60 @@ h2::after{
 }
 .slot b{display:block;color:var(--gold);font-weight:500;font-size:15px;margin-bottom:6px;letter-spacing:.02em}
 
+/* Страница книги: обложка слева, выходные данные справа, под ними — скачивание.
+   На узком экране обложка встаёт по центру и колонки складываются. */
+.book{max-width:760px;margin-bottom:30px}
+.book-top{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.book-cover{
+  width:154px;flex:none;border-radius:6px;display:block;
+  border:1px solid var(--gold-line);
+  /* Скан лежит на белом, поэтому подкладываем тень, иначе он висит пятном */
+  box-shadow:0 10px 26px rgba(0,0,0,.55), 0 0 0 4px rgba(185,138,46,.05)
+}
+.book-meta{flex:1;min-width:210px;display:flex;flex-direction:column;gap:1px}
+.book-m{
+  display:flex;gap:14px;align-items:baseline;justify-content:space-between;
+  padding:9px 0;border-bottom:1px solid rgba(185,138,46,.13)
+}
+.book-m:last-child{border-bottom:0}
+.book-m span{
+  font-size:11px;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--gold-dk);flex:none
+}
+.book-m b{font-weight:400;font-size:14.5px;color:var(--txt);text-align:right;line-height:1.35}
+
+.dl{
+  display:flex;align-items:center;gap:15px;margin-top:22px;
+  padding:15px 20px;border-radius:var(--r);text-decoration:none;
+  border:1px solid transparent;
+  background:var(--card-fill) padding-box, var(--edge) border-box;
+  transition:background .18s
+}
+.dl:hover{background:var(--card-fill) padding-box, linear-gradient(160deg,rgba(240,212,136,.75) 0%,rgba(185,138,46,.28) 40%,rgba(185,138,46,.10) 100%) border-box}
+.dl-i{
+  width:40px;height:40px;flex:none;border-radius:50%;
+  border:1px solid var(--gold-line);display:flex;align-items:center;justify-content:center;
+  color:var(--gold-lt);font-size:19px;line-height:1
+}
+.dl-t{
+  display:flex;flex-direction:column;gap:3px;font-size:16px;letter-spacing:.02em;
+  background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;line-height:1.25
+}
+.dl-t span{
+  font-size:11.5px;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--gold-dk);-webkit-text-fill-color:var(--gold-dk)
+}
+.dl-off{opacity:.55}
+.dl-off .dl-i{color:var(--gold-dk)}
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .dl-t{color:var(--gold-lt);-webkit-text-fill-color:var(--gold-lt)}
+}
+@media(max-width:560px){
+  .book-cover{width:126px}
+  .book-m b{font-size:13.5px}
+}
+
 .err{background:var(--surf);border-left:3px solid #B0472F;border-radius:0;padding:14px 17px;font-size:14px;color:var(--txt-2);margin:16px 0}
 .err b{color:#D2765C;font-weight:500}
 .tipbox{background:var(--surf);border-left:3px solid var(--gold);border-radius:0;padding:14px 17px;font-size:14px;color:var(--txt-2);margin:16px 0}
@@ -417,6 +471,7 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
 <script src="gibkost.js"></script>
 <script src="motivaciya.js"></script>
 <script src="rezina.js"></script>
+<script src="literatura.js"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -725,9 +780,8 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     {id:"m2",n:"5.2",t:"Книги",s:"Проза, мемуары и книги о том, как устроены выносливость и воля",m:""}
   ]},
 
-  s6:{title:"Спортивная литература",lede:"Профессиональные книги по плаванию и подготовке.",rows:[
-    ["6.1","Анатомия","","c"],["6.2","Баттерфляй","","c"],["6.3","Кроль","","c"],
-    ["6.4","Суша и ОФП","","c"],["6.5","Техника","","c"],["6.6","Упражнения","","c"]]},
+  // Шесть подразделов и книги внутри них собираются из literatura.js ниже.
+  s6:{title:"Спортивная литература",lede:"Профессиональные книги по плаванию и подготовке — с разбором, что из них брать."},
 
   s7:{title:"Сервис",lede:"",rows:[
     ["7.1","Управление подпиской","продлить, приостановить, отменить","c"],
@@ -1307,6 +1361,77 @@ if(typeof MOTIV !== "undefined"){
   });
 }
 
+/* Спортивная литература: раздел → подраздел → (иногда ещё вкладка) → книга.
+   Счётчики на карточках считаются по данным, поэтому разойтись не могут. */
+if(typeof LIT !== "undefined"){
+
+  const ЕДИН = ["книга","книги","книг"];
+  const ПУСТО = "Книги этого раздела ещё готовятся. Мы выкладываем их по одной: " +
+    "каждую сначала читаем сами и пишем, что из неё брать, а что можно пролистать.";
+
+  // Экран со списком книг. Пустой — с честной заглушкой вместо голой страницы.
+  function listScreen(node){
+    return node.books.length ? {
+      title: node.t, lede: node.s + ".", slot: false,
+      rows: node.books.map((b,i)=>[String(i+1), b.t, b.a + " · " + b.year, b.id])
+    } : { title: node.t, lede: node.s + ".", doc: [["p", ПУСТО]] };
+  }
+
+  function bookScreen(b){
+    return {
+      title: b.t,
+      book: b,
+      doc: [["h2","О чём книга"]]
+        .concat(b.about.map(p=>["p",p]))
+        .concat([["h2","Что брать"]])
+        .concat(b.take.map(p=>["p",p]))
+        .concat([["h2","Кому подойдёт"],["p", b.who]])
+        // Оглавление: главы нумеруем сами, подпункты (третье поле = 2)
+        // идут без номера и с отбивкой, иначе счёт съезжает.
+        // У электронных изданий страниц нет — тогда это просто список.
+        .concat([["h2","Оглавление"], b.toc.some(r=>r[1])
+          ? ["tbl", [["Глава","Стр."]].concat((()=>{ let n = 0; return b.toc.map(r=>
+              r[2] === 2 ? ["— " + r[0], r[1]] : [(++n) + ". " + r[0], r[1]]); })())]
+          : ["num", b.toc.map(r=>r[0])]])
+        .concat([["h2","Об авторе"],["p", b.author]])
+    };
+  }
+
+  function attachBooks(node){
+    (node.books||[]).forEach(b=>{ PARENT[b.id] = node.id; T[b.id] = bookScreen(b); });
+  }
+
+  T.s6.kids = LIT.map(sec=>({
+    id: sec.id, n: sec.n, t: sec.t, s: sec.s,
+    m: sec.subs
+      ? plural(sec.subs.reduce((s,x)=>s+x.books.length,0), ЕДИН)
+      : (sec.books.length ? plural(sec.books.length, ЕДИН) : "готовится")
+  }));
+
+  LIT.forEach(sec=>{
+    PARENT[sec.id] = "s6";
+
+    if(sec.subs){
+      // Раздел с вложенными вкладками: сам показывает карточки вкладок.
+      T[sec.id] = {
+        title: sec.t, lede: sec.s + ".",
+        kids: sec.subs.map(sub=>({
+          id: sub.id, n: sub.n, t: sub.t, s: sub.s,
+          m: sub.books.length ? plural(sub.books.length, ЕДИН) : "готовится"
+        }))
+      };
+      sec.subs.forEach(sub=>{
+        PARENT[sub.id] = sec.id;
+        T[sub.id] = listScreen(sub);
+        attachBooks(sub);
+      });
+    } else {
+      T[sec.id] = listScreen(sec);
+      attachBooks(sec);
+    }
+  });
+}
+
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function crumbs(id){
@@ -1408,6 +1533,28 @@ if(d.lesson){
       h += `<h2>Итоговый план тренировок</h2><div class="plan">`;
       L.plan.forEach(r=>{ h += `<div class="plan-r"><b>${esc(r[0])}</b><span>${esc(r[1])}</span></div>`; });
       h += `</div></div>`;
+    }
+
+    if(d.book){
+      const B = d.book;
+      const meta = [
+        ["Автор", B.a], ["Оригинал", B.orig], ["Год", B.year],
+        ["Издательство", B.pub], ["Объём", B.pages]
+      ].filter(x=>x[1]);
+      h += `<div class="book">
+        <div class="book-top">
+          ${B.cover ? `<img class="book-cover" src="${esc(B.cover)}" alt="Обложка книги «${esc(B.t)}»" loading="lazy">` : ""}
+          <div class="book-meta">
+            ${meta.map(m=>`<div class="book-m"><span>${esc(m[0])}</span><b>${esc(m[1])}</b></div>`).join("")}
+          </div>
+        </div>
+        ${B.file
+          ? `<a class="dl" href="${esc(B.file)}" download>
+               <span class="dl-i">↓</span>
+               <span class="dl-t">Скачать книгу<span>PDF${B.size?" · "+esc(B.size):""}</span></span>
+             </a>`
+          : `<div class="dl dl-off"><span class="dl-i">◷</span><span class="dl-t">Файл готовится<span>появится в этом разделе</span></span></div>`}
+      </div>`;
     }
 
     if(d.doc){
