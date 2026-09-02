@@ -219,6 +219,37 @@ h2::after{
 }
 .slot b{display:block;color:var(--gold);font-weight:500;font-size:15px;margin-bottom:6px;letter-spacing:.02em}
 
+/* Соцсети под главным экраном: три одинаковые карточки в ряд,
+   на узком экране переносятся и остаются по центру. */
+.soc{
+  margin-top:46px;padding-top:28px;text-align:center;
+  border-top:1px solid rgba(185,138,46,.16)
+}
+.soc-t{
+  display:block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold-dk);margin-bottom:18px
+}
+.soc-r{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.soc-b{
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  min-width:104px;padding:17px 20px;cursor:pointer;font:inherit;color:inherit;
+  border:1px solid transparent;border-radius:var(--r);
+  background:var(--card-fill) padding-box, var(--edge-soft) border-box;
+  transition:transform .16s ease, background .18s ease
+}
+.soc-b:hover{
+  transform:translateY(-2px);
+  background:var(--card-fill) padding-box, var(--edge) border-box
+}
+.soc-b:active{transform:translateY(0) scale(.97)}
+.soc-i{width:26px;height:26px;color:var(--gold-lt);display:block}
+.soc-i svg{width:100%;height:100%;display:block}
+.soc-n{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold-dk)}
+@media(max-width:420px){
+  .soc-r{gap:9px}
+  .soc-b{min-width:0;flex:1;padding:15px 10px}
+}
+
 /* Страница книги: обложка слева, выходные данные справа, под ними — скачивание.
    На узком экране обложка встаёт по центру и колонки складываются. */
 .book{max-width:760px;margin-bottom:30px}
@@ -1439,6 +1470,32 @@ if(typeof LIT !== "undefined"){
   });
 }
 
+/* Соцсети под главным экраном. Пункт без ссылки не рисуется вовсе —
+   так ютуб появится сам, как только в u подставят адрес. */
+const SOCIAL = [
+  {n:"Telegram",  u:"https://t.me/swim_island",                i:"tg"},
+  {n:"Instagram", u:"https://www.instagram.com/swim_island_rus/", i:"ig"},
+  // Адрес канала — @ПлавательныйОстров. Кириллицу в ссылке держим в
+  // процентной записи: так она переживёт любой браузер и любой вебвью.
+  {n:"YouTube",   u:"https://www.youtube.com/@%D0%9F%D0%BB%D0%B0%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%D0%9E%D1%81%D1%82%D1%80%D0%BE%D0%B2", i:"yt"}
+];
+
+const SOC_ICON = {
+  tg:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.8 15.6 9.6 19c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.8.4 1.3.2 1.5-.7l2.7-12.7c.2-1-.4-1.4-1-1.2L2.5 10.4c-1 .4-1 .9-.2 1.2l4.4 1.4L17 6.6c.5-.3.9-.1.6.2z"/></svg>`,
+  ig:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>`,
+  yt:`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8zM10 15V9l5.2 3z"/></svg>`
+};
+
+/* Внутри мини-приложения телеграма обычная ссылка открывается в том же
+   вебвью, и пользователь застревает без кнопки «назад». Поэтому отдаём
+   адрес телеграму, если он рядом, и только иначе открываем вкладкой. */
+function openExt(url){
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if(tg && /^https?:\/\/t\.me\//.test(url) && tg.openTelegramLink) return tg.openTelegramLink(url);
+  if(tg && tg.openLink) return tg.openLink(url);
+  window.open(url, "_blank", "noopener");
+}
+
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function crumbs(id){
@@ -1496,6 +1553,19 @@ function render(id){
       </button>`;
     });
     h += `</div>`;
+
+    // Соцсети внизу главного экрана. Кнопку без ссылки не показываем.
+    const soc = SOCIAL.filter(s=>s.u);
+    if(soc.length){
+      h += `<div class="soc"><span class="soc-t">Мы в соцсетях</span><div class="soc-r">`;
+      soc.forEach(s=>{
+        h += `<button class="soc-b" onclick="openExt('${esc(s.u)}')">
+          <span class="soc-i">${SOC_ICON[s.i]||""}</span>
+          <span class="soc-n">${esc(s.n)}</span>
+        </button>`;
+      });
+      h += `</div></div>`;
+    }
   } else {
     h += crumbs(id);
     h += `<h1>${esc(d.title)}</h1>`;
