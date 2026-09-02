@@ -1373,7 +1373,9 @@ if(typeof LIT !== "undefined"){
   function listScreen(node){
     return node.books.length ? {
       title: node.t, lede: node.s + ".", slot: false,
-      rows: node.books.map((b,i)=>[String(i+1), b.t, b.a + " · " + b.year, b.id])
+      // Года может не быть у самиздата — тогда точка не должна висеть в воздухе.
+      rows: node.books.map((b,i)=>[String(i+1), b.t,
+        [b.a, b.year].filter(Boolean).join(" · "), b.id])
     } : { title: node.t, lede: node.s + ".", doc: [["p", ПУСТО]] };
   }
 
