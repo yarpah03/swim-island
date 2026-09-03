@@ -8,29 +8,59 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* ============================================================
+   ЦВЕТ — всё в одном месте
+   ------------------------------------------------------------
+   Раньше оттенки были рассыпаны по файлу в сорока с лишним местах,
+   и смена фона означала сорок правок. Теперь ниже лежит вся палитра,
+   а остальной файл на неё только ссылается. Хотите поменять
+   настроение приложения — меняются числа здесь, и больше нигде.
+
+   Палитра «морская глубина»: золото прежнее, подложка ушла из
+   нейтрального чёрного в тёмно-синий. Золото от этого читается
+   холоднее и дороже, хотя код цвета не изменился ни на единицу.
+   ============================================================ */
 :root{
-  --gold:#B98A2E;
-  --gold-lt:#D0A445;
-  --gold-dk:#7E5C1E;
-  --gold-dim:rgba(185,138,46,.16);
-  --gold-line:rgba(185,138,46,.30);
-  --bg:#080807;
-  --surf:#111110;
-  --surf-2:#191817;
+  /* --- Золото. Три оттенка и два разложения в градиент --- */
+  --gold:#B98A2E;                  /* основной */
+  --gold-lt:#D0A445;               /* подсветка: наведение, иконки */
+  --gold-dk:#7E5C1E;               /* приглушённый: подписи, стрелки */
+  --gold-rgb:185,138,46;           /* то же число для полупрозрачных заливок */
+  --hi-rgb:240,212,136;            /* светлый блик на кромке карточек */
   /* Золото читается металлом только на переходе: светлая кромка сверху,
      тёмная снизу. Один плоский цвет мозг видит как горчичный. */
   --gold-metal:linear-gradient(180deg,#F0D488 0%,#C79A3C 55%,#8A671F 100%);
   --gold-metal-dim:linear-gradient(180deg,#C9A24E 0%,#6E521B 100%);
-  /* Кромка карточки: блик в верхнем левом углу, затухание к нижнему правому */
-  --edge:linear-gradient(160deg,rgba(240,212,136,.42) 0%,rgba(185,138,46,.16) 38%,rgba(185,138,46,.05) 100%);
-  --edge-soft:linear-gradient(160deg,rgba(240,212,136,.26) 0%,rgba(185,138,46,.11) 40%,rgba(185,138,46,.04) 100%);
-  --card-fill:linear-gradient(165deg,#191712 0%,#121110 55%,#0e0d0c 100%);
-  --txt:#F2EFE8;
-  --txt-2:#A8A296;
-  --txt-3:#6E6A62;
+
+  /* --- Подложка: страница и две ступени поверхностей --- */
+  --bg:#060B14;
+  --bg-rgb:6,11,20;                /* для шапки и затемнения под фотографией */
+  --surf:#0C1422;
+  --surf-2:#131E30;
+  /* Заливка карточки: чуть светлее страницы, с уходом в тень к низу */
+  --card-fill:linear-gradient(165deg,#141E30 0%,#0C1421 55%,#070C15 100%);
+  /* Тёплое свечение сверху страницы */
+  --glow:radial-gradient(120% 70% at 50% -12%, #16223A 0%, #0B1220 42%, var(--bg) 100%);
+
+  /* --- Кромка карточки: блик в верхнем левом углу, затухание к нижнему правому --- */
+  --gold-dim:rgba(var(--gold-rgb),.16);
+  --gold-line:rgba(var(--gold-rgb),.30);
+  --edge:linear-gradient(160deg,rgba(var(--hi-rgb),.42) 0%,rgba(var(--gold-rgb),.16) 38%,rgba(var(--gold-rgb),.05) 100%);
+  --edge-soft:linear-gradient(160deg,rgba(var(--hi-rgb),.26) 0%,rgba(var(--gold-rgb),.11) 40%,rgba(var(--gold-rgb),.04) 100%);
+
+  /* --- Текст: три ступени плюс подписи --- */
+  --txt:#EDF1F6;
+  --txt-2:#9BA7B8;
+  --txt-3:#6A778A;
   /* Подписи под названиями: приглушённое золото вместо серого.
      Только для подписей — длинный текст этим цветом набирать нельзя. */
   --txt-sub:#B09563;
+
+  /* --- Тревожный цвет: ошибки и предупреждения. Единственный
+         не-золотой акцент в приложении, поэтому и живёт отдельно --- */
+  --warn:#B0472F;
+  --warn-lt:#D2765C;
+
   --r:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -46,7 +76,7 @@ body{
    Отдельным слоем, чтобы не тянуться за прокруткой. */
 body::before{
   content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:radial-gradient(120% 70% at 50% -12%, #17150f 0%, #0d0c0a 42%, #080807 100%);
+  background:var(--glow);
 }
 /* Металлический перелив для коротких надписей и цифр */
 .gold-metal{
@@ -65,7 +95,7 @@ body::before{
 
 header{
   position:sticky;top:0;z-index:20;
-  background:rgba(8,8,7,.92);backdrop-filter:blur(12px);
+  background:rgba(var(--bg-rgb),.92);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--gold-line);
 }
 .hd{display:flex;align-items:center;gap:14px;padding:16px 0}
@@ -94,7 +124,7 @@ h2{
 }
 h2::after{
   content:"";flex:1;height:1px;
-  background:linear-gradient(90deg,rgba(185,138,46,.35),transparent)
+  background:linear-gradient(90deg,rgba(var(--gold-rgb),.35),transparent)
 }
 
 .hero{position:relative;padding:0;border:0;margin:0 -20px 8px;overflow:hidden}
@@ -107,7 +137,7 @@ h2::after{
 @media(max-width:700px){.hero-photo{background-image:url('hero-mobile.jpg')}}
 .hero-veil{
   position:absolute;inset:0;z-index:1;
-  background:linear-gradient(180deg,rgba(8,8,7,.30) 0%,rgba(8,8,7,.52) 44%,rgba(8,8,7,.88) 82%,#080807 100%);
+  background:linear-gradient(180deg,rgba(var(--bg-rgb),.30) 0%,rgba(var(--bg-rgb),.52) 44%,rgba(var(--bg-rgb),.88) 82%,var(--bg) 100%);
 }
 .hero-waves{position:absolute;left:0;right:0;bottom:0;height:120px;z-index:2;pointer-events:none}
 .hero .mark-big{width:70px;height:70px;margin-bottom:18px;display:block}
@@ -127,7 +157,7 @@ h2::after{
 .facts{display:flex;flex-direction:column;gap:2px}
 .fact{
   display:flex;align-items:center;gap:20px;
-  padding:17px 0;border-bottom:1px solid rgba(185,138,46,.12)
+  padding:17px 0;border-bottom:1px solid rgba(var(--gold-rgb),.12)
 }
 .fact:last-child{border-bottom:0}
 .fact-n{
@@ -157,7 +187,7 @@ h2::after{
 }
 .card:hover{
   transform:translateY(-2px);
-  background:var(--card-fill) padding-box, linear-gradient(160deg,rgba(240,212,136,.75) 0%,rgba(185,138,46,.28) 40%,rgba(185,138,46,.10) 100%) border-box;
+  background:var(--card-fill) padding-box, linear-gradient(160deg,rgba(var(--hi-rgb),.75) 0%,rgba(var(--gold-rgb),.28) 40%,rgba(var(--gold-rgb),.10) 100%) border-box;
   box-shadow:0 10px 26px rgba(0,0,0,.45)
 }
 .card:active{transform:translateY(0) scale(.985)}
@@ -167,13 +197,13 @@ h2::after{
   color:transparent;-webkit-text-fill-color:transparent
 }
 .card .ttl{
-  font-size:16px;font-weight:500;color:#FBF7EE;margin-top:4px;
+  font-size:16px;font-weight:500;color:var(--txt);margin-top:4px;
   text-transform:uppercase;letter-spacing:.09em;line-height:1.35
 }
 .card .sub{font-size:13.5px;color:var(--txt-sub);line-height:1.55}
 .card .meta{
   align-self:flex-start;margin-top:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
-  color:#C79A3C;background:rgba(185,138,46,.12);border-radius:20px;padding:4px 11px
+  color:var(--gold-lt);background:rgba(var(--gold-rgb),.12);border-radius:20px;padding:4px 11px
 }
 
 .row{
@@ -192,7 +222,7 @@ h2::after{
   background:var(--gold-metal-dim);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent;opacity:.75
 }
-.row .idx.small{font-size:19px;color:rgba(185,138,46,.45);min-width:auto}
+.row .idx.small{font-size:19px;color:rgba(var(--gold-rgb),.45);min-width:auto}
 .row .body{flex:1;min-width:0}
 .row .name{font-size:16.5px;font-weight:500;letter-spacing:.01em}
 /* Короткая справка идёт прописными и не спорит с названием.
@@ -214,8 +244,8 @@ h2::after{
 .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:22px}
 
 .slot{
-  border:1px dashed rgba(185,138,46,.34);border-radius:var(--r);
-  padding:30px 22px;text-align:center;color:var(--txt-3);font-size:14px;background:rgba(185,138,46,.03)
+  border:1px dashed rgba(var(--gold-rgb),.34);border-radius:var(--r);
+  padding:30px 22px;text-align:center;color:var(--txt-3);font-size:14px;background:rgba(var(--gold-rgb),.03)
 }
 .slot b{display:block;color:var(--gold);font-weight:500;font-size:15px;margin-bottom:6px;letter-spacing:.02em}
 
@@ -244,17 +274,17 @@ h2::after{
 .ref-btn{
   font:inherit;font-size:13.5px;letter-spacing:.03em;cursor:pointer;
   padding:10px 18px;border-radius:9px;color:var(--gold-lt);
-  border:1px solid var(--gold-line);background:rgba(185,138,46,.07);
+  border:1px solid var(--gold-line);background:rgba(var(--gold-rgb),.07);
   transition:background .18s, border-color .18s
 }
-.ref-btn:hover{background:rgba(185,138,46,.14);border-color:var(--gold)}
+.ref-btn:hover{background:rgba(var(--gold-rgb),.14);border-color:var(--gold)}
 .ref-btn:active{transform:scale(.98)}
 
 /* Соцсети под главным экраном: три одинаковые карточки в ряд,
    на узком экране переносятся и остаются по центру. */
 .soc{
   margin-top:46px;padding-top:28px;text-align:center;
-  border-top:1px solid rgba(185,138,46,.16)
+  border-top:1px solid rgba(var(--gold-rgb),.16)
 }
 .soc-t{
   display:block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
@@ -289,12 +319,12 @@ h2::after{
   width:154px;flex:none;border-radius:6px;display:block;
   border:1px solid var(--gold-line);
   /* Скан лежит на белом, поэтому подкладываем тень, иначе он висит пятном */
-  box-shadow:0 10px 26px rgba(0,0,0,.55), 0 0 0 4px rgba(185,138,46,.05)
+  box-shadow:0 10px 26px rgba(0,0,0,.55), 0 0 0 4px rgba(var(--gold-rgb),.05)
 }
 .book-meta{flex:1;min-width:210px;display:flex;flex-direction:column;gap:1px}
 .book-m{
   display:flex;gap:14px;align-items:baseline;justify-content:space-between;
-  padding:9px 0;border-bottom:1px solid rgba(185,138,46,.13)
+  padding:9px 0;border-bottom:1px solid rgba(var(--gold-rgb),.13)
 }
 .book-m:last-child{border-bottom:0}
 .book-m span{
@@ -310,7 +340,7 @@ h2::after{
   background:var(--card-fill) padding-box, var(--edge) border-box;
   transition:background .18s
 }
-.dl:hover{background:var(--card-fill) padding-box, linear-gradient(160deg,rgba(240,212,136,.75) 0%,rgba(185,138,46,.28) 40%,rgba(185,138,46,.10) 100%) border-box}
+.dl:hover{background:var(--card-fill) padding-box, linear-gradient(160deg,rgba(var(--hi-rgb),.75) 0%,rgba(var(--gold-rgb),.28) 40%,rgba(var(--gold-rgb),.10) 100%) border-box}
 .dl-i{
   width:40px;height:40px;flex:none;border-radius:50%;
   border:1px solid var(--gold-line);display:flex;align-items:center;justify-content:center;
@@ -335,24 +365,24 @@ h2::after{
   .book-m b{font-size:13.5px}
 }
 
-.err{background:var(--surf);border-left:3px solid #B0472F;border-radius:0;padding:14px 17px;font-size:14px;color:var(--txt-2);margin:16px 0}
-.err b{color:#D2765C;font-weight:500}
+.err{background:var(--surf);border-left:3px solid var(--warn);border-radius:0;padding:14px 17px;font-size:14px;color:var(--txt-2);margin:16px 0}
+.err b{color:var(--warn-lt);font-weight:500}
 .tipbox{background:var(--surf);border-left:3px solid var(--gold);border-radius:0;padding:14px 17px;font-size:14px;color:var(--txt-2);margin:16px 0}
 .tipbox b{color:var(--gold);font-weight:500}
 
 .lesson{max-width:760px}
-.lesson .intro{background:var(--surf);border:1px solid rgba(185,138,46,.16);border-radius:var(--r);padding:20px 22px;margin-bottom:8px;color:var(--txt-2);font-size:15px;line-height:1.65}
+.lesson .intro{background:var(--surf);border:1px solid rgba(var(--gold-rgb),.16);border-radius:var(--r);padding:20px 22px;margin-bottom:8px;color:var(--txt-2);font-size:15px;line-height:1.65}
 .ex{margin:30px 0 0}
 .ex-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
 .ex-n{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;color:var(--gold-dk);line-height:1;min-width:34px}
 .ex-t{font-size:21px;font-weight:500;letter-spacing:.01em;color:var(--txt)}
 .goal,.hint{display:flex;gap:11px;padding:13px 16px;border-radius:10px;font-size:14.5px;line-height:1.6;margin-bottom:9px}
-.goal{background:rgba(185,138,46,.07);border-left:3px solid var(--gold)}
+.goal{background:rgba(var(--gold-rgb),.07);border-left:3px solid var(--gold)}
 .hint{background:var(--surf);border-left:3px solid var(--gold-dk)}
 .goal i,.hint i{font-style:normal;color:var(--gold);flex:none;font-size:15px}
 .goal b,.hint b{color:var(--gold);font-weight:500}
 .goal span,.hint span{color:var(--txt-2)}
-.vid{margin:14px 0 0;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(185,138,46,.2)}
+.vid{margin:14px 0 0;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(var(--gold-rgb),.2)}
 .vid video{width:100%;display:block;background:#000}
 .vid-cap{padding:9px 14px;font-size:12.5px;color:var(--txt-3);letter-spacing:.03em;background:var(--surf)}
 .vid{position:relative}
@@ -360,14 +390,14 @@ h2::after{
 .vid .frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:block}
 .vid-ph{
   aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  background:rgba(185,138,46,.04);color:var(--txt-3);font-size:13px;text-align:center;padding:20px
+  background:rgba(var(--gold-rgb),.04);color:var(--txt-3);font-size:13px;text-align:center;padding:20px
 }
 .vid-ph b{color:var(--gold);font-weight:500;font-size:15px;letter-spacing:.02em}
 .snd{
   position:absolute;right:10px;top:10px;z-index:3;
   display:flex;align-items:center;gap:7px;
-  background:rgba(8,8,7,.72);backdrop-filter:blur(6px);
-  border:1px solid rgba(185,138,46,.4);border-radius:20px;
+  background:rgba(var(--bg-rgb),.72);backdrop-filter:blur(6px);
+  border:1px solid rgba(var(--gold-rgb),.4);border-radius:20px;
   padding:6px 13px;font-size:12px;color:var(--gold);
   cursor:pointer;pointer-events:none;transition:opacity .25s;letter-spacing:.02em
 }
@@ -376,13 +406,13 @@ h2::after{
 /* Тренировки: карточка + золотой разделитель между ними */
 .wks{max-width:780px}
 .wk{
-  background:var(--surf);border:1px solid rgba(185,138,46,.16);
+  background:var(--surf);border:1px solid rgba(var(--gold-rgb),.16);
   border-radius:var(--r);overflow:hidden
 }
 .wk-h{
   display:flex;align-items:center;gap:12px;
-  padding:13px 20px;background:rgba(185,138,46,.07);
-  border-bottom:1px solid rgba(185,138,46,.18)
+  padding:13px 20px;background:rgba(var(--gold-rgb),.07);
+  border-bottom:1px solid rgba(var(--gold-rgb),.18)
 }
 .wk-n{
   font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
@@ -407,18 +437,18 @@ h2::after{
 .wk-sep{display:flex;align-items:center;gap:16px;margin:26px 0}
 .wk-sep::before,.wk-sep::after{
   content:"";flex:1;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(185,138,46,.42),transparent)
+  background:linear-gradient(90deg,transparent,rgba(var(--gold-rgb),.42),transparent)
 }
 .wk-sep svg{width:20px;height:20px;flex:none;opacity:.6}
 
 /* Одна тренировка целиком: разбор, серии, подсказки */
 .one{max-width:780px}
 .story{
-  background:var(--surf);border:1px solid rgba(185,138,46,.16);border-radius:var(--r);
+  background:var(--surf);border:1px solid rgba(var(--gold-rgb),.16);border-radius:var(--r);
   padding:20px 22px;margin-bottom:8px;color:var(--txt-2);font-size:15px;line-height:1.65
 }
 .sets{margin-top:2px}
-.set{display:flex;gap:16px;padding:12px 0;border-bottom:1px solid rgba(185,138,46,.10)}
+.set{display:flex;gap:16px;padding:12px 0;border-bottom:1px solid rgba(var(--gold-rgb),.10)}
 .set:last-child{border-bottom:0}
 .set-v{
   font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold);
@@ -427,16 +457,16 @@ h2::after{
 .set-t{flex:1;min-width:0;font-size:14.5px;line-height:1.6;color:var(--txt-2)}
 .set-hint{
   display:block;margin-top:9px;padding:10px 14px;border-left:2px solid var(--gold-dk);
-  background:rgba(185,138,46,.05);font-size:13.5px;line-height:1.55;color:var(--txt-3)
+  background:rgba(var(--gold-rgb),.05);font-size:13.5px;line-height:1.55;color:var(--txt-3)
 }
 .set-hint b{color:var(--gold-dk);font-weight:500}
 .sets.novol .set-v{display:none}
 .sets.novol .set{gap:0}
 .safebox{
-  background:var(--surf);border-left:3px solid #B0472F;
+  background:var(--surf);border-left:3px solid var(--warn);
   padding:14px 17px;font-size:14px;line-height:1.6;color:var(--txt-2);margin:22px 0 0
 }
-.safebox b{color:#D2765C;font-weight:500}
+.safebox b{color:var(--warn-lt);font-weight:500}
 
 /* Текстовая страница: упражнение, ошибка, поворот, часть теории */
 .doc{max-width:760px}
@@ -471,13 +501,13 @@ h2::after{
 .tbl th{
   text-align:left;padding:10px 14px;font-weight:500;font-size:11.5px;
   letter-spacing:.09em;text-transform:uppercase;color:var(--gold);
-  background:rgba(185,138,46,.07);border-bottom:1px solid rgba(185,138,46,.22)
+  background:rgba(var(--gold-rgb),.07);border-bottom:1px solid rgba(var(--gold-rgb),.22)
 }
-.tbl td{padding:11px 14px;color:var(--txt-2);border-bottom:1px solid rgba(185,138,46,.10);line-height:1.5}
+.tbl td{padding:11px 14px;color:var(--txt-2);border-bottom:1px solid rgba(var(--gold-rgb),.10);line-height:1.5}
 .tbl tr:last-child td{border-bottom:0}
 .tbl td:first-child{color:var(--txt)}
 .doc .lead-box{
-  background:var(--surf);border:1px solid rgba(185,138,46,.16);border-radius:var(--r);
+  background:var(--surf);border:1px solid rgba(var(--gold-rgb),.16);border-radius:var(--r);
   padding:18px 20px;margin-bottom:6px;color:var(--txt-2);font-size:15px;line-height:1.65
 }
 @media(max-width:600px){
@@ -492,13 +522,13 @@ h2::after{
   .wk-i li{padding-left:26px;font-size:14px}
 }
 
-.plan{margin-top:14px;border:1px solid rgba(185,138,46,.2);border-radius:var(--r);overflow:hidden}
-.plan-r{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid rgba(185,138,46,.14);font-size:14.5px}
+.plan{margin-top:14px;border:1px solid rgba(var(--gold-rgb),.2);border-radius:var(--r);overflow:hidden}
+.plan-r{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid rgba(var(--gold-rgb),.14);font-size:14.5px}
 .plan-r:last-child{border-bottom:0}
 .plan-r b{color:var(--gold);font-weight:500;flex:none;min-width:62px}
 .plan-r span{color:var(--txt-2)}
 @media(max-width:600px){.ex-n{font-size:24px;min-width:26px}.ex-t{font-size:18px}}
-footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 8px;color:var(--txt-3);font-size:12.5px;letter-spacing:.04em}
+footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22px 0 8px;color:var(--txt-3);font-size:12.5px;letter-spacing:.04em}
 
 @media(max-width:600px){
   .wrap{padding:0 15px}
@@ -512,11 +542,11 @@ footer{border-top:1px solid rgba(185,138,46,.14);margin-top:56px;padding:22px 0 
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="markpath" viewBox="0 0 512 512"><g transform="translate(0,512) scale(0.1,-0.1)" fill="#B98A2E"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></symbol></defs></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="markpath" viewBox="0 0 512 512"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></symbol></defs></svg>
 
 <header>
   <div class="wrap hd">
-    <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><g transform="translate(0,512) scale(0.1,-0.1)" fill="#B98A2E"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></svg>
+    <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></svg>
     <div class="wordmark">ПЛАВАТЕЛЬНЫЙ ОСТРОВ<small>VIP</small></div>
     <div class="hd-spacer"></div>
     <div class="acct">ЯП</div>
@@ -1691,10 +1721,10 @@ function render(id){
     h += `<div class="hero">
       <div class="hero-photo"></div><div class="hero-veil"></div>
       <svg class="hero-waves" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M-40 62 Q 110 26 260 62 T 560 62 T 860 62 T 1240 62" fill="none" stroke="#B98A2E" stroke-width="1.4" opacity=".22"/>
-        <path d="M-40 82 Q 110 46 260 82 T 560 82 T 860 82 T 1240 82" fill="none" stroke="#B98A2E" stroke-width="1.4" opacity=".16"/>
-        <path d="M-40 102 Q 110 66 260 102 T 560 102 T 860 102 T 1240 102" fill="none" stroke="#B98A2E" stroke-width="1.4" opacity=".11"/>
-        <path d="M-40 122 Q 110 86 260 122 T 560 122 T 860 122 T 1240 122" fill="none" stroke="#B98A2E" stroke-width="1.4" opacity=".07"/>
+        <path d="M-40 62 Q 110 26 260 62 T 560 62 T 860 62 T 1240 62" fill="none" stroke="var(--gold)" stroke-width="1.4" opacity=".22"/>
+        <path d="M-40 82 Q 110 46 260 82 T 560 82 T 860 82 T 1240 82" fill="none" stroke="var(--gold)" stroke-width="1.4" opacity=".16"/>
+        <path d="M-40 102 Q 110 66 260 102 T 560 102 T 860 102 T 1240 102" fill="none" stroke="var(--gold)" stroke-width="1.4" opacity=".11"/>
+        <path d="M-40 122 Q 110 86 260 122 T 560 122 T 860 122 T 1240 122" fill="none" stroke="var(--gold)" stroke-width="1.4" opacity=".07"/>
       </svg>
       <div class="hero-in">
         <svg class="mark-big" viewBox="0 0 512 512" aria-hidden="true"><use href="#markpath"/></svg>
@@ -1932,7 +1962,7 @@ if(d.lesson){
       h += `<div class="grid-2">`;
       d.posters.forEach(p=>{
         h += `<button class="row">
-          <span style="width:44px;height:62px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(185,138,46,.07);display:flex;align-items:center;justify-content:center;color:var(--gold-dk);font-size:19px">◱</span>
+          <span style="width:44px;height:62px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(var(--gold-rgb),.07);display:flex;align-items:center;justify-content:center;color:var(--gold-dk);font-size:19px">◱</span>
           <span class="body"><span class="name">${esc(p[0])}</span><span class="note">${esc(p[1])}</span></span>
           <span class="chev">›</span>
         </button>`;
@@ -1945,7 +1975,7 @@ if(d.lesson){
       h += `<div class="grid-2">`;
       ["Разбор кроля","Разбор спины","Разбор брасса","Разбор баттерфляя","Старты и повороты","Вопросы и ответы"].forEach((v,i)=>{
         h += `<button class="row">
-          <span style="width:60px;height:38px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(185,138,46,.07);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px">▶</span>
+          <span style="width:60px;height:38px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(var(--gold-rgb),.07);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px">▶</span>
           <span class="body"><span class="name">${esc(v)}</span><span class="note">запись эфира</span></span>
           <span class="chev">›</span>
         </button>`;
