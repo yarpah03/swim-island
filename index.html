@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Цвет строки состояния и адресной строки в мобильных браузерах.
+     Держать в одном тоне с --bg: иначе сверху остаётся чужая полоса. -->
+<meta name="theme-color" content="#060B14">
 <title>Плавательный остров VIP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2117,6 +2120,30 @@ function setupVideos(){
 function go(id){ location.hash = id; }
 window.addEventListener("hashchange", ()=> render(location.hash.slice(1) || "home"));
 render(location.hash.slice(1) || "home");
+
+/* Над мини-приложением телеграм рисует собственную полосу и красит её
+   в цвет своей темы — у большинства он чёрный. Поэтому поверх синей
+   страницы висит чужая чёрная шапка. Просим телеграм взять наш цвет.
+   Значение берём из палитры, а не пишем руками: иначе при следующей
+   смене фона полоса снова отвяжется от страницы. */
+(function(){
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if(!tg || typeof getComputedStyle !== "function") return;
+  let bg = "";
+  try{ bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim(); }catch(e){}
+  if(!bg) return;
+  try{
+    tg.ready();
+    tg.expand();                                    // на весь экран, без полупозиции
+    if(tg.setBackgroundColor) tg.setBackgroundColor(bg);
+    if(tg.setHeaderColor){
+      // произвольный цвет шапки телеграм понимает начиная с версии 6.9;
+      // в старых клиентах просим взять цвет фона темы, это всё же ближе
+      const ok = tg.isVersionAtLeast && tg.isVersionAtLeast("6.9");
+      tg.setHeaderColor(ok ? bg : "bg_color");
+    }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
