@@ -252,6 +252,36 @@ h2::after{
 }
 .slot b{display:block;color:var(--gold);font-weight:500;font-size:15px;margin-bottom:6px;letter-spacing:.02em}
 
+/* Игра. Холст занимает всю ширину, высота держится пропорцией,
+   но не выше половины экрана — иначе на телефоне под ним ничего не видно. */
+.gamebox{
+  position:relative;max-width:760px;margin-bottom:26px;
+  border:1px solid transparent;border-radius:var(--r);overflow:hidden;
+  background:var(--card-fill) padding-box, var(--edge) border-box
+}
+.gamebox canvas{
+  display:block;width:100%;height:min(58vh,440px);
+  touch-action:none;cursor:pointer      /* иначе тап прокручивает страницу */
+}
+.g-hud{
+  position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;
+  padding:12px 16px;pointer-events:none;
+  font-size:13px;letter-spacing:.08em;text-transform:uppercase
+}
+.g-hud span:first-child{color:var(--gold-lt);font-weight:500}
+.g-hud span:last-child{color:var(--gold-dk)}
+
+/* Личный рекорд в игре */
+.bestv{
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:44px;line-height:1.15;
+  background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent
+}
+.bestv.empty{
+  font-family:inherit;font-size:15px;line-height:1.5;color:var(--txt-2);
+  -webkit-text-fill-color:var(--txt-2)
+}
+
 /* Персональная ссылка приглашения */
 .refbox{
   border:1px solid transparent;border-radius:var(--r);padding:20px 22px;
@@ -638,7 +668,8 @@ const T = {
     {id:"s4",n:"04",t:"Прямой эфир",s:"Записи разборов техники — видно, как ошибка находится и исправляется прямо в воде"},
     {id:"s5",n:"05",t:"Мотивация",s:"Фильмы и книги, после которых хочется на тренировку"},
     {id:"s6",n:"06",t:"Спортивная литература",s:"Профессиональные книги по анатомии, технике и подготовке пловца"},
-    {id:"s7",n:"07",t:"Сервис",s:"Управление подпиской, подарки и приглашение друзей"}
+    {id:"s7",n:"07",t:"Сервис",s:"Управление подпиской, подарки и приглашение друзей"},
+    {id:"game",n:"08",t:"Игра",s:"Ведите пловца между дорожками, ставьте рекорды и боритесь за призы",m:"розыгрыш каждый месяц"}
   ]},
 
   s1:{title:"Обучение",lede:"От первого занятия до разбора собственных ошибок.",kids:[
@@ -882,7 +913,68 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
   s6:{title:"Спортивная литература",lede:"Профессиональные книги по плаванию и подготовке — с разбором, что из них брать."},
 
   // Пять экранов «Сервиса» собираются ниже, из SERVICE.
-  s7:{title:"Сервис",lede:"Подписка, подарки, приглашение друзей и ответы на вопросы."}
+  s7:{title:"Сервис",lede:"Подписка, подарки, приглашение друзей и ответы на вопросы."},
+
+  game:{title:"Игра",lede:"Заплыв на одно касание. Ведите пловца между дорожками, ставьте рекорды и боритесь за призы.",kids:[
+    {id:"game_play",n:"01",t:"Играть",  s:"Заплыв на одно касание: гребок вверх, дальше пловец опускается сам",m:""},
+    {id:"game_top", n:"02",t:"Рейтинг", s:"Ваш личный рекорд и общая таблица среди участников клуба",m:""},
+    {id:"game_win", n:"03",t:"Призы",   s:"Что разыгрываем среди лучших пловцов каждый месяц",m:""},
+    {id:"game_help",n:"04",t:"Правила", s:"Как управлять, как считаются метры и что делает заплыв длиннее",m:""}
+  ]},
+
+  game_play:{title:"Заплыв",lede:"Касание — гребок. Просвет между дорожками проходите по центру.",game:true,
+    doc:[["tip","Не колотите по экрану. Пловец идёт по дуге: гребок поднимает его надолго, и чаще выгоднее подождать, чем добавить второй."]]},
+
+  game_top:{title:"Рейтинг",lede:"",best:true,
+    doc:[
+      ["h2","Общая таблица"],
+      ["p","Пока её нет, и мы не хотим делать вид, что она есть. Приложение сейчас ничего никуда не отправляет: рекорд лежит у вас в телефоне и остаётся только у вас."],
+      ["p","Чтобы сравнивать результаты между людьми, нужно место, где они хранятся, — и защита от накрутки. Счёт считается прямо в телефоне, поэтому без проверки в таблицу можно вписать любое число, не проплыв ни метра. Делать рейтинг, который выигрывает не пловец, мы не будем."],
+      ["h2","Как будет устроено"],
+      ["p","Заплыв станет воспроизводимым: приложение запомнит, в каком порядке шли дорожки и когда вы касались экрана, и отправит эту запись. Сервер прокрутит ваш заплыв у себя и подтвердит результат. Вписать чужие метры при этом не выйдет — придётся действительно их проплыть."],
+      ["tip","Пока таблицы нет, показывайте результат в канале клуба. Скриншот с метрами — самый честный рейтинг из возможных: его видят все."]
+    ]},
+
+  game_win:{title:"Призы",lede:"Каждый месяц отмечаем тех, кто проплыл дальше всех.",
+    doc:[
+      ["h2","Как это работает"],
+      ["num",[
+        "Играете в течение месяца и запоминаете свой лучший результат.",
+        "В конце месяца показываете его в канале клуба.",
+        "Лучшие результаты забирают призы."
+      ]],
+      ["h2","Что нужно знать"],
+      ["ul",[
+        "Розыгрыш идёт среди участников клуба.",
+        "Считается лучший заплыв за месяц, а не сумма всех.",
+        "Победителей и призы объявляем в канале в начале следующего месяца.",
+        "Результаты, полученные не игрой, а правкой приложения, не засчитываются."
+      ]],
+      ["tip","Конкретные призы и сроки на каждый месяц смотрите в канале клуба — там же публикуем итоги."]
+    ]},
+
+  game_help:{title:"Правила",lede:"Коротко обо всём, что нужно знать до первого заплыва.",
+    doc:[
+      ["h2","Управление"],
+      ["ul",[
+        "Касание экрана — гребок вверх. На компьютере то же самое делает пробел.",
+        "Между гребками пловец опускается сам. Высота держится не силой, а частотой касаний.",
+        "Пауза после проигрыша короткая: случайное касание не начнёт заплыв заново."
+      ]],
+      ["h2","Как считаются метры"],
+      ["ul",[
+        "Каждый пройденный просвет — двадцать пять метров, длина бассейна.",
+        "Чем дальше вы уплыли, тем чаще идут дорожки и тем уже просветы.",
+        "Заплыв кончается от касания троса, дна или поверхности."
+      ]],
+      ["h2","Что помогает"],
+      ["ul",[
+        "Целиться в середину просвета, а не в край: у края нет запаса на ошибку.",
+        "Смотреть не на пловца, а на следующий просвет — так вы начинаете вести, а не догонять.",
+        "Гребок делать чуть раньше, чем кажется нужным: пловец набирает высоту не мгновенно."
+      ]],
+      ["tip","Рекорд хранится в вашем телефоне и никуда не отправляется. Если очистить данные браузера, он сбросится."]
+    ]}
 };
 
 const PARENT = {
@@ -890,7 +982,8 @@ const PARENT = {
   e_bt:"s1_4",e_sp:"s1_4",e_br:"s1_4",e_kr:"s1_4",
   s2:"home",b_vy:"s2",b_sk:"s2",b_mo:"s2",b_vo:"s2",
   s3:"home",d1:"s3",d2:"s3",d3:"s3",d4:"s3",d5:"s3",
-  s4:"home",s5:"home",m1:"s5",m2:"s5",m3:"s5",s6:"home",s7:"home"
+  s4:"home",s5:"home",m1:"s5",m2:"s5",m3:"s5",s6:"home",s7:"home",
+  game:"home",game_play:"game",game_top:"game",game_win:"game",game_help:"game"
 };
 
 /* Разворачиваем данные выносливости в экраны: уровень → пять блоков → пять тренировок.
@@ -1820,6 +1913,20 @@ if(d.lesson){
     }
 
     // Кнопки-действия: тот же вид, что у кнопки скачивания книги.
+    if(d.game){
+      h += `<div class="gamebox">
+        <canvas id="gcv"></canvas>
+        <div class="g-hud"><span id="gdist">0 м</span><span id="gbest"></span></div>
+      </div>`;
+    }
+
+    if(d.best){
+      h += `<div class="book"><div class="refbox">
+        <span class="ref-t">Ваш личный рекорд</span>
+        <div class="bestv" id="bestv">—</div>
+      </div></div>`;
+    }
+
     if(d.act && d.act.length){
       h += `<div class="book">`;
       d.act.forEach(a=>{
@@ -1987,10 +2094,13 @@ if(d.lesson){
     }
   }
 
+  stopGame();                    // уходим с экрана — гасим цикл игры
   document.getElementById("app").innerHTML = h;
   window.scrollTo({top:0,behavior:"instant"});
   setupVideos();
   setupRef();
+  setupGame();
+  setupBest();
 }
 
 /* Персональная ссылка приглашения. Идентификатор берём у телеграма:
@@ -2033,6 +2143,290 @@ function setupRef(){
     const text = "Плавательный остров VIP — обучение всем стилям, готовые тренировки и разборы техники. Заходи по моей ссылке:";
     openExt("https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(text));
   };
+}
+
+/* ============================================================
+   ЗАПЛЫВ — игра на одно касание
+   ------------------------------------------------------------
+   Пловец опускается, гребок подбрасывает вверх, навстречу идут
+   разделительные дорожки с просветом. Задел трос — конец заплыва.
+   Всё считается в долях от размера холста, поэтому на любом экране
+   игра одинаковой сложности: на планшете не легче, чем на телефоне.
+   ============================================================ */
+let gameRAF = null, gameOff = null;
+const BEST_KEY = "swim_island_best";
+
+// Хранилище браузера бывает запрещено настройками или режимом инкогнито.
+// Тогда просто живём без рекорда, а не роняем экран.
+function readBest(){
+  try{ return parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; }catch(e){ return 0; }
+}
+function writeBest(v){ try{ localStorage.setItem(BEST_KEY, String(v)); }catch(e){} }
+
+// Личный рекорд на вкладке «Рейтинг»
+function setupBest(){
+  const el = document.getElementById("bestv");
+  if(!el) return;
+  const b = readBest();
+  el.textContent = b ? b + " м" : "Ещё не плавали — самое время начать";
+  el.classList.toggle("empty", !b);
+}
+
+function stopGame(){
+  if(gameRAF){ cancelAnimationFrame(gameRAF); gameRAF = null; }
+  if(gameOff){ gameOff(); gameOff = null; }   // снимаем обработчики
+}
+
+function setupGame(){
+  const cv = document.getElementById("gcv");
+  if(!cv || !cv.getContext) return;
+  const ctx = cv.getContext("2d");
+  const elDist = document.getElementById("gdist");
+  const elBest = document.getElementById("gbest");
+  const css = (typeof getComputedStyle === "function")
+    ? getComputedStyle(document.documentElement) : null;
+  const V = (n, f) => { try{ return css.getPropertyValue(n).trim() || f; }catch(e){ return f; } };
+  const GOLD = V("--gold","#B98A2E"), GOLD_LT = V("--gold-lt","#D0A445"),
+        GOLD_DK = V("--gold-dk","#7E5C1E"), BG = V("--bg","#060B14"),
+        SURF = V("--surf","#0C1422"), TXT = V("--txt","#EDF1F6");
+
+  // Рекорд храним в телефоне. Если браузер запрещает — играем без рекорда.
+  let best = readBest();
+
+  let W = 0, H = 0, dpr = 1;
+  function fit(){
+    const r = cv.getBoundingClientRect();
+    if(!r.width) return false;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return true;
+  }
+
+  // --- состояние ---
+  const READY = 0, PLAY = 1, DEAD = 2;
+  let state, y, vy, ropes, dist, t, shake;
+
+  function reset(){
+    state = READY; t = 0; shake = 0;
+    y = H * 0.5; vy = 0; dist = 0;
+    ropes = [];
+    // первая дорожка не у самого носа, но и не через полминуты
+    for(let i = 0; i < 3; i++) addRope(W * 0.9 + W * 0.58 * i);
+    draw();
+  }
+
+  // Просвет сужается с расстоянием, но не бесконечно: ниже 0.20 высоты
+  // проход становится делом удачи, а не умения.
+  function gapFor(){ return H * Math.max(0.26, 0.44 - dist * 0.0012); }
+  function speedFor(){ return W * (0.34 + Math.min(dist, 60) * 0.0030); }
+
+  function addRope(x){
+    const g = gapFor(), pad = H * 0.10;
+    const lo = pad + g/2, hi = H - pad - g/2;
+    let cy = lo + Math.random() * (hi - lo);
+    // Соседние просветы не должны прыгать через весь экран: иначе попадаются
+    // связки, которые физически не пройти, сколько ни греби.
+    const prev = ropes.length ? ropes[ropes.length-1].cy : H/2;
+    cy = Math.max(lo, Math.min(hi, Math.max(prev - H*0.26, Math.min(prev + H*0.26, cy))));
+    ropes.push({ x, g, cy, passed:false });
+  }
+
+  function stroke(){
+    if(state === READY){ state = PLAY; }
+    else if(state === DEAD){ if(t > 0.6) reset(); return; }
+    vy = -H * 0.58;   // короткий гребок: подъём примерно на восьмую часть высоты,
+                      // зато высоту держать заметно проще
+  }
+
+  function die(){
+    if(state !== PLAY) return;
+    state = DEAD; t = 0; shake = 1;
+    if(dist > best){
+      best = dist;
+      writeBest(best);
+    }
+    const tg = window.Telegram && window.Telegram.WebApp;
+    try{ tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred("error"); }catch(e){}
+  }
+
+  const R = () => H * 0.037;              // радиус пловца
+  const ROPE_W = () => H * 0.034;         // толщина троса
+
+  function step(dt){
+    t += dt;
+    if(shake > 0) shake = Math.max(0, shake - dt * 4);
+    if(state !== PLAY) return;
+
+    vy += H * 1.28 * dt;                   // тонет
+    vy = Math.min(vy, H * 0.95);           // но не камнем
+    y += vy * dt;
+
+    const sp = speedFor(), r = R(), rw = ROPE_W();
+    for(const p of ropes) p.x -= sp * dt;
+
+    if(ropes.length && ropes[0].x < -rw*1.5){ ropes.shift(); addRope(ropes[ropes.length-1].x + W * 0.58); }
+
+    const px = W * 0.28;
+    for(const p of ropes){
+      if(!p.passed && p.x + rw/2 < px - r){ p.passed = true; dist += 25; }
+      // Столкновение считаем не по точке, а по отрезку, который трос прошёл
+      // за кадр. Иначе на скорости он за один кадр перепрыгивает пловца
+      // целиком, и удар не засчитывается.
+      const was = p.x + sp * dt;
+      const l = Math.min(p.x, was) - rw/2, rr = Math.max(p.x, was) + rw/2;
+      if(l < px + r && rr > px - r){
+        if(y - r < p.cy - p.g/2 || y + r > p.cy + p.g/2) die();
+      }
+    }
+    if(y + r > H || y - r < 0) die();       // дно и поверхность
+  }
+
+  // --- рисование ---
+  function draw(){
+    const sh = shake ? (Math.random()-0.5) * H * 0.02 * shake : 0;
+    ctx.save(); ctx.translate(0, sh);
+
+    // вода
+    const grd = ctx.createLinearGradient(0,0,0,H);
+    grd.addColorStop(0, SURF); grd.addColorStop(1, BG);
+    ctx.fillStyle = grd; ctx.fillRect(0,-Math.abs(sh),W,H+Math.abs(sh)*2);
+
+    // блики на воде — уезжают влево, дают ощущение движения
+    ctx.strokeStyle = "rgba(255,255,255,.045)"; ctx.lineWidth = 1;
+    for(let i=0;i<7;i++){
+      const yy = H*(0.09+i*0.13), off = (t*speedFor()*0.35 + i*90) % (W+120);
+      ctx.beginPath();
+      for(let x=-120;x<W+120;x+=14) ctx.lineTo(x, yy + Math.sin((x+off)/48)*3.5);
+      ctx.stroke();
+    }
+
+    // дорожки
+    const rw = ROPE_W();
+    for(const p of ropes){
+      drawRope(p.x, 0, p.cy - p.g/2, rw);
+      drawRope(p.x, p.cy + p.g/2, H, rw);
+    }
+
+    drawSwimmer(W*0.28, y, R());
+    ctx.restore();
+
+    if(elDist) elDist.textContent = dist + " м";
+    if(elBest) elBest.textContent = best ? "рекорд " + best + " м" : "";
+
+    if(state === READY) banner("Касание — гребок", "Проведите пловца между дорожками");
+    if(state === DEAD)  banner(dist + " м", dist >= best && dist > 0 ? "Новый рекорд. Касание — заново" : "Касание — заново");
+  }
+
+  // Трос как в бассейне: цепочка поплавков, а не сплошная палка
+  function drawRope(x, y0, y1, w){
+    const r = w/2;
+    ctx.save(); ctx.beginPath(); ctx.rect(x-r, y0, w, Math.max(0,y1-y0)); ctx.clip();
+    let i = 0;
+    for(let yy = y0 - w; yy < y1 + w; yy += w, i++){
+      ctx.beginPath(); ctx.arc(x, yy + r, r*0.96, 0, 6.284);
+      ctx.fillStyle = (i % 2) ? GOLD : GOLD_DK; ctx.fill();
+    }
+    ctx.restore();
+    ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1;
+    ctx.strokeRect(x-r, y0, w, Math.max(0,y1-y0));
+  }
+
+  /* Пловец — тот же силуэт, что у клуба: кроль в профиль, рука в проносе
+     над головой, голова в шапочке лежит на воде, спина клином уходит назад.
+     Рисуем в коробке 100×59 и вписываем её в размер пловца. */
+  function swimmerPath(s){
+    const P = (a,b) => [a*s/100, b*s/100];
+
+    ctx.beginPath();                       // корпус: клин от хвоста к плечу
+    ctx.moveTo(...P(0,57));
+    ctx.quadraticCurveTo(...P(16,53), ...P(30,42));
+    ctx.lineTo(...P(37,36));
+    ctx.quadraticCurveTo(...P(45,47), ...P(54,59));
+    ctx.lineTo(...P(1,59));
+    ctx.closePath(); ctx.fill();
+
+    ctx.save();                            // голова в шапочке, лежит на воде
+    ctx.beginPath(); ctx.rect(0, 0, s, 59*s/100); ctx.clip();
+    ctx.beginPath(); ctx.ellipse(63*s/100, 47*s/100, 19*s/100, 13*s/100, -0.10, 0, 6.284);
+    ctx.fill(); ctx.restore();
+
+    ctx.beginPath();                       // рука в проносе: массивная, иначе пропадёт
+    ctx.moveTo(...P(34,36));
+    ctx.bezierCurveTo(...P(36,12), ...P(47,0),  ...P(63,0));
+    ctx.bezierCurveTo(...P(76,0),  ...P(86,3),  ...P(93,7));
+    ctx.quadraticCurveTo(...P(100,10), ...P(97,14));
+    ctx.quadraticCurveTo(...P(92,17), ...P(87,15));
+    ctx.bezierCurveTo(...P(77,11), ...P(63,11), ...P(53,20));
+    ctx.quadraticCurveTo(...P(46,26), ...P(43,40));
+    ctx.closePath(); ctx.fill();
+  }
+
+  function drawSwimmer(x, y, r){
+    const tilt = Math.max(-0.34, Math.min(0.34, vy / (H*1.6)));
+    const s = r * 4.2;                     // длина фигуры относительно радиуса удара
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+
+    ctx.save();                            // тень под пловцом — отрывает его от воды
+    ctx.translate(-s/2, -s*0.59/2 + r*0.20);
+    ctx.fillStyle = "rgba(0,0,0,.22)"; swimmerPath(s);
+    ctx.restore();
+
+    ctx.translate(-s/2, -s*0.59/2);
+    const g = ctx.createLinearGradient(0, 0, 0, s*0.59);
+    g.addColorStop(0, GOLD_LT); g.addColorStop(1, GOLD);
+    ctx.fillStyle = g; swimmerPath(s);
+    ctx.restore();
+
+    // пузырьки за спиной: дают ощущение хода, а не висения в воде
+    ctx.fillStyle = "rgba(255,255,255,.20)";
+    for(let i = 0; i < 4; i++){
+      const k = (t*2.2 + i*0.25) % 1;
+      ctx.beginPath();
+      ctx.arc(x - r*1.9 - k*r*3.4, y + Math.sin(t*6 + i)*r*0.5, r*0.20*(1-k), 0, 6.284);
+      ctx.fill();
+    }
+  }
+
+  // Подсказку держим в верхней трети: посередине она ложится прямо
+  // на пловца, и в самый нужный момент его не видно.
+  function banner(big, small){
+    ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(0, H*0.13, W, H*0.26);
+    ctx.textAlign = "center"; ctx.fillStyle = TXT;
+    ctx.font = "600 " + Math.round(H*0.075) + "px 'Cormorant Garamond',Georgia,serif";
+    ctx.fillText(big, W/2, H*0.235);
+    ctx.fillStyle = GOLD;
+    ctx.font = "500 " + Math.round(H*0.033) + "px Inter,sans-serif";
+    ctx.fillText(small, W/2, H*0.315);
+  }
+
+  // --- цикл ---
+  let last = 0;
+  function loop(ts){
+    if(!last) last = ts;
+    const dt = Math.min((ts - last)/1000, 0.05);   // после сворачивания не прыгаем
+    last = ts;
+    step(dt); draw();
+    gameRAF = requestAnimationFrame(loop);
+  }
+
+  // --- управление ---
+  const onTap = e => { e.preventDefault(); stroke(); };
+  const onKey = e => { if(e.code === "Space" || e.key === " "){ e.preventDefault(); stroke(); } };
+  const onResize = () => { if(fit()) reset(); };
+  cv.addEventListener("pointerdown", onTap, {passive:false});
+  window.addEventListener("keydown", onKey);
+  window.addEventListener("resize", onResize);
+  gameOff = () => {
+    cv.removeEventListener("pointerdown", onTap);
+    window.removeEventListener("keydown", onKey);
+    window.removeEventListener("resize", onResize);
+  };
+
+  if(!fit()){ requestAnimationFrame(()=>{ if(fit()){ reset(); gameRAF = requestAnimationFrame(loop); } }); return; }
+  reset();
+  gameRAF = requestAnimationFrame(loop);
 }
 
 let vidObserver = null;
