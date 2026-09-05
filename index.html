@@ -70,9 +70,11 @@
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--txt);
+  /* Полоса жеста снизу перекрывает последнюю строку, если про неё забыть */
+  padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px));
+  -webkit-tap-highlight-color:transparent;
   font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   font-size:16px;line-height:1.6;
-  padding-bottom:64px;
   -webkit-font-smoothing:antialiased;
 }
 /* Тёплое свечение сверху: контент лежит в свете, а не висит в пустоте.
@@ -94,10 +96,16 @@ body::before{
   }
   .card .num,.row .idx{color:var(--gold-dk);-webkit-text-fill-color:var(--gold-dk)}
 }
-.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+/* В альбомной ориентации вырез съедает край экрана — отступы считаем от него */
+.wrap{
+  max-width:1080px;margin:0 auto;
+  padding-left:calc(20px + env(safe-area-inset-left, 0px));
+  padding-right:calc(20px + env(safe-area-inset-right, 0px))
+}
 
 header{
   position:sticky;top:0;z-index:20;
+  padding-top:env(safe-area-inset-top, 0px);
   background:rgba(var(--bg-rgb),.92);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--gold-line);
 }
@@ -113,7 +121,8 @@ header{
 .acct{width:38px;height:38px;border:1px solid var(--gold-line);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:13px;font-weight:500;flex:none}
 
 .crumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:22px 0 6px;font-size:13px;color:var(--txt-3)}
-.crumb a{color:var(--gold);text-decoration:none;cursor:pointer}
+/* Крошки — навигация, в них целятся пальцем: даём им высоту */
+.crumb a{color:var(--gold);text-decoration:none;cursor:pointer;padding:6px 0;display:inline-block}
 .crumb a:hover{color:var(--gold-lt)}
 .crumb span.sep{color:var(--txt-3)}
 
@@ -182,6 +191,7 @@ h2::after{
 .grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
 
 .card{
+  -webkit-user-select:none;user-select:none;
   border:1px solid transparent;border-radius:var(--r);
   background:var(--card-fill) padding-box, var(--edge) border-box;
   padding:20px 20px 18px;cursor:pointer;
@@ -210,6 +220,7 @@ h2::after{
 }
 
 .row{
+  -webkit-user-select:none;user-select:none;
   display:flex;align-items:center;gap:18px;
   border:1px solid transparent;border-radius:10px;
   background:var(--card-fill) padding-box, var(--edge-soft) border-box;
@@ -256,9 +267,10 @@ h2::after{
    не хватает, поэтому фиксируем страницу целиком. */
 body.noscroll{
   position:fixed;top:0;left:0;width:100%;height:100%;
-  overflow:hidden;overscroll-behavior:none;padding-bottom:0
+  overflow:hidden;overscroll-behavior:none;
+  padding-bottom:env(safe-area-inset-bottom, 0px)
 }
-body.noscroll .gamebox canvas{height:min(56vh,420px)}
+body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 
 /* Игра. Холст занимает всю ширину, высота держится пропорцией,
    но не выше половины экрана — иначе на телефоне под ним ничего не видно. */
@@ -268,7 +280,7 @@ body.noscroll .gamebox canvas{height:min(56vh,420px)}
   background:var(--card-fill) padding-box, var(--edge) border-box
 }
 .gamebox canvas{
-  display:block;width:100%;height:min(58vh,440px);
+  display:block;width:100%;height:min(calc(var(--vh, 100vh) * 0.58), 440px);
   touch-action:none;cursor:pointer      /* иначе тап прокручивает страницу */
 }
 .g-hud{
@@ -314,7 +326,7 @@ body.noscroll .gamebox canvas{height:min(56vh,420px)}
 .ref-b{display:flex;gap:10px;flex-wrap:wrap}
 .ref-btn{
   font:inherit;font-size:13.5px;letter-spacing:.03em;cursor:pointer;
-  padding:10px 18px;border-radius:9px;color:var(--gold-lt);
+  min-height:44px;padding:10px 18px;border-radius:9px;color:var(--gold-lt);
   border:1px solid var(--gold-line);background:rgba(var(--gold-rgb),.07);
   transition:background .18s, border-color .18s
 }
@@ -350,6 +362,23 @@ body.noscroll .gamebox canvas{height:min(56vh,420px)}
 @media(max-width:420px){
   .soc-r{gap:9px}
   .soc-b{min-width:0;flex:1;padding:15px 10px}
+}
+
+/* Узкие телефоны: 320 точек ширины, из них 30 съедают поля */
+@media(max-width:380px){
+  h1{font-size:26px}
+  .hero h1{font-size:28px}
+  .lede{font-size:15px}
+  .card{padding:17px 16px 15px}
+  .card .ttl{font-size:15px;letter-spacing:.07em}
+  .grid{grid-template-columns:1fr}
+  .fact-n{font-size:31px;min-width:74px}
+  .book-cover{width:112px}
+  .book-m{gap:10px}
+  .book-m b{font-size:13px}
+  .dl{padding:14px 16px;gap:12px}
+  .soc-n{font-size:10.5px;letter-spacing:.06em}
+  .bestv{font-size:38px}
 }
 
 /* Страница книги: обложка слева, выходные данные справа, под ними — скачивание.
@@ -572,7 +601,10 @@ body.noscroll .gamebox canvas{height:min(56vh,420px)}
 footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22px 0 8px;color:var(--txt-3);font-size:12.5px;letter-spacing:.04em}
 
 @media(max-width:600px){
-  .wrap{padding:0 15px}
+  .wrap{
+    padding-left:calc(15px + env(safe-area-inset-left, 0px));
+    padding-right:calc(15px + env(safe-area-inset-right, 0px))
+  }
   h1{font-size:29px}
   .hero h1{font-size:32px}
   .hero{padding:26px 0 4px}
@@ -2536,6 +2568,7 @@ render(location.hash.slice(1) || "home");
   let bg = "";
   try{ bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim(); }catch(e){}
   if(!bg) return;
+  const ver = v => tg.isVersionAtLeast && tg.isVersionAtLeast(v);
   try{
     tg.ready();
     tg.expand();                                    // на весь экран, без полупозиции
@@ -2543,9 +2576,22 @@ render(location.hash.slice(1) || "home");
     if(tg.setHeaderColor){
       // произвольный цвет шапки телеграм понимает начиная с версии 6.9;
       // в старых клиентах просим взять цвет фона темы, это всё же ближе
-      const ok = tg.isVersionAtLeast && tg.isVersionAtLeast("6.9");
-      tg.setHeaderColor(ok ? bg : "bg_color");
+      tg.setHeaderColor(ver("6.9") ? bg : "bg_color");
     }
+
+    // Смахивание вниз внутри приложения сворачивает его. На заплыве это
+    // просто беда: тянешь пловца вверх — приложение закрывается.
+    if(ver("7.7") && tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+
+    /* Высота окна. В телеграме 100vh — это высота экрана, а не видимой
+       части приложения: сверху его собственная полоса, снизу иногда
+       клавиатура. Отдаём в стили настоящую высоту и следим за её сменой. */
+    const setVH = () => {
+      const h = tg.viewportStableHeight || tg.viewportHeight;
+      if(h) document.documentElement.style.setProperty("--vh", h + "px");
+    };
+    setVH();
+    if(tg.onEvent) tg.onEvent("viewportChanged", setVH);
   }catch(e){}
 })();
 </script>
