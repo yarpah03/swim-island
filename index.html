@@ -59,10 +59,31 @@
      Только для подписей — длинный текст этим цветом набирать нельзя. */
   --txt-sub:#B09563;
 
+  /* --- Разделительные дорожки в игре. Как в настоящем бассейне:
+         поплавки идут чередой, а не одним цветом --- */
+  --lane-1:#EDF2F7;
+  --lane-2:#2E6FD4;
+  --lane-3:#CE4038;
+
   /* --- Тревожный цвет: ошибки и предупреждения. Единственный
          не-золотой акцент в приложении, поэтому и живёт отдельно --- */
   --warn:#B0472F;
   --warn-lt:#D2765C;
+
+  /* --- Цвет вкладки. У каждой из пяти он свой: по нему видно, где ты
+         находишься, ещё до того как прочитал заголовок. Значения ставит
+         не эта строка, а paintTab() — здесь только запасной вариант на
+         случай, если скрипт не отработал. Золото остаётся хозяином:
+         оттенок вкладки живёт в фоне и в нижней панели, карточки его
+         не трогают. --- */
+  --ac:#C79A3C;
+  --ac-rgb:199,154,60;
+
+  /* Знак и название клуба. Единственное золото, которое не меняется
+     при переходе между вкладками: логотип должен быть одним и тем же
+     везде, иначе бренда не остаётся. */
+  --brand:#B98A2E;
+  --brand-metal:linear-gradient(180deg,#F0D488 0%,#C79A3C 55%,#8A671F 100%);
 
   --r:14px;
 }
@@ -70,8 +91,9 @@
 html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg);color:var(--txt);
-  /* Полоса жеста снизу перекрывает последнюю строку, если про неё забыть */
-  padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px));
+  /* Снизу теперь висит панель вкладок, а под ней ещё полоса жеста.
+     Если про них забыть, последняя строка уезжает под панель. */
+  padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px));
   -webkit-tap-highlight-color:transparent;
   font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   font-size:16px;line-height:1.6;
@@ -109,16 +131,179 @@ header{
   background:rgba(var(--bg-rgb),.92);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--gold-line);
 }
-.hd{display:flex;align-items:center;gap:14px;padding:16px 0}
-.mark{width:42px;height:42px;flex:none}
+/* Шапка. Знак и название стоят вместе по центру: логотип получает
+   вес, которого у прижатого к углу значка не было, и при этом
+   ничего не загораживает. */
+.hd{display:flex;align-items:center;justify-content:center;gap:12px;padding:13px 0}
+/* Знак и название набраны --brand, а не --gold: на вкладке «Вода»
+   всё остальное синеет, а логотип обязан остаться собой. */
+.mark{width:38px;height:38px;flex:none;color:var(--brand)}
+.mark path{fill:var(--brand)}
 .wordmark{
-  font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;font-weight:600;letter-spacing:.10em;line-height:1.1;
-  background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:600;letter-spacing:.12em;line-height:1.12;
+  text-align:left;
+  background:var(--brand-metal);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent
 }
-.wordmark small{display:block;font-family:'Inter',sans-serif;font-size:10px;font-weight:500;letter-spacing:.28em;color:var(--txt-3);margin-top:3px}
-.hd-spacer{flex:1}
-.acct{width:38px;height:38px;border:1px solid var(--gold-line);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:13px;font-weight:500;flex:none}
+.wordmark small{display:block;font-family:'Inter',sans-serif;font-size:9px;font-weight:500;letter-spacing:.30em;color:var(--txt-3);margin-top:2px}
+@media(max-width:420px){
+  .hd{gap:10px;padding:11px 0}
+  .mark{width:32px;height:32px}
+  .wordmark{font-size:15.5px;letter-spacing:.11em}
+}
+
+/* ============================================================
+   НИЖНЯЯ ПАНЕЛЬ
+   ------------------------------------------------------------
+   Пять вкладок вместо возврата к списку разделов. Панель висит
+   поверх страницы, поэтому у body внизу отступ — иначе последняя
+   строка прячется под ней.
+   ============================================================ */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  display:flex;
+  padding:7px 4px calc(9px + env(safe-area-inset-bottom, 0px));
+  background:rgba(var(--bg-rgb),.93);backdrop-filter:blur(14px);
+  border-top:1px solid rgba(255,255,255,.07)
+}
+.tabbar button{
+  flex:1;min-width:0;background:none;border:0;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:5px 2px;color:var(--txt-3);font-family:inherit;
+  font-size:10px;font-weight:500;letter-spacing:.02em;line-height:1.3;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .18s ease
+}
+.tabbar button svg{width:22px;height:22px;display:block;flex:none}
+.tabbar button.on{color:var(--ac)}
+.tabbar button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media(max-width:340px){ .tabbar button{font-size:9px} }
+
+/* ============================================================
+   ЛЕНТА «СЕГОДНЯ»
+   ------------------------------------------------------------
+   Главная перестала быть оглавлением. Сверху дата и крупное
+   «Сегодня», под ним — то, что стоит открыть именно сейчас.
+   Подборка считается от даты, поэтому меняется каждый день сама,
+   без сервера и без ручной работы.
+   ============================================================ */
+.feed-day{
+  font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--txt-3);padding-top:26px;margin-bottom:4px
+}
+.feed-h{
+  font-size:36px;font-weight:700;letter-spacing:-.02em;line-height:1.1;
+  color:var(--txt);margin-bottom:22px
+}
+@media(max-width:420px){ .feed-h{font-size:30px} }
+
+/* Главная карточка дня: фотография бассейна, поверх — что плыть */
+.pick{
+  display:block;width:100%;text-align:left;border:0;cursor:pointer;font-family:inherit;
+  position:relative;overflow:hidden;border-radius:20px;
+  min-height:196px;margin-bottom:12px;padding:0;
+  background:var(--surf-2);
+  -webkit-tap-highlight-color:transparent
+}
+.pick-photo{
+  position:absolute;inset:0;
+  background-image:url('hero-mobile.jpg');background-size:cover;background-position:center;
+  opacity:.62
+}
+.pick-veil{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(var(--bg-rgb),.12) 0%,rgba(var(--bg-rgb),.62) 52%,rgba(var(--bg-rgb),.93) 100%)
+}
+.pick-in{position:relative;z-index:2;padding:110px 18px 18px}
+.pick .k{
+  font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ac);display:block;margin-bottom:8px
+}
+.pick .t{
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:27px;font-weight:600;
+  line-height:1.15;color:var(--txt);display:block;margin-bottom:7px
+}
+.pick .d{font-size:13.5px;line-height:1.5;color:var(--txt-2);display:block}
+
+/* Обычная карточка ленты */
+.fcard{
+  display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
+  border:1px solid transparent;border-radius:18px;padding:16px 17px;margin-bottom:11px;
+  background:var(--card-fill) padding-box, var(--edge-soft) border-box;
+  -webkit-tap-highlight-color:transparent
+}
+.fcard .k{
+  font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ac);display:block;margin-bottom:8px;opacity:.9
+}
+.fcard .t{
+  font-size:16.5px;font-weight:600;line-height:1.32;color:var(--txt);
+  display:block;margin-bottom:5px
+}
+.fcard .d{font-size:13px;line-height:1.5;color:var(--txt-2);display:block}
+.fcard .go{
+  display:inline-block;margin-top:12px;font-size:12.5px;font-weight:500;
+  color:var(--gold);letter-spacing:.02em
+}
+
+/* Три цифры под заголовком раздела — сколько всего внутри */
+.nums{display:flex;gap:9px;margin-bottom:22px}
+.nums div{
+  flex:1;min-width:0;border:1px solid transparent;border-radius:16px;padding:14px 12px;
+  background:var(--card-fill) padding-box, var(--edge-soft) border-box
+}
+.nums b{
+  display:block;font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:30px;font-weight:600;line-height:1;color:var(--ac)
+}
+.nums span{
+  display:block;font-size:10.5px;line-height:1.35;color:var(--txt-3);margin-top:7px
+}
+@media(max-width:360px){ .nums b{font-size:25px} .nums span{font-size:9.5px} }
+
+/* Пост канала. Виджет телеграма приходит своей рамкой и сам подбирает
+   высоту, поэтому фиксировать её нельзя — задаём только поля и минимум
+   на время загрузки, чтобы экран не прыгал. */
+.tgpost{
+  margin-bottom:14px;border-radius:18px;overflow:hidden;
+  min-height:64px;position:relative
+}
+.tgpost iframe{border-radius:14px !important;display:block}
+.tg-wait{
+  padding:18px 17px;border-radius:18px;
+  border:1px solid transparent;
+  background:var(--card-fill) padding-box, var(--edge-soft) border-box;
+  font-size:13.5px;color:var(--txt-3)
+}
+.tg-fail{color:var(--txt-2)}
+.tg-wait a{color:var(--gold);cursor:pointer;text-decoration:none}
+.tg-wait a:hover{color:var(--gold-lt)}
+
+/* Выбор уровня подготовки */
+.lvls{display:flex;flex-direction:column;gap:11px;margin:6px 0 26px}
+.lvl{
+  display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
+  border:1px solid transparent;border-radius:18px;padding:16px 17px;
+  background:var(--card-fill) padding-box, var(--edge-soft) border-box;
+  -webkit-tap-highlight-color:transparent
+}
+.lvl.on{background:var(--card-fill) padding-box, var(--edge) border-box}
+.lvl-h{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.lvl-h b{font-size:17px;font-weight:600;color:var(--txt)}
+.lvl-h i{font-style:normal;font-size:12.5px;color:var(--gold-dk);margin-left:auto;white-space:nowrap}
+.lvl-s{display:block;font-size:13px;line-height:1.5;color:var(--txt-2)}
+.lvl-now{
+  display:inline-block;margin-top:11px;font-size:10.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--gold);
+  border:1px solid var(--gold-line);border-radius:20px;padding:5px 11px
+}
+/* Подпись под карточкой дня: по какому уровню она подобрана */
+.lvl-note{
+  font-size:12px;color:var(--txt-3);margin:-4px 0 16px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap
+}
+.lvl-note a{color:var(--gold);cursor:pointer;text-decoration:none;padding:4px 0}
+.lvl-note a:hover{color:var(--gold-lt)}
 
 .crumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:22px 0 6px;font-size:13px;color:var(--txt-3)}
 /* Крошки — навигация, в них целятся пальцем: даём им высоту */
@@ -126,7 +311,27 @@ header{
 .crumb a:hover{color:var(--gold-lt)}
 .crumb span.sep{color:var(--txt-3)}
 
-h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;font-weight:600;letter-spacing:.01em;line-height:1.15;margin:6px 0 10px}
+/* ============================================================
+   ЗАГОЛОВКИ РАЗНОЙ ДЛИНЫ
+   ------------------------------------------------------------
+   «Кроль» и «1500 упражнений для моделирования круговой тренировки»
+   — это один и тот же h1, но при кегле 38 пикселей второй заголовок
+   разваливается на телефоне в четыре строки крупного серифа и давит
+   всё остальное на экране.
+
+   Поэтому кегль зависит от длины: класс ставит render() по числу
+   знаков. Плюс text-wrap:balance — браузер разбивает заголовок на
+   строки примерно равной длины, а не оставляет одно слово болтаться
+   в последней строке. Где его не понимают, всё просто останется
+   как было.
+   ============================================================ */
+h1{
+  font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;
+  font-size:clamp(27px, 8.4vw, 38px);letter-spacing:.01em;line-height:1.15;
+  margin:6px 0 10px;text-wrap:balance;overflow-wrap:break-word;hyphens:manual
+}
+h1.long {font-size:clamp(24px, 7.2vw, 33px);line-height:1.18}
+h1.xlong{font-size:clamp(21px, 6.1vw, 28px);line-height:1.24;letter-spacing:.005em}
 .lede{color:var(--txt-sub);font-size:16px;max-width:660px;margin-bottom:30px}
 h2{
   font-size:12.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
@@ -211,7 +416,13 @@ h2::after{
 }
 .card .ttl{
   font-size:16px;font-weight:500;color:var(--txt);margin-top:4px;
-  text-transform:uppercase;letter-spacing:.09em;line-height:1.35
+  text-transform:uppercase;letter-spacing:.09em;line-height:1.35;
+  text-wrap:balance;overflow-wrap:break-word
+}
+/* Прописные съедают ширину быстрее строчных, поэтому длинному
+   названию карточки капитель только вредит — снимаем её. */
+.card .ttl.long{
+  text-transform:none;letter-spacing:.02em;font-size:15.5px;line-height:1.3
 }
 .card .sub{font-size:13.5px;color:var(--txt-sub);line-height:1.55}
 .card .meta{
@@ -238,7 +449,11 @@ h2::after{
 }
 .row .idx.small{font-size:19px;color:rgba(var(--gold-rgb),.45);min-width:auto}
 .row .body{flex:1;min-width:0}
-.row .name{font-size:16.5px;font-weight:500;letter-spacing:.01em}
+.row .name{font-size:16.5px;font-weight:500;letter-spacing:.01em;
+  text-wrap:balance;overflow-wrap:break-word}
+/* Длинное название в списке набираем мельче и плотнее: иначе одна
+   строка списка вырастает вдвое выше соседних и ряд рассыпается. */
+.row .name.long{font-size:15px;letter-spacing:0;line-height:1.35}
 /* Короткая справка идёт прописными и не спорит с названием.
    Длинную оставляем обычным набором — капитель на фразу нечитаема. */
 .row .note{
@@ -268,7 +483,7 @@ h2::after{
 body.noscroll{
   position:fixed;top:0;left:0;width:100%;height:100%;
   overflow:hidden;overscroll-behavior:none;
-  padding-bottom:env(safe-area-inset-bottom, 0px)
+  padding-bottom:calc(72px + env(safe-area-inset-bottom, 0px))
 }
 body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 
@@ -290,6 +505,43 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 }
 .g-hud span:first-child{color:var(--gold-lt);font-weight:500}
 .g-hud span:last-child{color:var(--gold-dk)}
+
+/* Квадратное дыхание. Холст держим квадратным: шарик ходит по сторонам,
+   и на вытянутом прямоугольнике «вдох» стал бы длиннее «задержки»
+   визуально, хотя по времени они равны. */
+.breathbox{
+  position:relative;max-width:520px;margin:0 auto 18px;
+  border:1px solid transparent;border-radius:var(--r);overflow:hidden;
+  background:var(--card-fill) padding-box, var(--edge) border-box
+}
+.breathbox canvas{
+  display:block;width:100%;aspect-ratio:1/1;
+  max-height:min(calc(var(--vh, 100vh) * 0.52), 480px)
+}
+.brow{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  max-width:520px;margin:0 auto 12px
+}
+.bplay{
+  flex:1 1 150px;cursor:pointer;font-family:inherit;
+  padding:14px 20px;border-radius:var(--r);border:1px solid var(--gold-line);
+  background:rgba(var(--gold-rgb),.10);color:var(--gold-lt);
+  font-size:16px;letter-spacing:.02em;transition:background .18s;
+  -webkit-tap-highlight-color:transparent
+}
+.bplay:hover{background:rgba(var(--gold-rgb),.18)}
+.bsec{display:flex;gap:6px;flex:0 0 auto}
+.bsec button{
+  cursor:pointer;font-family:inherit;font-size:14px;
+  padding:12px 13px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.10);background:transparent;color:var(--txt-3);
+  -webkit-tap-highlight-color:transparent
+}
+.bsec button.on{border-color:var(--gold-line);color:var(--gold-lt);background:rgba(var(--gold-rgb),.10)}
+.bcnt{
+  max-width:520px;margin:0 auto 26px;font-size:13px;color:var(--txt-3);text-align:center
+}
+.bcnt b{color:var(--gold-lt);font-weight:500}
 
 /* Личный рекорд в игре */
 .bestv{
@@ -403,33 +655,26 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 }
 .book-m b{font-weight:400;font-size:14.5px;color:var(--txt);text-align:right;line-height:1.35}
 
-.dl{
-  display:flex;align-items:center;gap:15px;margin-top:22px;
-  padding:15px 20px;border-radius:var(--r);text-decoration:none;
+/* Где взять книгу. Раньше на этом месте была кнопка скачивания. */
+.buy{
+  margin-top:22px;padding:18px 20px;border-radius:var(--r);
   border:1px solid transparent;
-  background:var(--card-fill) padding-box, var(--edge) border-box;
-  transition:background .18s
+  background:var(--card-fill) padding-box, var(--edge-soft) border-box
 }
-.dl:hover{background:var(--card-fill) padding-box, linear-gradient(160deg,rgba(var(--hi-rgb),.75) 0%,rgba(var(--gold-rgb),.28) 40%,rgba(var(--gold-rgb),.10) 100%) border-box}
-.dl-i{
-  width:40px;height:40px;flex:none;border-radius:50%;
-  border:1px solid var(--gold-line);display:flex;align-items:center;justify-content:center;
-  color:var(--gold-lt);font-size:19px;line-height:1
+.buy-t{
+  font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:9px
 }
-.dl-t{
-  display:flex;flex-direction:column;gap:3px;font-size:16px;letter-spacing:.02em;
-  background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
-  color:transparent;-webkit-text-fill-color:transparent;line-height:1.25
+.buy-p{font-size:14px;line-height:1.55;color:var(--txt-2);margin-bottom:15px}
+.buy-r{display:flex;gap:9px;flex-wrap:wrap}
+.buy-b{
+  flex:1 1 auto;min-width:104px;cursor:pointer;font-family:inherit;
+  padding:12px 16px;border-radius:var(--r);border:1px solid var(--gold-line);
+  background:rgba(var(--gold-rgb),.07);color:var(--gold-lt);
+  font-size:14.5px;letter-spacing:.02em;transition:background .18s;
+  -webkit-tap-highlight-color:transparent
 }
-.dl-t span{
-  font-size:11.5px;letter-spacing:.10em;text-transform:uppercase;
-  color:var(--gold-dk);-webkit-text-fill-color:var(--gold-dk)
-}
-.dl-off{opacity:.55}
-.dl-off .dl-i{color:var(--gold-dk)}
-@supports not ((-webkit-background-clip:text) or (background-clip:text)){
-  .dl-t{color:var(--gold-lt);-webkit-text-fill-color:var(--gold-lt)}
-}
+.buy-b:hover{background:rgba(var(--gold-rgb),.14)}
 @media(max-width:560px){
   .book-cover{width:126px}
   .book-m b{font-size:13.5px}
@@ -620,15 +865,18 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <header>
   <div class="wrap hd">
     <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></svg>
-    <div class="wordmark">ПЛАВАТЕЛЬНЫЙ ОСТРОВ<small>VIP</small></div>
-    <div class="hd-spacer"></div>
-    <div class="acct">ЯП</div>
+    <div class="wordmark">ПЛАВАТЕЛЬНЫЙ<br>ОСТРОВ<small>VIP</small></div>
   </div>
 </header>
 
 <main class="wrap" id="app"></main>
 
 <footer class="wrap">ПЛАВАТЕЛЬНЫЙ ОСТРОВ VIP · прототип интерфейса</footer>
+
+<!-- Нижняя панель. Содержимое кнопок рисует renderTabs(): подписи и
+     значки лежат в TABS, чтобы вкладку можно было переименовать
+     в одном месте, а не искать её по разметке. -->
+<nav class="tabbar" id="tabbar" aria-label="Разделы"></nav>
 
 <!-- Официальный набор телеграма. Без него приложение не знает, кто его открыл,
      и не умеет по-человечески открывать внешние ссылки. -->
@@ -640,6 +888,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="motivaciya.js"></script>
 <script src="rezina.js"></script>
 <script src="literatura.js"></script>
+<script src="posts.js"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -920,8 +1169,37 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     {id:"d2",n:"3.2",t:"Гребковые тренировки на резине",s:"Отрабатываем гребок на суше по фазам, а потом собираем его в рабочую серию",m:"3 стиля"},
     {id:"d3",n:"3.3",t:"Кор и стабилизация",s:"Упражнения на удержание корпуса и готовые комплексы, которые делаются по таймеру",m:"45 упражнений · 11 комплексов"},
     {id:"d4",n:"3.4",t:"Круговые тренировки",s:"Общая физподготовка на всё тело: полчаса, высокий пульс, минимум инвентаря",m:"32 станции · 9 тренировок"},
-    {id:"d5",n:"3.5",t:"Гибкость",s:"Работаем над тем, что мешает мышцам работать: плечи, голеностоп, таз и спина",m:"34 упражнения · 5 комплексов"}
+    {id:"d5",n:"3.5",t:"Гибкость",s:"Работаем над тем, что мешает мышцам работать: плечи, голеностоп, таз и спина",m:"34 упражнения · 5 комплексов"},
+    {id:"d6",n:"3.6",t:"Квадратное дыхание",s:"Успокоить пульс перед стартом и уйти с симпатики после тяжёлой тренировки",m:"упражнение с таймером"}
   ]},
+
+  /* Квадратное дыхание. Четыре равных отрезка — вдох, задержка, выдох,
+     задержка, — отсюда и название: шарик обходит квадрат по одной стороне
+     за отрезок. Экран нужен затем, что вслух считать неудобно, а по
+     секундомеру сбиваешься: глазу нужна точка, за которой он следит. */
+  d6:{title:"Квадратное дыхание", breath:true,
+    lede:"Дыхание по четырём равным отрезкам. Шарик идёт по стороне квадрата, вы дышите вместе с ним.",
+    doc:[
+      ["h2","Когда применять"],
+      ["ul",[
+        "Перед стартом — сбить предстартовое возбуждение, когда пульс уже поднялся, а плыть ещё рано.",
+        "Вечером после тяжёлой тренировки — уйти с симпатики и не лежать потом с колотящимся сердцем.",
+        "В любой момент, когда нужно собраться: счёт занимает внимание, и посторонние мысли уходят сами."
+      ]],
+      ["h2","Как это работает"],
+      ["p","Все четыре отрезка равны по длительности, поэтому выдох выходит длиннее обычного, а задержки добавляют паузу. Это повышает вагусный тонус — пульс замедляется. Внимание при этом занято счётом, и на тревожные мысли ресурса не остаётся."],
+      ["p","Попутно упражнение приучает спокойно переносить лёгкое желание вдохнуть. То же чувство мешает держать дыхательный рисунок на дистанции, и привыкать к нему лучше на суше."],
+      ["h2","Как считать"],
+      ["num",[
+        "Начните с четырёх секунд на отрезок. Это рабочая длина для большинства.",
+        "Дышите животом, а не грудью: на вдохе поднимается живот, плечи стоят на месте.",
+        "Выдох ртом, мягко, без выталкивания воздуха.",
+        "Пять-шесть кругов достаточно. Дальше — по самочувствию, но обычно хватает трёх минут.",
+        "Пять и шесть секунд берите, когда четыре стали лёгкими. Гнаться за длиной не нужно: смысл в ровности, а не в рекорде."
+      ]],
+      ["warn","Только на суше. Задержки дыхания в воде — отдельная история с риском потери сознания без предупреждающих признаков, и к этому упражнению она отношения не имеет."],
+      ["tip","Появилось головокружение или потемнело в глазах — прекратите и подышите обычно. Это значит, что отрезок для вас пока длинный, а не что вы плохо стараетесь."]
+    ]},
   d1:{title:"Разминка перед водой",lede:"Упражнения идут подряд и пронумерованы. Выбирать ничего не нужно.",rows:[
     ["","Суставная разминка, сверху вниз","упражнения 1–7","c"],
     ["","Резина","упражнения 8–14","c"],
@@ -950,7 +1228,11 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
   ]},
 
   // Шесть подразделов и книги внутри них собираются из literatura.js ниже.
-  s6:{title:"Спортивная литература",lede:"Профессиональные книги по плаванию и подготовке — с разбором, что из них брать."},
+  s6:{title:"Спортивная литература",
+    lede:"Двадцать две книги, которые мы прочли сами. По каждой — что из неё брать, кому она подойдёт и стоит ли покупать.",
+    // Раздел — это разборы, а не библиотека файлов. Говорим об этом сразу,
+    // чтобы человек не искал кнопку скачивания и не думал, что она сломалась.
+    doc:[["tip","Файлы книг мы не раздаём: это чужая работа, и живут авторы с переводчиками именно с продаж. Наше здесь — разборы: оглавление, что читать, а что пролистать, и честная оценка, нужна ли вам эта книга вообще. На странице каждой книги есть кнопки поиска в магазинах."]]},
 
   // Пять экранов «Сервиса» собираются ниже, из SERVICE.
   s7:{title:"Сервис",lede:"Подписка, подарки, приглашение друзей и ответы на вопросы."},
@@ -1018,13 +1300,196 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
 };
 
 const PARENT = {
-  s1:"home",s1_1:"s1",bt0:"s1_1",sp0:"s1_1",br0:"s1_1",kr0:"s1_1",s1_2:"s1",s1_3:"s1",s1_4:"s1",
+  s1:"t_water",s1_1:"s1",bt0:"s1_1",sp0:"s1_1",br0:"s1_1",kr0:"s1_1",s1_2:"s1",s1_3:"s1",s1_4:"s1",
   e_bt:"s1_4",e_sp:"s1_4",e_br:"s1_4",e_kr:"s1_4",
-  s2:"home",b_vy:"s2",b_sk:"s2",b_mo:"s2",b_vo:"s2",
-  s3:"home",d1:"s3",d2:"s3",d3:"s3",d4:"s3",d5:"s3",
-  s4:"home",s5:"home",m1:"s5",m2:"s5",m3:"s5",s6:"home",s7:"home",
-  game:"home",game_play:"game",game_top:"game",game_win:"game",game_help:"game"
+  s2:"t_water",b_vy:"s2",b_sk:"s2",b_mo:"s2",b_vo:"s2",
+  s3:"home",d1:"s3",d2:"s3",d3:"s3",d4:"s3",d5:"s3",d6:"s3",
+  s4:"t_more",s5:"t_lib",m1:"s5",m2:"s5",m3:"s5",s6:"t_lib",s7:"t_more",
+  about:"t_more",level:"t_more",
+  game:"t_more",game_play:"game",game_top:"game",game_win:"game",game_help:"game",
+  t_water:"home",t_lib:"home",t_more:"home"
 };
+
+/* ============================================================
+   ПЯТЬ ВКЛАДОК
+   ------------------------------------------------------------
+   Раньше в любой раздел ходили через список из восьми плиток на
+   главной. Теперь снизу висит панель: пять мест, до которых
+   всегда один палец, а восемь разделов разложены по ним.
+
+   to  — экран, который открывает вкладка
+   g   — цвет фона вверху страницы
+   hdr — цвет полосы телеграма: он должен совпасть с верхом фона,
+         иначе сверху видна чужая ступенька
+   ac  — цвет самой вкладки в панели и подписей в ленте
+   ph  — снимок в верхней полосе экрана. Есть не у всех: у «Сегодня»
+         фотография уже стоит на карточке дня, вторая под ней сделала бы
+         кашу, а «Ещё» — служебный экран, ему картинка не нужна
+
+   Цвет вкладки — это не один оттенок, а целый набор: им набраны
+   заголовки разделов, номера на карточках, кромка карточек, крошки,
+   ссылки и подписи. Иначе вкладки отличались бы только фоном, а всё
+   написанное на них оставалось бы одинаковым.
+
+   base — основной, lt — светлый (наведение, значки), dk — приглушённый
+   (номера, стрелки), rgb — он же числами для полупрозрачных заливок,
+   hi — блик на верхней кромке карточки, sub — цвет подводок под
+   заголовками. Тот же смысл, что у золота в палитре наверху: набор
+   просто подменяется целиком при переходе на другую вкладку.
+
+   «Сегодня» и «Книги» набраны исходным золотом — цифры в них те же,
+   что в :root, поэтому эти две вкладки выглядят как раньше.
+   ============================================================ */
+const TABS = [
+  // Бирюза — цвет воды на свету, а не под водой: «Сегодня» рядом
+  // с «Водой», но их нельзя перепутать
+  {id:"today", to:"home", n:"Сегодня", g:"10,46,48", hdr:"#0B2A2D",
+   ac:"#4BB3A5", acr:"75,179,165",
+   base:"#3FA396", lt:"#74C9BD", dk:"#2F7C72", rgb:"63,163,150", hi:"150,224,213", sub:"#8CB3AD"},
+
+  // Синий пришлось притушить: на ярком варианте мелкие серые подписи
+  // теряли контраст (2,9 при норме 3) — красиво на картинке, нечитаемо в руках
+  {id:"water", to:"t_water", n:"Вода", g:"8,46,70", hdr:"#092A40", ph:"bg-water.jpg",
+   ac:"#4FA3D1", acr:"79,163,209",
+   base:"#4A9BC9", lt:"#7FC3E6", dk:"#2B617F", rgb:"74,155,201", hi:"168,214,240", sub:"#8FB0C6"},
+
+  {id:"land", to:"s3", n:"Суша", g:"62,32,18", hdr:"#371E14", ph:"bg-land.jpg",
+   ac:"#D67A4A", acr:"214,122,74",
+   base:"#C7703F", lt:"#E29466", dk:"#8A4A26", rgb:"199,112,63", hi:"240,180,140", sub:"#C0917A"},
+
+  {id:"lib", to:"t_lib", n:"Книги", g:"52,38,16", hdr:"#2E2312", ph:"bg-lib.jpg",
+   ac:"#C79A3C", acr:"199,154,60",
+   base:"#B98A2E", lt:"#D0A445", dk:"#7E5C1E", rgb:"185,138,46", hi:"240,212,136", sub:"#B09563"},
+
+  // Сирень — единственный оттенок, который ни с чем в приложении
+  // не спорит: ни с водой, ни с сушей, ни с золотом книг
+  {id:"more", to:"t_more", n:"Ещё", g:"32,26,52", hdr:"#1D1930",
+   ac:"#9C88CE", acr:"156,136,206",
+   base:"#8F7BC0", lt:"#B4A4DC", dk:"#6B5D9C", rgb:"143,123,192", hi:"206,192,240", sub:"#A99DC4"}
+];
+
+/* ============================================================
+   УРОВЕНЬ ПОДГОТОВКИ
+   ------------------------------------------------------------
+   Тренировка дня одна, а плавают все по-разному: 1200 метров и
+   4600 — это разные виды спорта. Поэтому при первом открытии
+   спрашиваем уровень один раз и дальше подбираем занятие под него.
+
+   Буква уровня — это последняя часть идентификатора экрана:
+   sk_n_11 лежит в sk_n, то есть «Скорость, новичок». Так устроены
+   все направления и вся выносливость, поэтому отбирать тренировки
+   можно прямо по имени, ничего не размечая заново.
+   ============================================================ */
+const LEVELS = [
+  {id:"n", n:"Новичок", vol:"1200–1600 м",
+   s:"Плаваю недавно или редко. Задача — доплыть ровно, а не быстро."},
+  {id:"s", n:"Средний", vol:"2200–2800 м",
+   s:"Плаваю регулярно, держу темп на дистанции и умею считать отдых."},
+  {id:"p", n:"Продвинутый", vol:"4000–4600 м",
+   s:"Плаваю давно и много, работаю по интервалу с коротким отдыхом."}
+];
+const LVL_KEY = "swim_level";
+let LEVEL = null;
+
+const isLvl = v => LEVELS.some(l => l.id === v);
+const cloud = () => {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  return tg && tg.CloudStorage ? tg.CloudStorage : null;
+};
+
+/* Память устройства читается мгновенно, а облако — с задержкой. Поэтому
+   сначала показываем то, что знаем, и только потом, когда ответит облако,
+   при необходимости перерисовываем. Иначе первый экран мигал бы. */
+function loadLevel(){
+  try{ const v = localStorage.getItem(LVL_KEY); if(isLvl(v)) LEVEL = v; }catch(e){}
+}
+function saveLevel(v){
+  if(!isLvl(v)) return;
+  LEVEL = v;
+  try{ localStorage.setItem(LVL_KEY, v); }catch(e){}
+  const cs = cloud();
+  try{ if(cs && cs.setItem) cs.setItem(LVL_KEY, v, ()=>{}); }catch(e){}
+}
+/* Спрашиваем облако телеграма: там уровень лежит рядом с человеком, а не
+   с телефоном, поэтому переезжает на новое устройство сам. Если в облаке
+   пусто, а на устройстве уровень есть — переносим его туда. */
+function syncLevel(){
+  const cs = cloud();
+  if(!cs || !cs.getItem) return;
+  try{
+    cs.getItem(LVL_KEY, (err, v)=>{
+      if(err) return;
+      if(isLvl(v)){
+        if(v !== LEVEL){
+          LEVEL = v;
+          try{ localStorage.setItem(LVL_KEY, v); }catch(e){}
+          render(location.hash.slice(1) || "home");
+        }
+      } else if(LEVEL && cs.setItem){
+        cs.setItem(LVL_KEY, LEVEL, ()=>{});
+      }
+    });
+  }catch(e){}
+}
+// Выбор уровня — из разметки, поэтому функция должна быть видна снаружи
+function pickLevel(v){
+  saveLevel(v);
+  const tg = window.Telegram && window.Telegram.WebApp;
+  try{ if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light"); }catch(e){}
+  render(location.hash.slice(1) || "home");
+  if(typeof window !== "undefined" && window.scrollTo) window.scrollTo({top:0,behavior:"instant"});
+}
+
+const TAB_ICON = {
+  today:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>`,
+  water:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M2 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 10c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg>`,
+  land:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5 8v8M19 8v8M8 12h8M3 10v4M21 10v4"/></svg>`,
+  lib:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v16H4zM13 4h7v16h-7z"/></svg>`,
+  more:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg>`
+};
+
+/* Экраны-развилки вкладок. Тексты карточек не дублируем: берём те же,
+   что лежат в T.home.kids, — иначе описания разъедутся при первой правке. */
+(function(){
+  const pick = ids => ids
+    .map(i => T.home.kids.find(k => k.id === i))
+    .filter(Boolean)
+    .map((k, i) => Object.assign({}, k, {n:"0" + (i+1)}));
+
+  T.t_water = {
+    water: true,               // сверху — тренировка дня под уровень
+    title:"Вода",
+    lede:"Всё, что происходит в бассейне: как освоить стиль, что плыть на занятии и какие ошибки мешают.",
+    kids: pick(["s1","s2"])
+  };
+  T.t_lib = {
+    title:"Книги",
+    lede:"Профессиональная литература по плаванию и подготовке — и то, после чего хочется на тренировку.",
+    kids: pick(["s6","s5"])
+  };
+  T.t_more = {
+    more: true,                // сверху — карточка игры с рекордом месяца
+    title:"Ещё",
+    lede:"Подписка, разборы, игра и всё остальное.",
+    kids: pick(["s7","s4","game"]).concat([
+      {id:"level", n:"04", t:"Уровень подготовки", s:"От него зависит, какую тренировку предлагает главный экран"},
+      {id:"about", n:"05", t:"О клубе", s:"Что внутри приложения и для кого оно сделано"}
+    ])
+  };
+  T.level = {
+    title:"Уровень подготовки",
+    lede:"От него зависит только одно: какую тренировку вам предложит главный экран. Весь каталог открыт целиком в любом случае — уровень ничего не закрывает.",
+    levels:true
+  };
+  // «О клубе» показывает тот же рассказ, что раньше висел на главной.
+  // Ссылка на один и тот же объект: числа в нём считаются из данных,
+  // и копия немедленно бы от них отстала.
+  T.about = {
+    title:"О клубе",
+    lede:"Закрытый клуб для тех, кто плавает для себя — но хочет плавать хорошо.",
+    about: T.home.about
+  };
+})();
 
 /* Разворачиваем данные выносливости в экраны: уровень → пять блоков → пять тренировок.
    Восемнадцать экранов писать руками не нужно, они собираются отсюда. */
@@ -1527,7 +1992,10 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
 })();
 
 /* Числа в описании на главной подставляем из самих данных: сколько
-   в файлах реально лежит, столько и обещаем. Разойтись не может. */
+   в файлах реально лежит, столько и обещаем. Разойтись не может.
+   Те же числа показывает лента «Сегодня», поэтому складываем их
+   в COUNTS, а не пересчитываем во второй раз. */
+let COUNTS = {};
 (function(){
   const A = T.home.about;
   if(!A) return;
@@ -1564,6 +2032,8 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       return [v + (plus ? "+" : ""), text];
     })
     .filter(Boolean);
+
+  COUNTS = N;
 })();
 
 /* Мотивация: на сайте лежало по 12 позиций из 15 и без описаний.
@@ -1836,7 +2306,323 @@ function openExt(url){
   };
 })();
 
+/* Класс по длине надписи. Кегль заголовка нельзя задать раз и навсегда:
+   в приложении соседствуют «Кроль» и «1500 упражнений для моделирования
+   круговой тренировки». Считаем знаки и отдаём вёрстке подсказку. */
+const lenCls = (t, mid, big) => {
+  const n = String(t || "").length;
+  return n > big ? " xlong" : n > mid ? " long" : "";
+};
+
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ============================================================
+   ЛЕНТА «СЕГОДНЯ»
+   ------------------------------------------------------------
+   Главная больше не оглавление, а подборка на день. Подборка не
+   случайная и не придуманная руками: она считается от даты. Один
+   и тот же день даёт одну и ту же тренировку у всех, завтра она
+   сменится сама. Сервер для этого не нужен — и это важно, потому
+   что сервера у приложения нет.
+   ============================================================ */
+T.home.feed = true;
+
+const МЕСЯЦЫ = ["января","февраля","марта","апреля","мая","июня",
+                "июля","августа","сентября","октября","ноября","декабря"];
+
+// Номер дня от начала эпохи. Считаем по местной дате, а не по UTC:
+// иначе подборка сменится в неурочный час.
+function dayNo(){
+  const d = new Date();
+  return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+}
+// Берём элемент по номеру периода. Разные разделы сдвигаем солью,
+// иначе тренировка и упражнение всегда выпадали бы «парой».
+const byDay = (arr, period, salt) =>
+  arr.length ? arr[Math.abs(Math.floor(dayNo() / period) + salt) % arr.length] : null;
+
+/* Выбор уровня. Показывается на главной, пока уровень неизвестен, и
+   всегда — на своём экране в «Ещё». Одна и та же разметка, чтобы
+   выбор выглядел одинаково и в первый раз, и при смене. */
+function levelPickHTML(head){
+  let h = "";
+  if(head){
+    h += `<div class="feed-day">Один вопрос перед началом</div>`;
+    h += `<div class="feed-h">Какой у вас уровень?</div>`;
+    h += `<p class="lede">Нужен ровно для одного: чтобы главный экран предлагал тренировку по силам. Весь каталог открыт целиком в любом случае, и уровень можно поменять в «Ещё» в любой момент.</p>`;
+  }
+  h += `<div class="lvls">`;
+  LEVELS.forEach(l=>{
+    h += `<button class="lvl${LEVEL === l.id ? " on" : ""}" onclick="pickLevel('${l.id}')">
+      <span class="lvl-h"><b>${esc(l.n)}</b><i>${esc(l.vol)}</i></span>
+      <span class="lvl-s">${esc(l.s)}</span>
+      ${LEVEL === l.id ? `<span class="lvl-now">Ваш уровень</span>` : ""}
+    </button>`;
+  });
+  h += `</div>`;
+  return h;
+}
+
+function feedPools(){
+  /* Тренировки: берём экраны, где лежит одно занятие целиком, и
+     оставляем только свой уровень. Буква уровня — у родителя:
+     sk_n_11 лежит в sk_n. Если уровень ещё не выбран, берём все —
+     лента не должна пустеть из-за ненастроенного приложения. */
+  const work = Object.keys(T)
+    .filter(k => T[k] && T[k].one)
+    .filter(k => !LEVEL || String(PARENT[k] || "").endsWith("_" + LEVEL))
+    .sort();
+
+  // Технические упражнения
+  const drills = [];
+  if(typeof UCH !== "undefined" && UCH.drills)
+    UCH.drills.forEach(g => g.items.forEach(x =>
+      drills.push({id:g.key + "_" + x.n, t:x.title, s:g.name + " · " + x.cat})));
+
+  // Типичные ошибки
+  const errs = [];
+  if(typeof UCH !== "undefined" && UCH.errors)
+    UCH.errors.forEach(g => g.items.forEach(x =>
+      errs.push({id:g.key + "_" + x.n, t:x.title, s:g.name})));
+
+  // Книги: и те, что лежат прямо в разделе, и те, что во вкладках
+  const books = [];
+  if(typeof LIT !== "undefined")
+    LIT.forEach(sec => {
+      const put = node => (node.books || []).forEach(b =>
+        books.push({id:b.id, t:b.t, a:b.a, about:(b.about || [])[0] || ""}));
+      put(sec);
+      (sec.subs || []).forEach(put);
+    });
+
+  return {work, drills, errs, books};
+}
+
+function feedHTML(){
+  const now = new Date();
+  let h = "";
+  h += `<div class="feed-day">${now.getDate()} ${МЕСЯЦЫ[now.getMonth()]}</div>`;
+  h += `<div class="feed-h">Сегодня</div>`;
+
+  /* Посты канала. Виджет телеграма подставляется скриптом после того,
+     как разметка попала на страницу: скрипты, вставленные через
+     innerHTML, браузер не выполняет — их нужно создавать отдельно.
+     Здесь мы только готовим места под них. */
+  const P = (typeof POSTS !== "undefined" && POSTS) ? POSTS : null;
+  const ids = P && Array.isArray(P.ids) ? P.ids.filter(n => +n > 0) : [];
+
+  if(ids.length){
+    h += ids.map(n => `<div class="tgpost" data-post="${esc(P.channel)}/${+n}">
+        <div class="tg-wait">Загружаем пост из канала…</div>
+      </div>`).join("");
+    h += `<div class="lvl-note">Это записи из канала «Плавательный остров»
+      <a onclick="openExt('https://t.me/${esc(P.channel)}')">открыть канал</a></div>`;
+  } else {
+    /* Пустой список — не повод показывать пустой экран. Говорим прямо,
+       что записей пока нет, и уводим в канал. */
+    h += `<div class="fcard">
+      <span class="k">Канал</span>
+      <span class="t">Здесь появятся записи из канала</span>
+      <span class="d">Пока список пуст. Как только в канале выйдет пост, он окажется на этом экране.</span>
+      <span class="go" onclick="openExt('https://t.me/${P ? esc(P.channel) : "swim_island"}')">Открыть канал &rarr;</span>
+    </div>`;
+  }
+
+  return h;
+}
+
+/* Виджеты постов. Телеграм отдаёт их скриптом, который заменяет сам себя
+   на рамку с постом. Скрипт нужно создать через createElement — вставленный
+   разметкой, он бы не выполнился.
+
+   Если сеть до telegram.org недоступна, рамка не появится. Ждём несколько
+   секунд и вместо ожидания показываем ссылку: пустое место на экране
+   выглядит как поломка, а честная ссылка — нет. */
+/* Тренировка дня. Раньше жила на главной; теперь главная отдана каналу,
+   и карточка переехала во вкладку «Вода» — туда, где ей и место по смыслу.
+   Вместе с ней переехал и вопрос об уровне: спрашивать его на главной было
+   бы странно, раз подборка оттуда ушла. */
+function dayPickHTML(){
+  if(!LEVEL) return levelPickHTML(true);
+  const P = feedPools();
+  const lvl = LEVELS.find(l => l.id === LEVEL);
+  const w = byDay(P.work, 1, 0);
+  let h = "";
+  if(w){
+    const d = T[w], p = d.pills || [];
+    h += `<button class="pick" onclick="go('${w}')">
+      <div class="pick-photo"></div><div class="pick-veil"></div>
+      <div class="pick-in">
+        <span class="k">Тренировка дня</span>
+        <span class="t">${esc([p[0], p[1]].filter(Boolean).join(" · ") || d.title)}</span>
+        <span class="d">${esc([d.title, p[2]].filter(Boolean).join(" · "))}</span>
+      </div>
+    </button>`;
+    h += `<div class="lvl-note">Подобрано под уровень «${esc(lvl.n)}»
+      <a onclick="go('level')">сменить</a></div>`;
+  }
+  const dr = byDay(P.drills, 1, 3);
+  if(dr) h += `<button class="fcard" onclick="go('${dr.id}')">
+      <span class="k">Упражнение дня</span>
+      <span class="t">${esc(dr.t)}</span>
+      <span class="d">${esc(dr.s)}</span>
+      <span class="go">Разобрать &rarr;</span>
+    </button>`;
+  return h;
+}
+
+/* Рекорд месяца. Тоже переехал с главной — к игре, в «Ещё». */
+function gameCardHTML(){
+  const mb = readMonthBest(), ab = readBest();
+  const месяц = МЕСЯЦЫ[new Date().getMonth()];
+  return `<button class="fcard" onclick="go('game_play')">
+      <span class="k">Игра · ${esc(месяц)}</span>
+      <span class="t">${mb ? "Ваш рекорд месяца — " + mb + " м"
+                          : "В этом месяце вы ещё не плавали"}</span>
+      <span class="d">${mb
+        ? (ab > mb ? "Рекорд за всё время — " + ab + " м. До него ещё " + (ab - mb) + " м."
+                   : "Это ваш лучший заплыв за всё время.")
+        : "Заплыв на одно касание. Первого числа отсчёт начинается заново — у всех поровну."}</span>
+      <span class="go">Плыть &rarr;</span>
+    </button>`;
+}
+
+function setupPosts(){
+  const boxes = document.querySelectorAll ? document.querySelectorAll(".tgpost") : [];
+  if(!boxes || !boxes.length) return;
+  Array.prototype.forEach.call(boxes, box => {
+    const post = box.getAttribute("data-post");
+    if(!post || box.getAttribute("data-done")) return;
+    box.setAttribute("data-done", "1");
+
+    const sc = document.createElement("script");
+    sc.async = true;
+    sc.src = "https://telegram.org/js/telegram-widget.js?22";
+    sc.setAttribute("data-telegram-post", post);
+    sc.setAttribute("data-width", "100%");
+    sc.setAttribute("data-dark", "1");
+    sc.setAttribute("data-color", "C79A3C");
+    sc.setAttribute("data-dark-color", "C79A3C");
+    box.appendChild(sc);
+
+    setTimeout(() => {
+      if(box.querySelector && box.querySelector("iframe")) return;
+      const w = box.querySelector && box.querySelector(".tg-wait");
+      if(w){
+        w.innerHTML = 'Пост не загрузился — <a onclick="openExt(\'https://t.me/' +
+          post + '\')">открыть в телеграме</a>';
+        w.className = "tg-wait tg-fail";
+      }
+    }, 6000);
+  });
+}
+
+/* Какой вкладке принадлежит экран. Идём вверх по родителям, пока не
+   упрёмся в экран, который открывает какая-нибудь вкладка. Цепочка
+   всегда кончается на «home», а его открывает «Сегодня», — значит,
+   безответных экранов быть не может. */
+function tabOf(id){
+  let cur = id;
+  for(let i = 0; cur && i < 40; i++){
+    const t = TABS.find(x => x.to === cur);
+    if(t) return t;
+    cur = PARENT[cur];
+  }
+  return TABS[0];
+}
+
+/* Красим страницу в цвет вкладки. Вместе с фоном перекрашиваем полосу
+   телеграма и строку состояния браузера: если этого не сделать, сверху
+   остаётся ступенька чужого цвета — она заметнее самого фона. */
+function paintTab(t){
+  const R = document.documentElement;
+  if(!R || !R.style) return;
+  R.style.setProperty("--ac", t.ac);
+  R.style.setProperty("--ac-rgb", t.acr);
+
+  /* Подменяем весь набор акцента целиком. Всё, что в файле набрано
+     «золотом», ссылается на эти шесть переменных, поэтому одной сменой
+     перекрашиваются заголовки, номера, кромки карточек, крошки и
+     подписи — а не только значок вкладки. Знак и название в шапке
+     держатся за --brand и остаются золотыми на всех вкладках: это
+     единственное, что должно быть одинаковым везде. */
+  R.style.setProperty("--gold", t.base);
+  R.style.setProperty("--gold-lt", t.lt);
+  R.style.setProperty("--gold-dk", t.dk);
+  R.style.setProperty("--gold-rgb", t.rgb);
+  R.style.setProperty("--hi-rgb", t.hi);
+  R.style.setProperty("--txt-sub", t.sub);
+  R.style.setProperty("--gold-metal",
+    `linear-gradient(180deg, rgb(${t.hi}) 0%, ${t.base} 55%, ${t.dk} 100%)`);
+  R.style.setProperty("--gold-metal-dim",
+    `linear-gradient(180deg, ${t.lt} 0%, ${t.dk} 100%)`);
+  /* Фон «Глубина»: три слоя.
+     1) оттенок вкладки сверху — по нему узнаётся, где ты;
+     2) еле заметная косая штриховка — она даёт фактуру, из-за которой
+        экран выглядит плотнее, чем один ровный градиент;
+     3) затемнение к низу — страница «сидит» в тени, а не обрывается.
+     Штриховку держим на 2,2%: выше она начинает муарить на дешёвых
+     экранах, ниже — просто не видна. */
+  /* Снимок вкладки, если он есть, ложится между штриховкой и цветом.
+     Затемнение и растворение книзу уже впечатаны в сам файл — там их
+     можно было измерить по пикселям, а в градиенте нельзя. */
+  const photo = t.ph ? `url('${t.ph}') top center / 100% auto no-repeat,` : "";
+  R.style.setProperty("--glow",
+    `repeating-linear-gradient(115deg, rgba(255,255,255,.022) 0 2px, rgba(255,255,255,0) 2px 9px),` +
+    photo +
+    `radial-gradient(120% 58% at 50% -8%, rgba(${t.g},.85) 0%, rgba(${t.g},.30) 44%, rgba(${t.g},0) 78%),` +
+    `radial-gradient(105% 48% at 50% 106%, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 70%),` +
+    `linear-gradient(var(--bg), var(--bg))`);
+
+  const meta = document.querySelector && document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute("content", t.hdr);
+
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if(tg && tg.setHeaderColor && tg.isVersionAtLeast && tg.isVersionAtLeast("6.9")){
+    try{ tg.setHeaderColor(t.hdr); }catch(e){}
+  }
+}
+
+function renderTabs(active){
+  const bar = document.getElementById("tabbar");
+  if(!bar) return;
+  bar.innerHTML = TABS.map(t =>
+    `<button class="${t.id === active ? "on" : ""}" onclick="go('${t.to}')">
+      ${TAB_ICON[t.id] || ""}<span>${esc(t.n)}</span>
+    </button>`).join("");
+}
+
+/* ============================================================
+   ГДЕ КУПИТЬ КНИГУ
+   ------------------------------------------------------------
+   Раньше здесь стояла кнопка «Скачать книгу». Файлы мы больше не
+   раздаём: это чужие произведения, а приложение платное — раздача
+   PDF нарушает права издательств и переводчиков, и никакая
+   договорённость не покрывает любительские переводы.
+
+   Ценность раздела от этого не потерялась: она в разборах — что из
+   книги брать, а что пролистать. Их писали мы, они наши.
+   Вместо файла даём поиск в магазинах по названию и автору.
+   Прямые ссылки на товар не вписываем нарочно: они протухают,
+   а поиск работает всегда.
+   ============================================================ */
+const SHOPS = [
+  {n:"Литрес",       u:"https://www.litres.ru/search/?q="},
+  {n:"Яндекс Маркет",u:"https://market.yandex.ru/search?text="},
+  {n:"Поиск",        u:"https://yandex.ru/search/?text="}
+];
+
+function buyHTML(B){
+  const q = encodeURIComponent([B.t, B.a].filter(Boolean).join(" ") + " книга");
+  return `<div class="buy">
+    <div class="buy-t">Где взять книгу</div>
+    <p class="buy-p">Файл мы не раздаём: это чужая работа, а издательство и переводчик
+      живут с её продаж. Разбор выше — наш, им пользуйтесь свободно.</p>
+    <div class="buy-r">
+      ${SHOPS.map(s=>`<button class="buy-b" onclick="openExt('${s.u}${q}')">${esc(s.n)}</button>`).join("")}
+    </div>
+  </div>`;
+}
 
 function crumbs(id){
   const chain=[];let cur=id;
@@ -1853,46 +2639,8 @@ function render(id){
   const d = T[id]; if(!d) return;
   let h = "";
 
-  if(id==="home"){
-    h += `<div class="hero">
-      <div class="hero-photo"></div><div class="hero-veil"></div>
-      <svg class="hero-waves" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M-40 62 Q 110 26 260 62 T 560 62 T 860 62 T 1240 62" fill="none" stroke="var(--gold)" stroke-width="1.4" opacity=".22"/>
-        <path d="M-40 82 Q 110 46 260 82 T 560 82 T 860 82 T 1240 82" fill="none" stroke="var(--gold)" stroke-width="1.4" opacity=".16"/>
-        <path d="M-40 102 Q 110 66 260 102 T 560 102 T 860 102 T 1240 102" fill="none" stroke="var(--gold)" stroke-width="1.4" opacity=".11"/>
-        <path d="M-40 122 Q 110 86 260 122 T 560 122 T 860 122 T 1240 122" fill="none" stroke="var(--gold)" stroke-width="1.4" opacity=".07"/>
-      </svg>
-      <div class="hero-in">
-        <svg class="mark-big" viewBox="0 0 512 512" aria-hidden="true"><use href="#markpath"/></svg>
-        <div class="hero-note">ЗАКРЫТЫЙ КЛУБ ДЛЯ ПЛОВЦОВ</div>
-        <h1>${esc(d.title)}</h1>
-        <p class="lede">${esc(d.lede)}</p>
-      </div>
-    </div>`;
-    if(d.about){
-      const A = d.about;
-      h += `<div class="about">`;
-      (A.text||[]).forEach(t=>{ h += `<p>${esc(t)}</p>`; });
-      if(A.points && A.points.length){
-        h += `<h2>Что внутри</h2><div class="facts">`;
-        A.points.forEach(([num, text])=>{
-          h += `<div class="fact"><span class="fact-n">${esc(num)}</span><span class="fact-t">${esc(text)}</span></div>`;
-        });
-        h += `</div>`;
-      }
-      h += `</div>`;
-    }
-
-    h += `<h2>Разделы</h2><div class="grid">`;
-    d.kids.forEach(k=>{
-      h += `<button class="card" onclick="go('${k.id}')">
-        <span class="num">${esc(k.n)}</span>
-        <span class="ttl">${esc(k.t)}</span>
-        <span class="sub">${esc(k.s)}</span>
-        ${k.m?`<span class="meta">${esc(k.m)}</span>`:""}
-      </button>`;
-    });
-    h += `</div>`;
+  if(d.feed){
+    h += feedHTML();
 
     // Соцсети внизу главного экрана. Кнопку без ссылки не показываем.
     const soc = SOCIAL.filter(s=>s.u);
@@ -1908,16 +2656,39 @@ function render(id){
     }
   } else {
     h += crumbs(id);
-    h += `<h1>${esc(d.title)}</h1>`;
+    h += `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
     if(d.lede) h += `<p class="lede">${esc(d.lede)}</p>`;
     if(d.pills) h += `<div class="pills">${d.pills.map(p=>`<span class="pill">${esc(p)}</span>`).join("")}</div>`;
+
+    // Тренировка дня и рекорд месяца — на своих вкладках
+    if(d.water) h += dayPickHTML();
+    if(d.more)  h += gameCardHTML();
+
+    // Экран смены уровня — та же разметка, что и при первом вопросе
+    if(d.levels) h += levelPickHTML(false);
+
+    // Рассказ о клубе. Раньше висел на главной; теперь у него свой
+    // экран, потому что главная стала лентой на день.
+    if(d.about){
+      const A = d.about;
+      h += `<div class="about">`;
+      (A.text||[]).forEach(t=>{ h += `<p>${esc(t)}</p>`; });
+      if(A.points && A.points.length){
+        h += `<h2>Что внутри</h2><div class="facts">`;
+        A.points.forEach(([num, text])=>{
+          h += `<div class="fact"><span class="fact-n">${esc(num)}</span><span class="fact-t">${esc(text)}</span></div>`;
+        });
+        h += `</div>`;
+      }
+      h += `</div>`;
+    }
 
     if(d.kids){
       h += `<div class="grid">`;
       d.kids.forEach(k=>{
         h += `<button class="card" onclick="go('${k.id}')">
           <span class="num">${esc(k.n)}</span>
-          <span class="ttl">${esc(k.t)}</span>
+          <span class="ttl${lenCls(k.t, 26, 999)}">${esc(k.t)}</span>
           <span class="sub">${esc(k.s)}</span>
           ${k.m?`<span class="meta">${esc(k.m)}</span>`:""}
         </button>`;
@@ -1953,6 +2724,18 @@ if(d.lesson){
     }
 
     // Кнопки-действия: тот же вид, что у кнопки скачивания книги.
+    if(d.breath){
+      const sec = readBSec();
+      h += `<div class="breathbox"><canvas id="bcv"></canvas></div>
+        <div class="brow">
+          <button class="bplay" id="bplay">Начать</button>
+          <div class="bsec">
+            ${[3,4,5,6].map(v=>`<button class="bs${v===sec?" on":""}" onclick="setBreathSec(${v})">${v} с</button>`).join("")}
+          </div>
+        </div>
+        <div class="bcnt">Кругов пройдено: <b id="bcycles">0</b></div>`;
+    }
+
     if(d.game){
       h += `<div class="gamebox">
         <canvas id="gcv"></canvas>
@@ -1961,9 +2744,13 @@ if(d.lesson){
     }
 
     if(d.best){
+      // Два числа, а не одно: призы разыгрываются помесячно, поэтому
+      // рекорд месяца важнее рекорда за всё время
       h += `<div class="book"><div class="refbox">
-        <span class="ref-t">Ваш личный рекорд</span>
-        <div class="bestv" id="bestv">—</div>
+        <span class="ref-t">Рекорд этого месяца</span>
+        <div class="bestv" id="bestm">—</div>
+        <span class="ref-t" style="margin-top:18px;display:block">За всё время</span>
+        <div class="bestv" id="bestv" style="font-size:30px">—</div>
       </div></div>`;
     }
 
@@ -2007,12 +2794,7 @@ if(d.lesson){
             ${meta.map(m=>`<div class="book-m"><span>${esc(m[0])}</span><b>${esc(m[1])}</b></div>`).join("")}
           </div>
         </div>
-        ${B.file
-          ? `<a class="dl" href="${esc(B.file)}" download>
-               <span class="dl-i">↓</span>
-               <span class="dl-t">Скачать книгу<span>PDF${B.size?" · "+esc(B.size):""}</span></span>
-             </a>`
-          : `<div class="dl dl-off"><span class="dl-i">◷</span><span class="dl-t">Файл готовится<span>появится в этом разделе</span></span></div>`}
+        ${buyHTML(B)}
       </div>`;
     }
 
@@ -2091,7 +2873,7 @@ if(d.lesson){
         const note = r[2] ? `<span class="note${longNotes ? " long" : ""}">${esc(r[2])}</span>` : "";
         h += `<button class="row"${go2}>
           ${idx}
-          <span class="body"><span class="name">${esc(r[1])}</span>${note}</span>
+          <span class="body"><span class="name${lenCls(r[1], 38, 999)}">${esc(r[1])}</span>${note}</span>
           <span class="chev">›</span>
         </button>`;
       });
@@ -2104,7 +2886,7 @@ if(d.lesson){
       h += `<h2>Что делают не так</h2>`;
       d.errs.forEach((e,i)=>{ h += `<div class="err"><b>${i+1}.</b> ${esc(e)}</div>`; });
       h += `<h2>Что с этим делать</h2>`;
-      h += `<button class="row"><span class="idx">▶</span><span class="body"><span class="name">${esc(d.fix)}</span><span class="note">упражнения и серии, которые убирают все ошибки сразу</span></span><span class="chev">›</span></button>`;
+      h += `<button class="row"><span class="idx">▶</span><span class="body"><span class="name${lenCls(d.fix, 38, 999)}">${esc(d.fix)}</span><span class="note">упражнения и серии, которые убирают все ошибки сразу</span></span><span class="chev">›</span></button>`;
       h += `<div class="tipbox" style="margin-top:22px"><b>На что смотреть.</b> Ошибки почти никогда не приходят по одной. Начинайте с первой в списке — остальные часто уходят вместе с ней.</div>`;
     }
 
@@ -2113,7 +2895,7 @@ if(d.lesson){
       d.posters.forEach(p=>{
         h += `<button class="row">
           <span style="width:44px;height:62px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(var(--gold-rgb),.07);display:flex;align-items:center;justify-content:center;color:var(--gold-dk);font-size:19px">◱</span>
-          <span class="body"><span class="name">${esc(p[0])}</span><span class="note">${esc(p[1])}</span></span>
+          <span class="body"><span class="name${lenCls(p[0], 38, 999)}">${esc(p[0])}</span><span class="note">${esc(p[1])}</span></span>
           <span class="chev">›</span>
         </button>`;
       });
@@ -2126,7 +2908,7 @@ if(d.lesson){
       ["Разбор кроля","Разбор спины","Разбор брасса","Разбор баттерфляя","Старты и повороты","Вопросы и ответы"].forEach((v,i)=>{
         h += `<button class="row">
           <span style="width:60px;height:38px;flex:none;border:1px solid var(--gold-line);border-radius:5px;background:rgba(var(--gold-rgb),.07);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px">▶</span>
-          <span class="body"><span class="name">${esc(v)}</span><span class="note">запись эфира</span></span>
+          <span class="body"><span class="name${lenCls(v, 38, 999)}">${esc(v)}</span><span class="note">запись эфира</span></span>
           <span class="chev">›</span>
         </button>`;
       });
@@ -2135,13 +2917,22 @@ if(d.lesson){
   }
 
   stopGame();                    // уходим с экрана — гасим цикл игры
+  stopBreath();                  // и цикл дыхания: они живут независимо
   // На заплыве палец управляет пловцом, а не страницей.
   if(document.body) document.body.classList.toggle("noscroll", !!d.game);
+
+  // Вкладка красит страницу и подсвечивает себя в нижней панели
+  const tab = tabOf(id);
+  paintTab(tab);
+  renderTabs(tab.id);
+
   document.getElementById("app").innerHTML = h;
   window.scrollTo({top:0,behavior:"instant"});
   setupVideos();
   setupRef();
   setupGame();
+  setupBreath();
+  setupPosts();
   setupBest();
 }
 
@@ -2195,8 +2986,21 @@ function setupRef(){
    Всё считается в долях от размера холста, поэтому на любом экране
    игра одинаковой сложности: на планшете не легче, чем на телефоне.
    ============================================================ */
-let gameRAF = null, gameOff = null;
+let gameRAF = null, gameOff = null, gameResize = null;
 const BEST_KEY = "swim_island_best";
+
+/* Снимок бассейна для фона игры. Грузим один раз на всё приложение и
+   только когда игру открыли: тем, кто в неё не заходит, он не нужен.
+   Если файла нет или сеть подвела — игра просто рисует градиент. */
+let bgImg = null, bgAsked = false;
+function loadGameBg(){
+  if(bgAsked || typeof Image !== "function") return;
+  bgAsked = true;
+  const im = new Image();
+  im.onload = () => { if(im.width && im.height) bgImg = im; };
+  im.onerror = () => { bgImg = null; };
+  im.src = "hero-mobile.jpg";
+}
 
 // Хранилище браузера бывает запрещено настройками или режимом инкогнито.
 // Тогда просто живём без рекорда, а не роняем экран.
@@ -2205,13 +3009,38 @@ function readBest(){
 }
 function writeBest(v){ try{ localStorage.setItem(BEST_KEY, String(v)); }catch(e){} }
 
+/* Рекорд текущего месяца — отдельно от рекорда за всё время.
+   Призы разыгрываются каждый месяц, а рекорд за всё время к первому
+   числу не обнуляется: человек, поставивший 900 метров в июне, иначе
+   выглядел бы лидером и в сентябре, ничего в сентябре не проплыв.
+   Храним месяц вместе со значением — по нему и понимаем, что пора
+   начинать заново. Никуда не отправляем: это по-прежнему только
+   ваш телефон. */
+const MONTH_KEY = "swim_island_best_month";
+const nowMonth = () => {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+};
+function readMonthBest(){
+  try{
+    const r = JSON.parse(localStorage.getItem(MONTH_KEY) || "null");
+    return (r && r.m === nowMonth()) ? (parseInt(r.v, 10) || 0) : 0;
+  }catch(e){ return 0; }
+}
+function writeMonthBest(v){
+  try{ localStorage.setItem(MONTH_KEY, JSON.stringify({m: nowMonth(), v: v})); }catch(e){}
+}
+
 // Личный рекорд на вкладке «Рейтинг»
 function setupBest(){
-  const el = document.getElementById("bestv");
-  if(!el) return;
-  const b = readBest();
-  el.textContent = b ? b + " м" : "Ещё не плавали — самое время начать";
-  el.classList.toggle("empty", !b);
+  const put = (id, v, empty) => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = v ? v + " м" : empty;
+    el.classList.toggle("empty", !v);
+  };
+  put("bestm", readMonthBest(), "В этом месяце ещё не плавали");
+  put("bestv", readBest(), "Ещё не плавали — самое время начать");
 }
 
 function stopGame(){
@@ -2219,9 +3048,198 @@ function stopGame(){
   if(gameOff){ gameOff(); gameOff = null; }   // снимаем обработчики
 }
 
+/* ============================================================
+   КВАДРАТНОЕ ДЫХАНИЕ
+   ------------------------------------------------------------
+   Четыре равных отрезка — вдох, задержка, выдох, задержка. Шарик
+   проходит по одной стороне квадрата за отрезок, в середине —
+   название фазы и обратный отсчёт.
+
+   Почему не просто цифры: вслух считать неудобно, а по секундомеру
+   человек сбивается. Глазу нужна точка, за которой он следит, — и
+   тогда счёт перестаёт требовать усилия.
+
+   Живёт отдельно от заплыва: у них свои циклы и свои обработчики,
+   и один не должен гасить другой.
+   ============================================================ */
+let breathRAF = null, breathOff = null, breathResize = null;
+const BSEC_KEY = "swim_breath_sec";
+
+// Обход по часовой стрелке от нижнего левого угла: вверх — вдох,
+// вправо — задержка, вниз — выдох, влево — снова задержка. Подъём
+// шарика совпадает с наполнением лёгких, и объяснять это не нужно.
+const BPHASES = [
+  {n:"Вдох",     hint:"через нос, живот вперёд"},
+  {n:"Задержка", hint:"не напрягайтесь"},
+  {n:"Выдох",    hint:"ртом, мягко"},
+  {n:"Задержка", hint:"спокойно, пусто"}
+];
+
+function readBSec(){
+  try{ const v = parseInt(localStorage.getItem(BSEC_KEY), 10);
+       return (v >= 3 && v <= 6) ? v : 4; }catch(e){ return 4; }
+}
+function writeBSec(v){ try{ localStorage.setItem(BSEC_KEY, String(v)); }catch(e){} }
+
+// Выбор длины отрезка — из разметки, поэтому функция глобальная
+function setBreathSec(v){
+  writeBSec(v);
+  render(location.hash.slice(1) || "home");
+}
+
+function stopBreath(){
+  if(breathRAF){ cancelAnimationFrame(breathRAF); breathRAF = null; }
+  if(breathOff){ breathOff(); breathOff = null; }
+  breathResize = null;
+}
+
+function setupBreath(){
+  const cv = document.getElementById("bcv");
+  if(!cv) return;
+  const ctx = cv.getContext("2d");
+  const btn = document.getElementById("bplay");
+  const cyc = document.getElementById("bcycles");
+
+  const SEC = readBSec();
+  let W = 0, H = 0;
+  let running = false, phase = 0, t = 0, cycles = 0, last = 0;
+
+  function fit(){
+    const r = cv.getBoundingClientRect();
+    if(!r.width) return false;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return true;
+  }
+
+  const css = n => {
+    try{ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+    catch(e){ return ""; }
+  };
+  const BALL = css("--lane-3") || "#CE4038";
+  const LINE = css("--gold-line") || "rgba(185,138,46,.30)";
+  const ACC  = css("--gold-lt")   || "#D0A445";
+  const TXT  = css("--txt")       || "#EDF1F6";
+  const TX2  = css("--txt-2")     || "#9BA7B8";
+  const TX3  = css("--txt-3")     || "#6A778A";
+
+  /* Углы квадрата по порядку обхода. Начинаем снизу слева: вдох ведёт
+     шарик вверх, и это читается без подписи. */
+  function corners(){
+    const pad = Math.max(26, Math.min(W, H) * 0.13);
+    const s = Math.min(W, H) - pad * 2;
+    const x = (W - s) / 2, y = (H - s) / 2;
+    return [[x, y + s], [x, y], [x + s, y], [x + s, y + s]];
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    const c = corners();
+    const r = Math.max(7, Math.min(W, H) * 0.028);
+
+    // дорожка квадрата
+    ctx.beginPath();
+    ctx.moveTo(c[0][0], c[0][1]);
+    for(let i = 1; i < 4; i++) ctx.lineTo(c[i][0], c[i][1]);
+    ctx.closePath();
+    ctx.strokeStyle = LINE; ctx.lineWidth = 2; ctx.stroke();
+
+    // пройденная часть текущей стороны — светлее
+    const a = c[phase], b = c[(phase + 1) % 4];
+    const k = running ? t / SEC : 0;
+    ctx.beginPath();
+    ctx.moveTo(a[0], a[1]);
+    ctx.lineTo(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k);
+    ctx.strokeStyle = ACC; ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.stroke();
+
+    // шарик
+    const bx = a[0] + (b[0] - a[0]) * k, by = a[1] + (b[1] - a[1]) * k;
+    ctx.beginPath(); ctx.arc(bx, by, r * 2.1, 0, 6.284);
+    ctx.fillStyle = "rgba(206,64,56,.16)"; ctx.fill();
+    ctx.beginPath(); ctx.arc(bx, by, r, 0, 6.284);
+    ctx.fillStyle = BALL; ctx.fill();
+
+    // середина: фаза, обратный отсчёт, подсказка
+    const cx = W / 2, cy = H / 2;
+    const P = BPHASES[phase];
+    ctx.textAlign = "center";
+
+    if(running){
+      ctx.fillStyle = TX2;
+      ctx.font = "600 " + Math.round(Math.min(W, H) * 0.055) + "px Inter, sans-serif";
+      // подпись фазы уводим выше: при кегле 0.26 цифра доставала до неё
+      ctx.fillText(P.n.toUpperCase(), cx, cy - Math.min(W, H) * 0.145);
+
+      ctx.fillStyle = TXT;
+      ctx.font = "600 " + Math.round(Math.min(W, H) * 0.24) + "px 'Cormorant Garamond', Georgia, serif";
+      ctx.fillText(String(Math.max(1, Math.ceil(SEC - t))), cx, cy + Math.min(W, H) * 0.085);
+
+      ctx.fillStyle = TX3;
+      ctx.font = "400 " + Math.round(Math.min(W, H) * 0.040) + "px Inter, sans-serif";
+      ctx.fillText(P.hint, cx, cy + Math.min(W, H) * 0.16);
+    } else {
+      ctx.fillStyle = TX2;
+      ctx.font = "500 " + Math.round(Math.min(W, H) * 0.050) + "px Inter, sans-serif";
+      ctx.fillText("Готовы — нажмите «Начать»", cx, cy - Math.min(W, H) * 0.02);
+      ctx.fillStyle = TX3;
+      ctx.font = "400 " + Math.round(Math.min(W, H) * 0.040) + "px Inter, sans-serif";
+      ctx.fillText(SEC + " секунды на сторону", cx, cy + Math.min(W, H) * 0.06);
+    }
+    ctx.textAlign = "start";
+  }
+
+  const buzz = kind => {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(kind); }catch(e){}
+  };
+
+  function frame(now){
+    breathRAF = requestAnimationFrame(frame);
+    if(!last) last = now;
+    const dt = Math.min((now - last) / 1000, 0.1);   // вкладка была свёрнута — не прыгаем
+    last = now;
+
+    if(running){
+      t += dt;
+      if(t >= SEC){
+        t -= SEC;
+        phase = (phase + 1) % 4;
+        // конец круга — считаем цикл и отмечаем сильнее
+        if(phase === 0){ cycles++; if(cyc) cyc.textContent = cycles; buzz("medium"); }
+        else buzz("light");
+      }
+    }
+    draw();
+  }
+
+  function toggle(){
+    running = !running;
+    if(running){ last = 0; }
+    else { phase = 0; t = 0; }
+    if(btn) btn.textContent = running ? "Остановить" : "Начать";
+    buzz("medium");
+  }
+
+  if(!fit()) return;
+  if(btn) btn.addEventListener("click", toggle);
+  const onResize = () => { fit(); };
+  breathResize = onResize;
+  window.addEventListener("resize", onResize);
+
+  breathOff = () => {
+    window.removeEventListener("resize", onResize);
+    if(btn) btn.removeEventListener("click", toggle);
+  };
+  breathRAF = requestAnimationFrame(frame);
+}
+
 function setupGame(){
   const cv = document.getElementById("gcv");
   if(!cv || !cv.getContext) return;
+  loadGameBg();
   const ctx = cv.getContext("2d");
   const elDist = document.getElementById("gdist");
   const elBest = document.getElementById("gbest");
@@ -2231,6 +3249,7 @@ function setupGame(){
   const GOLD = V("--gold","#B98A2E"), GOLD_LT = V("--gold-lt","#D0A445"),
         GOLD_DK = V("--gold-dk","#7E5C1E"), BG = V("--bg","#060B14"),
         SURF = V("--surf","#0C1422"), TXT = V("--txt","#EDF1F6");
+  const LANE = [V("--lane-1","#EDF2F7"), V("--lane-2","#2E6FD4"), V("--lane-3","#CE4038")];
 
   // Рекорд храним в телефоне. Если браузер запрещает — играем без рекорда.
   let best = readBest();
@@ -2289,6 +3308,9 @@ function setupGame(){
       best = dist;
       writeBest(best);
     }
+    // Рекорд месяца растёт независимо: он может обновиться и тогда,
+    // когда до общего рекорда заплыв не дотянул
+    if(dist > readMonthBest()) writeMonthBest(dist);
     const tg = window.Telegram && window.Telegram.WebApp;
     try{ tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred("error"); }catch(e){}
   }
@@ -2325,24 +3347,49 @@ function setupGame(){
     if(y + r > H || y - r < 0) die();       // дно и поверхность
   }
 
+  /* Фон — настоящий снимок бассейна, тот же, что на главной. Он медленно
+     уезжает влево: если оставить его неподвижным, мозг замечает, что всё
+     движется, а бассейн стоит. Плитки чередуем зеркально — у фотографии
+     левый и правый края не совпадают, а зеркальная укладка сходится всегда. */
+  function drawWater(sh){
+    if(!bgImg){                                   // снимок ещё не загрузился
+      const grd = ctx.createLinearGradient(0,0,0,H);
+      grd.addColorStop(0, SURF); grd.addColorStop(1, BG);
+      ctx.fillStyle = grd; ctx.fillRect(0,-Math.abs(sh),W,H+Math.abs(sh)*2);
+      ctx.strokeStyle = "rgba(255,255,255,.045)"; ctx.lineWidth = 1;
+      for(let i=0;i<7;i++){
+        const yy = H*(0.09+i*0.13), off = (t*speedFor()*0.35 + i*90) % (W+120);
+        ctx.beginPath();
+        for(let x=-120;x<W+120;x+=14) ctx.lineTo(x, yy + Math.sin((x+off)/48)*3.5);
+        ctx.stroke();
+      }
+      return;
+    }
+    const k = Math.max(W/bgImg.width, H/bgImg.height);
+    const dw = bgImg.width*k, dh = bgImg.height*k, y0 = (H-dh)/2 - Math.abs(sh);
+    const shift = t * speedFor() * 0.12;          // фон идёт много медленнее дорожек
+    const first = Math.floor(shift/dw) - 1;
+    for(let i = first; i*dw - shift < W; i++){
+      const x = i*dw - shift;
+      ctx.save();
+      if((((i % 2) + 2) % 2) === 1){               // зеркальная плитка
+        ctx.translate(x + dw, y0); ctx.scale(-1, 1);
+        ctx.drawImage(bgImg, 0, 0, dw, dh + Math.abs(sh)*2);
+      } else {
+        ctx.drawImage(bgImg, x, y0, dw, dh + Math.abs(sh)*2);
+      }
+      ctx.restore();
+    }
+    // затемняем, иначе золотые тросы теряются на светлой воде
+    ctx.fillStyle = "rgba(6,11,20,.58)";
+    ctx.fillRect(0, -Math.abs(sh), W, H + Math.abs(sh)*2);
+  }
+
   // --- рисование ---
   function draw(){
     const sh = shake ? (Math.random()-0.5) * H * 0.02 * shake : 0;
     ctx.save(); ctx.translate(0, sh);
-
-    // вода
-    const grd = ctx.createLinearGradient(0,0,0,H);
-    grd.addColorStop(0, SURF); grd.addColorStop(1, BG);
-    ctx.fillStyle = grd; ctx.fillRect(0,-Math.abs(sh),W,H+Math.abs(sh)*2);
-
-    // блики на воде — уезжают влево, дают ощущение движения
-    ctx.strokeStyle = "rgba(255,255,255,.045)"; ctx.lineWidth = 1;
-    for(let i=0;i<7;i++){
-      const yy = H*(0.09+i*0.13), off = (t*speedFor()*0.35 + i*90) % (W+120);
-      ctx.beginPath();
-      for(let x=-120;x<W+120;x+=14) ctx.lineTo(x, yy + Math.sin((x+off)/48)*3.5);
-      ctx.stroke();
-    }
+    drawWater(sh);
 
     // дорожки
     const rw = ROPE_W();
@@ -2361,14 +3408,18 @@ function setupGame(){
     if(state === DEAD)  banner(dist + " м", dist >= best && dist > 0 ? "Новый рекорд. Касание — заново" : "Касание — заново");
   }
 
-  // Трос как в бассейне: цепочка поплавков, а не сплошная палка
+  /* Трос как в бассейне: цепочка поплавков, а не сплошная палка.
+     Цвета идут по кругу бело-сине-красным. Порядок считаем от общей
+     сетки, а не от начала куска, — иначе верхний и нижний отрезки
+     одной дорожки начинались бы с разного цвета. */
   function drawRope(x, y0, y1, w){
     const r = w/2;
     ctx.save(); ctx.beginPath(); ctx.rect(x-r, y0, w, Math.max(0,y1-y0)); ctx.clip();
-    let i = 0;
-    for(let yy = y0 - w; yy < y1 + w; yy += w, i++){
+    const start = Math.floor((y0 - w) / w);
+    for(let n = start; n * w < y1 + w; n++){
+      const yy = n * w;
       ctx.beginPath(); ctx.arc(x, yy + r, r*0.96, 0, 6.284);
-      ctx.fillStyle = (i % 2) ? GOLD : GOLD_DK; ctx.fill();
+      ctx.fillStyle = LANE[((n % 3) + 3) % 3]; ctx.fill();
     }
     ctx.restore();
     ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1;
@@ -2456,7 +3507,20 @@ function setupGame(){
   // --- управление ---
   const onTap = e => { e.preventDefault(); stroke(); };
   const onKey = e => { if(e.code === "Space" || e.key === " "){ e.preventDefault(); stroke(); } };
-  const onResize = () => { if(fit()) reset(); };
+  /* Размер окна на телефоне меняется всё время: прячется адресная строка,
+     разворачивается телеграм, поворачивается экран. Раньше на каждое такое
+     событие заплыв начинался заново — прямо посреди рекорда. Теперь просто
+     пересчитываем всё под новый размер и плывём дальше. */
+  const onResize = () => {
+    const oldW = W, oldH = H;
+    if(!fit()) return;
+    if(!oldW || !oldH || state === READY){ reset(); return; }
+    const kx = W / oldW, ky = H / oldH;
+    y *= ky; vy *= ky;
+    for(const p of ropes){ p.x *= kx; p.cy *= ky; p.g *= ky; }
+  };
+  gameResize = onResize;                  // телеграм сообщает о смене окна отдельно
+
   cv.addEventListener("pointerdown", onTap, {passive:false});
   window.addEventListener("keydown", onKey);
   window.addEventListener("resize", onResize);
@@ -2464,6 +3528,7 @@ function setupGame(){
     cv.removeEventListener("pointerdown", onTap);
     window.removeEventListener("keydown", onKey);
     window.removeEventListener("resize", onResize);
+    gameResize = null;
   };
 
   if(!fit()){ requestAnimationFrame(()=>{ if(fit()){ reset(); gameRAF = requestAnimationFrame(loop); } }); return; }
@@ -2555,6 +3620,7 @@ function setupVideos(){
 
 function go(id){ location.hash = id; }
 window.addEventListener("hashchange", ()=> render(location.hash.slice(1) || "home"));
+loadLevel();                       // из памяти устройства — мгновенно
 render(location.hash.slice(1) || "home");
 
 /* Над мини-приложением телеграм рисует собственную полосу и красит её
@@ -2574,10 +3640,21 @@ render(location.hash.slice(1) || "home");
     tg.expand();                                    // на весь экран, без полупозиции
     if(tg.setBackgroundColor) tg.setBackgroundColor(bg);
     if(tg.setHeaderColor){
-      // произвольный цвет шапки телеграм понимает начиная с версии 6.9;
-      // в старых клиентах просим взять цвет фона темы, это всё же ближе
-      tg.setHeaderColor(ver("6.9") ? bg : "bg_color");
+      /* Произвольный цвет шапки телеграм понимает начиная с версии 6.9;
+         в старых клиентах просим взять цвет фона темы, это всё же ближе.
+         На новых клиентах цвет ставит paintTab: у каждой вкладки он свой,
+         и одного значения на всё приложение уже не хватает. Скрипт
+         телеграма грузится позже первой отрисовки, поэтому красим
+         повторно — иначе шапка осталась бы от цвета по умолчанию. */
+      if(ver("6.9")) paintTab(tabOf(location.hash.slice(1) || "home"));
+      else tg.setHeaderColor("bg_color");
     }
+
+    /* Уровень подготовки лежит в облаке телеграма, а не на телефоне:
+       так он переезжает вместе с человеком. Ответ приходит с задержкой,
+       поэтому экран уже нарисован по памяти устройства, а здесь мы его
+       при необходимости перерисуем. */
+    syncLevel();
 
     // Смахивание вниз внутри приложения сворачивает его. На заплыве это
     // просто беда: тянешь пловца вверх — приложение закрывается.
@@ -2588,7 +3665,11 @@ render(location.hash.slice(1) || "home");
        клавиатура. Отдаём в стили настоящую высоту и следим за её сменой. */
     const setVH = () => {
       const h = tg.viewportStableHeight || tg.viewportHeight;
-      if(h) document.documentElement.style.setProperty("--vh", h + "px");
+      if(!h) return;
+      document.documentElement.style.setProperty("--vh", h + "px");
+      // холст меряется в пикселях, поэтому после смены высоты его надо
+      // пересчитать: иначе картинка растянется, а игра этого не заметит
+      if(gameResize) gameResize();
     };
     setVH();
     if(tg.onEvent) tg.onEvent("viewportChanged", setVH);
