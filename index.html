@@ -41,15 +41,15 @@
   --surf:#0A2647;
   --surf-2:#0D3460;
   /* Заливка карточки: чуть светлее страницы, с уходом в тень к низу */
-  --card-fill:linear-gradient(165deg,#141E30 0%,#0C1421 55%,#070C15 100%);
+  --card-fill:linear-gradient(180deg,rgba(13,52,94,.50) 0%,rgba(9,38,74,.55) 100%);
   /* Тёплое свечение сверху страницы */
   --glow:radial-gradient(120% 70% at 50% -12%, #16223A 0%, #0B1220 42%, var(--bg) 100%);
 
   /* --- Кромка карточки: блик в верхнем левом углу, затухание к нижнему правому --- */
   --gold-dim:rgba(var(--gold-rgb),.16);
   --gold-line:rgba(var(--gold-rgb),.30);
-  --edge:linear-gradient(160deg,rgba(var(--hi-rgb),.42) 0%,rgba(var(--gold-rgb),.16) 38%,rgba(var(--gold-rgb),.05) 100%);
-  --edge-soft:linear-gradient(160deg,rgba(var(--hi-rgb),.26) 0%,rgba(var(--gold-rgb),.11) 40%,rgba(var(--gold-rgb),.04) 100%);
+  --edge:linear-gradient(rgba(244,197,66,.45),rgba(244,197,66,.45));
+  --edge-soft:linear-gradient(rgba(244,197,66,.30),rgba(244,197,66,.30));
 
   /* --- Текст: три ступени плюс подписи --- */
   --txt:#EDF1F6;
@@ -85,7 +85,7 @@
   --brand:#F6CC48;
   --brand-metal:linear-gradient(180deg,#FFF7D0 0%,#FEE488 40%,#F9D25E 75%,#F1C64A 100%);
 
-  --r:14px;
+  --r:22px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -394,7 +394,7 @@ h1.long {font-size:clamp(24px, 7.2vw, 33px);line-height:1.18}
 h1.xlong{font-size:clamp(21px, 6.1vw, 28px);line-height:1.24;letter-spacing:.005em}
 .lede{color:var(--txt-sub);font-size:16px;max-width:660px;margin-bottom:30px}
 h2{
-  font-size:12.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  font-size:12.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   margin:38px 0 16px;display:flex;align-items:center;gap:10px;
   background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent
@@ -493,7 +493,7 @@ h2::after{
 .row{
   -webkit-user-select:none;user-select:none;
   display:flex;align-items:center;gap:18px;
-  border:1px solid transparent;border-radius:10px;
+  border:1px solid transparent;border-radius:18px;
   background:var(--card-fill) padding-box, var(--edge-soft) border-box;
   padding:16px 20px;cursor:pointer;transition:transform .16s ease, background .18s ease;
   text-align:left;color:inherit;font:inherit;width:100%;
@@ -529,7 +529,9 @@ h2::after{
 }
 .rows{display:flex;flex-direction:column;gap:8px}
 
-.pill{display:inline-block;font-size:11.5px;letter-spacing:.06em;color:var(--gold);background:var(--gold-dim);border-radius:20px;padding:4px 12px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--gold);
+  background:linear-gradient(180deg,rgba(13,52,94,.50),rgba(9,38,74,.55));
+  border:1px solid rgba(244,197,66,.45);border-radius:30px;padding:6px 14px}
 .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:22px}
 
 .slot{
@@ -742,18 +744,27 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 
 .err{background:var(--surf);border-left:3px solid var(--warn);border-radius:0;padding:14px 17px;font-size:14px;color:var(--txt-2);margin:16px 0}
 .err b{color:var(--warn-lt);font-weight:500}
-.tipbox{background:var(--surf);border-left:3px solid var(--gold);border-radius:0;padding:14px 17px;font-size:14px;color:var(--txt-2);margin:16px 0}
+.tipbox{background:linear-gradient(180deg,rgba(9,40,76,.82),rgba(6,26,54,.88));
+  border:1px solid rgba(244,197,66,.30);border-left:6px solid #E7A62B;border-radius:22px;
+  padding:15px 18px;font-size:14px;color:var(--txt-2);margin:16px 0}
 .tipbox b{color:var(--gold);font-weight:500}
 
 .lesson{max-width:760px}
-.lesson .intro{background:var(--surf);border:1px solid rgba(var(--gold-rgb),.16);border-radius:var(--r);padding:20px 22px;margin-bottom:8px;color:var(--txt-2);font-size:15px;line-height:1.65}
+.lesson .intro{background:linear-gradient(180deg,rgba(13,52,94,.50),rgba(9,38,74,.55));
+  border:1px solid rgba(244,197,66,.45);border-radius:22px;padding:20px 22px;margin-bottom:8px;
+  color:var(--txt-2);font-size:15px;line-height:1.65}
 .ex{margin:30px 0 0}
 .ex-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
 .ex-n{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:30px;color:var(--gold-dk);line-height:1;min-width:34px}
 .ex-t{font-size:21px;font-weight:500;letter-spacing:.01em;color:var(--txt)}
-.goal,.hint{display:flex;gap:11px;padding:13px 16px;border-radius:10px;font-size:14.5px;line-height:1.6;margin-bottom:9px}
-.goal{background:rgba(var(--gold-rgb),.07);border-left:3px solid var(--gold)}
-.hint{background:var(--surf);border-left:3px solid var(--gold-dk)}
+/* Цитата-плашка из памятки: синий полупрозрачный фон, скругление 22,
+   слева золотой бар. Тем же приёмом набраны «цель» и «совет». */
+.goal,.hint{display:flex;gap:12px;padding:14px 16px;border-radius:22px;font-size:14.5px;line-height:1.6;
+  margin-bottom:9px;border:1px solid rgba(244,197,66,.30);border-left:6px solid;
+  border-image:linear-gradient(90deg,#F7D162,#E7A62B) 1 stretch;
+  background:linear-gradient(180deg,rgba(9,40,76,.82),rgba(6,26,54,.88))}
+.goal{border-left-width:6px}
+.hint{border-left-width:6px}
 .goal i,.hint i{font-style:normal;color:var(--gold);flex:none;font-size:15px}
 .goal b,.hint b{color:var(--gold);font-weight:500}
 .goal span,.hint span{color:var(--txt-2)}
@@ -835,8 +846,8 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 .set{display:flex;gap:16px;padding:12px 0;border-bottom:1px solid rgba(var(--gold-rgb),.10)}
 .set:last-child{border-bottom:0}
 .set-v{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:16px;color:var(--gold);
-  min-width:64px;flex:none;text-align:right;letter-spacing:.02em;padding-top:1px
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:800;font-size:15px;
+  color:var(--gold);min-width:64px;flex:none;text-align:right;letter-spacing:0;padding-top:2px
 }
 .set-t{flex:1;min-width:0;font-size:14.5px;line-height:1.6;color:var(--txt-2)}
 .set-hint{
