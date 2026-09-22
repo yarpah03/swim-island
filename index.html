@@ -179,7 +179,7 @@ header{
 .hm-mark svg{width:32px;height:32px;display:block;flex:none}
 .hm-mark span{font-size:11.5px;font-weight:700;letter-spacing:.14em;
   text-transform:uppercase;color:var(--gold-lt)}
-.hm-h{font-size:clamp(26px,8vw,34px);font-weight:900;letter-spacing:-.5px;
+.hm-h{margin-top:18px;font-size:clamp(26px,8vw,34px);font-weight:900;letter-spacing:-.5px;
   line-height:1.02;text-transform:uppercase;margin:0 0 14px;
   background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:var(--gold-lt)}
@@ -2674,10 +2674,7 @@ function nDate(d){ return nWhen(d) }
    бы странно, раз подборка оттуда ушла. */
 function homeHTML(){
   let h = "";
-  h += `<div class="hm-mark">
-    <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#markpath"/></svg>
-    <span>Плавательный остров</span>
-  </div>`;
+  // Знак не печатаем: он уже есть в липкой шапке над экраном.
   h += `<div class="hm-h">Сегодня</div>`;
 
   // Карточка дня закрыта: название тренировки на главной не показываем.
@@ -2790,8 +2787,8 @@ function tabOf(id){
 function paintTab(t){
   const R = document.documentElement;
   if(!R || !R.style) return;
-  R.style.setProperty("--ac", t.ac);
-  R.style.setProperty("--ac-rgb", t.acr);
+  // Акцент тоже общий: он красит активные элементы, и прыгающий
+  // цвет между разделами читался как сбой, а не как подсказка.
 
   /* Подменяем весь набор акцента целиком. Всё, что в файле набрано
      «золотом», ссылается на эти шесть переменных, поэтому одной сменой
@@ -2799,16 +2796,11 @@ function paintTab(t){
      подписи — а не только значок вкладки. Знак и название в шапке
      держатся за --brand и остаются золотыми на всех вкладках: это
      единственное, что должно быть одинаковым везде. */
-  R.style.setProperty("--gold", t.base);
-  R.style.setProperty("--gold-lt", t.lt);
-  R.style.setProperty("--gold-dk", t.dk);
-  R.style.setProperty("--gold-rgb", t.rgb);
-  R.style.setProperty("--hi-rgb", t.hi);
-  R.style.setProperty("--txt-sub", t.sub);
-  R.style.setProperty("--gold-metal",
-    `linear-gradient(180deg, rgb(${t.hi}) 0%, ${t.base} 55%, ${t.dk} 100%)`);
-  R.style.setProperty("--gold-metal-dim",
-    `linear-gradient(180deg, ${t.lt} 0%, ${t.dk} 100%)`);
+  /* Золото больше не перекрашивается под вкладку. Раньше это
+     подсвечивало активную кнопку в нижней панели; панели нет, и
+     разноцветное золото просто ломало фирменный цвет на каждом
+     экране. Вкладка теперь узнаётся фотографией и подсветкой фона,
+     а золото одно на всё приложение — как в каруселях. */
   /* Фон «Глубина»: три слоя.
      1) оттенок вкладки сверху — по нему узнаётся, где ты;
      2) еле заметная косая штриховка — она даёт фактуру, из-за которой
