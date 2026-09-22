@@ -759,12 +759,14 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 .ex-t{font-size:21px;font-weight:500;letter-spacing:.01em;color:var(--txt)}
 /* Цитата-плашка из памятки: синий полупрозрачный фон, скругление 22,
    слева золотой бар. Тем же приёмом набраны «цель» и «совет». */
+/* Бар слева заливаем цветом, а не border-image: при border-image
+   браузер выключает border-radius, и плашка теряет скругление —
+   ровно это и случилось в первой версии. */
 .goal,.hint{display:flex;gap:12px;padding:14px 16px;border-radius:22px;font-size:14.5px;line-height:1.6;
-  margin-bottom:9px;border:1px solid rgba(244,197,66,.30);border-left:6px solid;
-  border-image:linear-gradient(90deg,#F7D162,#E7A62B) 1 stretch;
+  margin-bottom:9px;border:1px solid rgba(244,197,66,.30);
   background:linear-gradient(180deg,rgba(9,40,76,.82),rgba(6,26,54,.88))}
-.goal{border-left-width:6px}
-.hint{border-left-width:6px}
+.goal{border-left:6px solid #F7D162}
+.hint{border-left:6px solid #E7A62B}
 .goal i,.hint i{font-style:normal;color:var(--gold);flex:none;font-size:15px}
 .goal b,.hint b{color:var(--gold);font-weight:500}
 .goal span,.hint span{color:var(--txt-2)}
