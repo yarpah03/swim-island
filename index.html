@@ -9,7 +9,7 @@
 <title>Плавательный остров VIP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    ЦВЕТ — всё в одном месте
@@ -27,7 +27,7 @@
   /* --- Золото. Три оттенка и два разложения в градиент --- */
   --gold:#F6CC48;                  /* основной */
   --gold-lt:#FEE488;               /* подсветка: наведение, иконки */
-  --gold-dk:#8A5F14;               /* приглушённый: подписи, стрелки */
+  --gold-dk:#A2721F;               /* приглушённый: подписи, стрелки */
   --gold-rgb:246,204,72;           /* то же число для полупрозрачных заливок */
   --hi-rgb:240,212,136;            /* светлый блик на кромке карточек */
   /* Золото читается металлом только на переходе: светлая кромка сверху,
@@ -38,18 +38,36 @@
   /* --- Подложка: страница и две ступени поверхностей --- */
   --bg:#03122A;
   --bg-rgb:3,18,42;                /* для шапки и затемнения под фотографией */
-  --surf:#0A2647;
-  --surf-2:#0D3460;
+  /* --surf теперь читаемая плашка (тёмная), --surf-2 — нажимаемая.
+     Всё, что осталось на этих переменных, попадает в нужную группу само. */
+  --surf:#071D36;
+  --surf-2:#0B2A4E;
   /* Заливка карточки: чуть светлее страницы, с уходом в тень к низу */
-  --card-fill:linear-gradient(180deg,rgba(13,52,94,.50) 0%,rgba(9,38,74,.55) 100%);
+  --card-fill:linear-gradient(180deg,#071E38 0%,#040F1E 100%);
+  /* Вторая группа — то, что читают: разбор, цель, совет, предупреждение.
+     Темнее страницы, поэтому текст на ней всегда читается. */
+  --read-fill:linear-gradient(180deg,#071D36 0%,#05152A 100%);
+  --read-edge:rgba(244,197,66,.12);
+  /* Третья группа — действие. Одна заливка на все кнопки вместо шести
+     разных подмесов золота, которые раньше стояли по всему файлу. */
+  --act-fill:rgba(var(--gold-rgb),.10);
+  --act-fill-h:rgba(var(--gold-rgb),.18);
+  /* Шапка таблицы и недели — не кнопка и не плашка, отдельная полоса. */
+  --head-fill:rgba(var(--gold-rgb),.08);
+  /* Бар слева у читаемой плашки. Цветом закодировано, что за замечание. */
+  --bar-goal:#F7D162;
+  --bar-note:#E7A62B;
   /* Тёплое свечение сверху страницы */
-  --glow:radial-gradient(120% 70% at 50% -12%, #16223A 0%, #0B1220 42%, var(--bg) 100%);
+  --glow:linear-gradient(180deg, rgba(var(--bg-rgb),.60) 0%, rgba(var(--bg-rgb),.86) 34%, var(--bg) 78%);
+  /* Снимок вкладки живёт отдельным слоем: только так его размер и
+     положение можно менять под ширину экрана. */
+  --photo:none;
 
   /* --- Кромка карточки: блик в верхнем левом углу, затухание к нижнему правому --- */
   --gold-dim:rgba(var(--gold-rgb),.16);
   --gold-line:rgba(var(--gold-rgb),.30);
-  --edge:linear-gradient(rgba(244,197,66,.45),rgba(244,197,66,.45));
-  --edge-soft:linear-gradient(rgba(244,197,66,.30),rgba(244,197,66,.30));
+  --edge:linear-gradient(rgba(244,197,66,.55),rgba(244,197,66,.55));
+  --edge-soft:linear-gradient(rgba(244,197,66,.34),rgba(244,197,66,.34));
 
   /* --- Текст: три ступени плюс подписи --- */
   --txt:#EDF1F6;
@@ -86,6 +104,7 @@
   --brand-metal:linear-gradient(180deg,#FFF7D0 0%,#FEE488 40%,#F9D25E 75%,#F1C64A 100%);
 
   --r:22px;
+  --r2:18px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -103,18 +122,28 @@ html,body{font-feature-settings:"mark" 0,"mkmk" 0}
 html,body{font-feature-settings:"mark" 0,"mkmk" 0}
 body{
   background:var(--bg);color:var(--txt);
-  /* Снизу теперь висит панель вкладок, а под ней ещё полоса жеста.
-     Если про них забыть, последняя строка уезжает под панель. */
+  /* Нижней панели давно нет — меню переехало на главную. Отступ
+     оставлен под полосу жеста, иначе последняя строка липнет к краю. */
   padding-bottom:calc(28px + env(safe-area-inset-bottom, 0px));
   -webkit-tap-highlight-color:transparent;
   font-family:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  font-size:16px;line-height:1.6;
+  font-size:18px;line-height:1.6;
   -webkit-font-smoothing:antialiased;
 }
 /* Тёплое свечение сверху: контент лежит в свете, а не висит в пустоте.
    Отдельным слоем, чтобы не тянуться за прокруткой. */
+body::after{
+  content:"";position:fixed;inset:0;z-index:-3;pointer-events:none;
+  background-image:var(--photo);background-repeat:no-repeat;
+  background-position:top center;background-size:100% auto;
+}
+/* На компьютере снимок кроется по центру окна. Иначе кадр 750×900
+   растягивается до полутора тысяч пикселей и разваливается. */
+@media(min-width:760px){
+  body::after{background-position:center center;background-size:cover}
+}
 body::before{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
   background:var(--glow);
 }
 /* Металлический перелив для коротких надписей и цифр */
@@ -137,11 +166,11 @@ body::before{
   padding-right:calc(20px + env(safe-area-inset-right, 0px))
 }
 
+/* Полосы наверху нет: ни подложки, ни черты — знак стоит прямо на
+   фотографии. Липкость снята вместе с подложкой: прозрачная шапка,
+   которая едет за прокруткой, ложилась бы поверх текста. */
 header{
-  position:sticky;top:0;z-index:20;
   padding-top:env(safe-area-inset-top, 0px);
-  background:rgba(var(--bg-rgb),.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--gold-line);
 }
 /* Шапка. Знак и название стоят вместе по центру: логотип получает
    вес, которого у прижатого к углу значка не было, и при этом
@@ -152,16 +181,16 @@ header{
 .mark{width:38px;height:38px;flex:none;color:var(--brand)}
 .mark path{fill:var(--brand)}
 .wordmark{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:19px;font-weight:600;letter-spacing:.12em;line-height:1.12;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:20.5px;font-weight:600;letter-spacing:.12em;line-height:1.12;
   text-align:left;
   background:var(--brand-metal);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent
 }
-.wordmark small{display:block;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:500;letter-spacing:.30em;color:var(--txt-3);margin-top:2px}
+.wordmark small{display:block;font-family:'Montserrat',sans-serif;font-size:11.5px;font-weight:500;letter-spacing:.30em;color:var(--txt-2);margin-top:2px}
 @media(max-width:420px){
   .hd{gap:10px;padding:11px 0}
   .mark{width:32px;height:32px}
-  .wordmark{font-size:15.5px;letter-spacing:.11em}
+  .wordmark{font-size:17.5px;letter-spacing:.11em}
 }
 
 /* ============================================================
@@ -177,27 +206,50 @@ header{
    Карточка дня закрыта: что плыть, человек узнаёт, открыв её. */
 .hm-mark{display:flex;align-items:center;gap:10px;padding:18px 0 6px}
 .hm-mark svg{width:32px;height:32px;display:block;flex:none}
-.hm-mark span{font-size:11.5px;font-weight:700;letter-spacing:.14em;
+.hm-mark span{font-size:13.5px;font-weight:700;letter-spacing:.14em;
   text-transform:uppercase;color:var(--gold-lt)}
-.hm-h{margin-top:18px;font-size:clamp(26px,8vw,34px);font-weight:900;letter-spacing:-.5px;
+.hm-h{margin-top:18px;font-size:clamp(28px, 8.5vw, 35.5px);font-weight:900;letter-spacing:-.5px;
   line-height:1.02;text-transform:uppercase;margin:0 0 14px;
   background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:var(--gold-lt)}
 .hm-gift{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:9px;min-height:118px;padding:18px 14px;margin-bottom:12px;border-radius:18px;
-  background:var(--surf);border:1px solid rgba(var(--gold-rgb),.42);
+  position:relative;overflow:hidden;
+  gap:9px;aspect-ratio:5/2;min-height:118px;padding:18px 14px;margin:20px auto 12px;max-width:520px;border-radius:var(--r);
+  background:var(--card-fill);border:1px solid rgba(var(--gold-rgb),.55);
   cursor:pointer;font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
-.hm-gift .g{font-size:32px;line-height:1}
-.hm-gift .t{font-size:14px;font-weight:700;letter-spacing:.13em;color:#fff;text-align:center}
-.hm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hm-tile{display:flex;flex-direction:column;justify-content:space-between;
-  min-height:96px;padding:14px;border-radius:18px;text-align:left;
-  background:var(--surf);border:1px solid rgba(255,255,255,.09);
+.hm-gift .g{position:relative;font-size:33.5px;line-height:1}
+.hm-gift .t{position:relative;font-family:'Oswald',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-weight:600;font-size:24px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--gold);text-align:center}
+/* 520 — это ширина, на которой плитка остаётся плиткой. Без потолка
+   на ноутбуке она растягивается до 515 px при высоте 96, и снимок
+   внутри превращается в горизонтальную ленту. */
+.hm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:520px;margin:0 auto}
+.hm-tile{position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  aspect-ratio:16/9;min-height:96px;padding:14px;border-radius:var(--r);text-align:center;
+  background:var(--card-fill);border:1px solid rgba(var(--gold-rgb),.34);
   cursor:pointer;font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
-.hm-tile svg{width:21px;height:21px;display:block;color:var(--gold)}
+/* Снимок отдельным слоем, а не заливкой самой плитки: так заливка
+   остаётся у тех плиток, для которых кадра ещё нет, и обе плитки
+   живут в одной сетке без разнобоя. Затемнение впечатано в файл —
+   его там можно измерить по пикселям. */
+.hm-tile .tph,.hm-gift .tph{position:absolute;inset:0;background-size:cover;background-position:center;
+  border-radius:inherit}
+/* Значок набран цветом текста, а не золотом: золото ушло на слово.
+   Ищут раздел по названию, значок только подсказывает. */
+.hm-tile svg{position:relative;width:28px;height:28px;display:block;flex:none;color:var(--txt)}
 .hm-tile svg *{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.hm-tile b{font-size:15px;font-weight:700;letter-spacing:-.2px}
-@media(max-width:340px){ .hm-tile b{font-size:13.5px} }
+/* Oswald только здесь, на шести плитках меню. В остальном приложении
+   шрифт один — Montserrat; два шрифта в одном тексте читались бы как
+   сбой, а не как приём. */
+.hm-tile b{position:relative;font-family:'Oswald',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-weight:600;font-size:24px;letter-spacing:.03em;text-transform:uppercase;
+  line-height:1.12;color:var(--gold)}
+/* На 320 px плитка даёт 107 px ширины. Берём 18, а не 19: модель
+   ширины приблизительная, и ровно на границе любая мелочь — другое
+   начертание Oswald, иной пересчёт — даст перенос на вторую строку. */
+@media(max-width:340px){ .hm-tile b{font-size:18px;letter-spacing:.03em} }
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   display:flex;
@@ -209,7 +261,7 @@ header{
   flex:1;min-width:0;background:none;border:0;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:4px;
   padding:5px 1px;color:var(--txt-3);font-family:inherit;
-  font-size:9.5px;font-weight:500;letter-spacing:0;line-height:1.3;
+  font-size:12px;font-weight:500;letter-spacing:0;line-height:1.3;
   -webkit-tap-highlight-color:transparent;
   transition:color .18s ease
 }
@@ -219,7 +271,7 @@ header{
 /* Шесть вкладок на узком экране: подписи ужимаем, значки оставляем.
    Ниже 330 пикселей подпись всё равно не читается — прячем её и
    оставляем один значок, это честнее обрезанного слова. */
-@media(max-width:360px){ .tabbar button{font-size:9px} .tabbar button svg{width:20px;height:20px} }
+@media(max-width:360px){ .tabbar button{font-size:11.5px} .tabbar button svg{width:20px;height:20px} }
 @media(max-width:329px){ .tabbar button span{display:none} .tabbar button{padding:9px 1px} }
 
 /* ============================================================
@@ -231,21 +283,21 @@ header{
    без сервера и без ручной работы.
    ============================================================ */
 .feed-day{
-  font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   color:var(--txt-3);padding-top:26px;margin-bottom:4px
 }
 .feed-h{
-  font-size:36px;font-weight:700;letter-spacing:-.02em;line-height:1.1;
+  font-size:37.5px;font-weight:700;letter-spacing:-.02em;line-height:1.1;
   color:var(--txt);margin-bottom:22px
 }
-@media(max-width:420px){ .feed-h{font-size:30px} }
+@media(max-width:420px){ .feed-h{font-size:32.5px} }
 
 /* Главная карточка дня: фотография бассейна, поверх — что плыть */
 .pick{
   display:block;width:100%;text-align:left;border:0;cursor:pointer;font-family:inherit;
-  position:relative;overflow:hidden;border-radius:20px;
+  position:relative;overflow:hidden;border-radius:var(--r);
   min-height:196px;margin-bottom:12px;padding:0;
-  background:var(--surf-2);
+  background:var(--surf-2);border:1px solid rgba(var(--gold-rgb),.22);
   -webkit-tap-highlight-color:transparent
 }
 .pick-photo{
@@ -259,78 +311,78 @@ header{
 }
 .pick-in{position:relative;z-index:2;padding:110px 18px 18px}
 .pick .k{
-  font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   color:var(--ac);display:block;margin-bottom:8px
 }
 .pick .t{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:27px;font-weight:600;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:29px;font-weight:600;
   line-height:1.15;color:var(--txt);display:block;margin-bottom:7px
 }
-.pick .d{font-size:13.5px;line-height:1.5;color:var(--txt-2);display:block}
+.pick .d{font-size:16px;line-height:1.5;color:var(--txt-2);display:block}
 
 /* Обычная карточка ленты */
 .fcard{
   display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
-  border:1px solid transparent;border-radius:18px;padding:16px 17px;margin-bottom:11px;
+  border:1px solid transparent;border-radius:var(--r2);padding:16px 17px;margin-bottom:11px;
   background:var(--card-fill) padding-box, var(--edge-soft) border-box;
   -webkit-tap-highlight-color:transparent
 }
 .fcard .k{
-  font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   color:var(--ac);display:block;margin-bottom:8px;opacity:.9
 }
 .fcard .t{
-  font-size:16.5px;font-weight:600;line-height:1.32;color:var(--txt);
+  font-size:18.5px;font-weight:600;line-height:1.32;color:var(--txt);
   display:block;margin-bottom:5px
 }
-.fcard .d{font-size:13px;line-height:1.5;color:var(--txt-2);display:block}
+.fcard .d{font-size:15.5px;line-height:1.5;color:var(--txt-2);display:block}
 .fcard .go{
-  display:inline-block;margin-top:12px;font-size:12.5px;font-weight:500;
+  display:inline-block;margin-top:12px;font-size:15px;font-weight:500;
   color:var(--gold);letter-spacing:.02em
 }
 
 /* Три цифры под заголовком раздела — сколько всего внутри */
 .nums{display:flex;gap:9px;margin-bottom:22px}
 .nums div{
-  flex:1;min-width:0;border:1px solid transparent;border-radius:16px;padding:14px 12px;
+  flex:1;min-width:0;border:1px solid transparent;border-radius:var(--r2);padding:14px 12px;
   background:var(--card-fill) padding-box, var(--edge-soft) border-box
 }
 .nums b{
   display:block;font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;
-  font-size:30px;font-weight:600;line-height:1;color:var(--ac)
+  font-size:32.5px;font-weight:600;line-height:1;color:var(--ac)
 }
 .nums span{
-  display:block;font-size:10.5px;line-height:1.35;color:var(--txt-3);margin-top:7px
+  display:block;font-size:13px;line-height:1.35;color:var(--txt-3);margin-top:7px
 }
-@media(max-width:360px){ .nums b{font-size:25px} .nums span{font-size:9.5px} }
+@media(max-width:360px){ .nums b{font-size:27px} .nums span{font-size:12px} }
 
 /* Новость клуба. Отличается от карточки-ссылки тем, что её читают
    целиком прямо здесь, а кнопка — необязательное продолжение. */
 .ncard{
-  border:1px solid transparent;border-radius:18px;padding:17px 18px;margin-bottom:12px;
+  border:1px solid transparent;border-radius:var(--r2);padding:17px 18px;margin-bottom:12px;
   background:var(--card-fill) padding-box, var(--edge-soft) border-box
 }
 .ncard .nimg{
   display:block;width:calc(100% + 36px);margin:-17px -18px 15px;
-  border-radius:18px 18px 0 0;object-fit:cover
+  border-radius:var(--r2) var(--r2) 0 0;object-fit:cover
 }
 .ncard .k{
-  display:block;font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  display:block;font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   color:var(--ac);margin-bottom:9px;opacity:.9
 }
 .ncard .t{
   display:block;font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;
-  font-size:23px;font-weight:600;line-height:1.2;color:var(--txt);margin-bottom:10px;
+  font-size:25px;font-weight:600;line-height:1.2;color:var(--txt);margin-bottom:10px;
   text-wrap:balance
 }
-.ncard .d{display:block;font-size:14px;line-height:1.6;color:var(--txt-2);margin-bottom:9px}
+.ncard .d{display:block;font-size:16px;line-height:1.6;color:var(--txt-2);margin-bottom:9px}
 .ncard .go{
   display:inline-block;margin-top:5px;cursor:pointer;font-family:inherit;
   padding:11px 17px;border-radius:var(--r);border:1px solid var(--gold-line);
-  background:rgba(var(--gold-rgb),.09);color:var(--gold-lt);font-size:14.5px;
+  background:var(--act-fill);color:var(--gold-lt);font-size:16px;
   transition:background .18s;-webkit-tap-highlight-color:transparent
 }
-.ncard .go:hover{background:rgba(var(--gold-rgb),.16)}
+.ncard .go:hover{background:var(--act-fill-h)}
 
 /* Пост канала. Виджет телеграма приходит своей рамкой и сам подбирает
    высоту, поэтому фиксировать её нельзя — задаём только поля и минимум
@@ -340,29 +392,29 @@ header{
 .lvls{display:flex;flex-direction:column;gap:11px;margin:6px 0 26px}
 .lvl{
   display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
-  border:1px solid transparent;border-radius:18px;padding:16px 17px;
+  border:1px solid transparent;border-radius:var(--r2);padding:16px 17px;
   background:var(--card-fill) padding-box, var(--edge-soft) border-box;
   -webkit-tap-highlight-color:transparent
 }
 .lvl.on{background:var(--card-fill) padding-box, var(--edge) border-box}
 .lvl-h{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
-.lvl-h b{font-size:17px;font-weight:600;color:var(--txt)}
-.lvl-h i{font-style:normal;font-size:12.5px;color:var(--gold-dk);margin-left:auto;white-space:nowrap}
-.lvl-s{display:block;font-size:13px;line-height:1.5;color:var(--txt-2)}
+.lvl-h b{font-size:19px;font-weight:600;color:var(--txt)}
+.lvl-h i{font-style:normal;font-size:15px;color:var(--gold-dk);margin-left:auto;white-space:nowrap}
+.lvl-s{display:block;font-size:15.5px;line-height:1.5;color:var(--txt-2)}
 .lvl-now{
-  display:inline-block;margin-top:11px;font-size:10.5px;font-weight:600;
+  display:inline-block;margin-top:11px;font-size:13px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase;color:var(--gold);
-  border:1px solid var(--gold-line);border-radius:20px;padding:5px 11px
+  border:1px solid var(--gold-line);border-radius:30px;padding:5px 11px
 }
 /* Подпись под карточкой дня: по какому уровню она подобрана */
 .lvl-note{
-  font-size:12px;color:var(--txt-3);margin:-4px 0 16px;
+  font-size:14px;color:var(--txt-3);margin:-4px 0 16px;
   display:flex;align-items:center;gap:8px;flex-wrap:wrap
 }
 .lvl-note a{color:var(--gold);cursor:pointer;text-decoration:none;padding:4px 0}
 .lvl-note a:hover{color:var(--gold-lt)}
 
-.crumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:22px 0 6px;font-size:13px;color:var(--txt-3)}
+.crumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:22px 0 6px;font-size:15.5px;color:var(--txt-2)}
 /* Крошки — навигация, в них целятся пальцем: даём им высоту */
 .crumb a{color:var(--gold);text-decoration:none;cursor:pointer;padding:6px 0;display:inline-block}
 .crumb a:hover{color:var(--gold-lt)}
@@ -384,17 +436,17 @@ header{
    ============================================================ */
 h1{
   font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:900;
-  font-size:clamp(25px, 7.8vw, 35px);letter-spacing:-.5px;line-height:1.02;
+  font-size:clamp(27px, 8.3vw, 36.5px);letter-spacing:-.5px;line-height:1.02;
   text-transform:uppercase;
   margin:6px 0 12px;text-wrap:balance;overflow-wrap:break-word;hyphens:manual;
   background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:var(--gold-lt)
 }
-h1.long {font-size:clamp(24px, 7.2vw, 33px);line-height:1.18}
-h1.xlong{font-size:clamp(21px, 6.1vw, 28px);line-height:1.24;letter-spacing:.005em}
-.lede{color:var(--txt-sub);font-size:16px;max-width:660px;margin-bottom:30px}
+h1.long {font-size:clamp(26px, 7.6vw, 34.5px);line-height:1.18}
+h1.xlong{font-size:clamp(22.5px, 6.5vw, 30px);line-height:1.24;letter-spacing:.005em}
+.lede{color:var(--txt-sub);font-size:18px;max-width:660px;margin-bottom:30px}
 h2{
-  font-size:12.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  font-size:15px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   margin:38px 0 16px;display:flex;align-items:center;gap:10px;
   background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent
@@ -418,19 +470,19 @@ h2::after{
 }
 .hero-waves{position:absolute;left:0;right:0;bottom:0;height:120px;z-index:2;pointer-events:none}
 .hero .mark-big{width:70px;height:70px;margin-bottom:18px;display:block}
-.hero h1{font-size:46px;margin-bottom:12px}
+.hero h1{font-size:48px;margin-bottom:12px}
 .hero .lede{margin-bottom:24px;color:var(--txt-2)}
-.hero-note{font-size:11px;letter-spacing:.14em;color:var(--txt-3);margin-bottom:14px}
+.hero-note{font-size:13px;letter-spacing:.14em;color:var(--txt-3);margin-bottom:14px}
 @media(max-width:600px){
   .hero{margin:0 -15px 8px}
   .hero-in{padding:42px 15px 22px}
-  .hero h1{font-size:31px}
+  .hero h1{font-size:32.5px}
   .hero .mark-big{width:54px;height:54px}
 }
 
 /* Описание клуба на главной */
 .about{max-width:700px;margin-bottom:8px}
-.about p{margin:0 0 14px;font-size:15.5px;line-height:1.7;color:var(--txt-2)}
+.about p{margin:0 0 14px;font-size:17.5px;line-height:1.7;color:var(--txt-2)}
 .facts{display:flex;flex-direction:column;gap:2px}
 .fact{
   display:flex;align-items:center;gap:20px;
@@ -439,17 +491,17 @@ h2::after{
 .fact:last-child{border-bottom:0}
 .fact-n{
   font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:600;
-  font-size:48px;line-height:1.15;letter-spacing:0;
+  font-size:50px;line-height:1.15;letter-spacing:0;
   min-width:118px;flex:none;text-align:right;white-space:nowrap;
   background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent
 }
-.fact-t{flex:1;font-size:15px;line-height:1.55;color:var(--txt-2)}
+.fact-t{flex:1;font-size:17px;line-height:1.55;color:var(--txt-2)}
 @media(max-width:600px){
-  .about p{font-size:15px}
+  .about p{font-size:17px}
   .fact{gap:14px;padding:14px 0}
-  .fact-n{font-size:36px;min-width:88px}
-  .fact-t{font-size:14px}
+  .fact-n{font-size:37.5px;min-width:88px}
+  .fact-t{font-size:16px}
 }
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
@@ -470,30 +522,31 @@ h2::after{
 }
 .card:active{transform:translateY(0) scale(.985)}
 .card .num{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:30px;line-height:1;letter-spacing:.02em;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:32.5px;line-height:1;letter-spacing:.02em;
   background:var(--gold-metal-dim);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent
 }
 .card .ttl{
-  font-size:16px;font-weight:500;color:var(--txt);margin-top:4px;
+  font-size:18px;font-weight:500;color:var(--txt);margin-top:4px;
   text-transform:uppercase;letter-spacing:.09em;line-height:1.35;
   text-wrap:balance;overflow-wrap:break-word
 }
 /* Прописные съедают ширину быстрее строчных, поэтому длинному
    названию карточки капитель только вредит — снимаем её. */
 .card .ttl.long{
-  text-transform:none;letter-spacing:.02em;font-size:15.5px;line-height:1.3
+  text-transform:none;letter-spacing:.02em;font-size:17.5px;line-height:1.3
 }
-.card .sub{font-size:13.5px;color:var(--txt-sub);line-height:1.55}
+.card .sub{font-size:16px;color:var(--txt-sub);line-height:1.55}
 .card .meta{
-  align-self:flex-start;margin-top:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--gold-lt);background:rgba(var(--gold-rgb),.12);border-radius:20px;padding:4px 11px
+  align-self:flex-start;margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--gold-lt);background:var(--read-fill);border:1px solid var(--read-edge);
+  border-radius:30px;padding:4px 11px
 }
 
 .row{
   -webkit-user-select:none;user-select:none;
   display:flex;align-items:center;gap:18px;
-  border:1px solid transparent;border-radius:18px;
+  border:1px solid transparent;border-radius:var(--r2);
   background:var(--card-fill) padding-box, var(--edge-soft) border-box;
   padding:16px 20px;cursor:pointer;transition:transform .16s ease, background .18s ease;
   text-align:left;color:inherit;font:inherit;width:100%;
@@ -502,43 +555,43 @@ h2::after{
 .row:active{transform:scale(.99)}
 /* Номер — часть оформления, а не подпись: крупная приглушённая цифра */
 .row .idx{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:34px;line-height:1;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:35.5px;line-height:1;
   min-width:42px;flex:none;letter-spacing:.02em;
   background:var(--gold-metal-dim);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent;opacity:.75
 }
-.row .idx.small{font-size:19px;color:rgba(var(--gold-rgb),.45);min-width:auto}
+.row .idx.small{font-size:20.5px;color:rgba(var(--gold-rgb),.45);min-width:auto}
 .row .body{flex:1;min-width:0}
-.row .name{font-size:16.5px;font-weight:500;letter-spacing:.01em;
+.row .name{font-size:18.5px;font-weight:500;letter-spacing:.01em;
   text-wrap:balance;overflow-wrap:break-word}
 /* Длинное название в списке набираем мельче и плотнее: иначе одна
    строка списка вырастает вдвое выше соседних и ряд рассыпается. */
-.row .name.long{font-size:15px;letter-spacing:0;line-height:1.35}
+.row .name.long{font-size:17px;letter-spacing:0;line-height:1.35}
 /* Короткая справка идёт прописными и не спорит с названием.
    Длинную оставляем обычным набором — капитель на фразу нечитаема. */
 .row .note{
-  display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  display:block;font-size:14px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--gold-dk);margin-top:5px;line-height:1.45
 }
-.row .note.long{text-transform:none;letter-spacing:.01em;font-size:13px;color:var(--txt-sub);line-height:1.5}
-.row .chev{color:var(--gold-dk);font-size:18px;line-height:1;flex:none}
+.row .note.long{text-transform:none;letter-spacing:.01em;font-size:15.5px;color:var(--txt-sub);line-height:1.5}
+.row .chev{color:var(--gold-dk);font-size:19.5px;line-height:1;flex:none}
 @media(max-width:600px){
   .row{gap:14px;padding:15px 16px}
-  .row .idx{font-size:28px;min-width:34px}
-  .row .name{font-size:15.5px}
+  .row .idx{font-size:30px;min-width:34px}
+  .row .name{font-size:17.5px}
 }
 .rows{display:flex;flex-direction:column;gap:8px}
 
-.pill{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--gold);
-  background:linear-gradient(180deg,rgba(13,52,94,.50),rgba(9,38,74,.55));
+.pill{display:inline-block;font-size:13.5px;font-weight:700;letter-spacing:.04em;color:var(--gold);
+  background:var(--card-fill);
   border:1px solid rgba(244,197,66,.45);border-radius:30px;padding:6px 14px}
 .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:22px}
 
 .slot{
   border:1px dashed rgba(var(--gold-rgb),.34);border-radius:var(--r);
-  padding:30px 22px;text-align:center;color:var(--txt-3);font-size:14px;background:rgba(var(--gold-rgb),.03)
+  padding:30px 22px;text-align:center;color:var(--txt-3);font-size:16px;background:var(--read-fill)
 }
-.slot b{display:block;color:var(--gold);font-weight:500;font-size:15px;margin-bottom:6px;letter-spacing:.02em}
+.slot b{display:block;color:var(--gold);font-weight:500;font-size:17px;margin-bottom:6px;letter-spacing:.02em}
 
 /* Пока идёт заплыв, страница не ездит. Одного overflow:hidden на телефонах
    не хватает, поэтому фиксируем страницу целиком. */
@@ -563,7 +616,7 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 .g-hud{
   position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;
   padding:12px 16px;pointer-events:none;
-  font-size:13px;letter-spacing:.08em;text-transform:uppercase
+  font-size:15.5px;letter-spacing:.08em;text-transform:uppercase
 }
 .g-hud span:first-child{color:var(--gold-lt);font-weight:500}
 .g-hud span:last-child{color:var(--gold-dk)}
@@ -587,32 +640,32 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 .bplay{
   flex:1 1 150px;cursor:pointer;font-family:inherit;
   padding:14px 20px;border-radius:var(--r);border:1px solid var(--gold-line);
-  background:rgba(var(--gold-rgb),.10);color:var(--gold-lt);
-  font-size:16px;letter-spacing:.02em;transition:background .18s;
+  background:var(--act-fill);color:var(--gold-lt);
+  font-size:18px;letter-spacing:.02em;transition:background .18s;
   -webkit-tap-highlight-color:transparent
 }
-.bplay:hover{background:rgba(var(--gold-rgb),.18)}
+.bplay:hover{background:var(--act-fill-h)}
 .bsec{display:flex;gap:6px;flex:0 0 auto}
 .bsec button{
-  cursor:pointer;font-family:inherit;font-size:14px;
-  padding:12px 13px;border-radius:10px;
-  border:1px solid rgba(255,255,255,.10);background:transparent;color:var(--txt-3);
+  cursor:pointer;font-family:inherit;font-size:16px;
+  padding:12px 13px;border-radius:var(--r2);
+  border:1px solid rgba(var(--gold-rgb),.18);background:transparent;color:var(--txt-3);
   -webkit-tap-highlight-color:transparent
 }
-.bsec button.on{border-color:var(--gold-line);color:var(--gold-lt);background:rgba(var(--gold-rgb),.10)}
+.bsec button.on{border-color:var(--gold-line);color:var(--gold-lt);background:var(--act-fill)}
 .bcnt{
-  max-width:520px;margin:0 auto 26px;font-size:13px;color:var(--txt-3);text-align:center
+  max-width:520px;margin:0 auto 26px;font-size:15.5px;color:var(--txt-3);text-align:center
 }
 .bcnt b{color:var(--gold-lt);font-weight:500}
 
 /* Личный рекорд в игре */
 .bestv{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:44px;line-height:1.15;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:46px;line-height:1.15;
   background:var(--gold-metal);-webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent
 }
 .bestv.empty{
-  font-family:inherit;font-size:15px;line-height:1.5;color:var(--txt-2);
+  font-family:inherit;font-size:17px;line-height:1.5;color:var(--txt-2);
   -webkit-text-fill-color:var(--txt-2)
 }
 
@@ -622,29 +675,29 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
   background:var(--card-fill) padding-box, var(--edge) border-box
 }
 .ref-t{
-  display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  display:block;font-size:13px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--gold-dk);margin-bottom:12px
 }
 /* Ссылка длинная и её будут выделять руками — даём моноширинный набор
    и разрешаем перенос в любом месте, иначе она вылезет за экран. */
 .ref-v{
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  font-size:14px;line-height:1.5;color:var(--gold-lt);
+  font-size:16px;line-height:1.5;color:var(--gold-lt);
   word-break:break-all;user-select:all;margin-bottom:16px
 }
 .refbox.off .ref-v{
-  font-family:inherit;font-size:14.5px;color:var(--txt-2);
+  font-family:inherit;font-size:16px;color:var(--txt-2);
   word-break:normal;user-select:auto;margin-bottom:0
 }
 .refbox.off .ref-b{display:none}
 .ref-b{display:flex;gap:10px;flex-wrap:wrap}
 .ref-btn{
-  font:inherit;font-size:13.5px;letter-spacing:.03em;cursor:pointer;
-  min-height:44px;padding:10px 18px;border-radius:9px;color:var(--gold-lt);
-  border:1px solid var(--gold-line);background:rgba(var(--gold-rgb),.07);
+  font:inherit;font-size:16px;letter-spacing:.03em;cursor:pointer;
+  min-height:44px;padding:10px 18px;border-radius:var(--r2);color:var(--gold-lt);
+  border:1px solid var(--gold-line);background:var(--act-fill);
   transition:background .18s, border-color .18s
 }
-.ref-btn:hover{background:rgba(var(--gold-rgb),.14);border-color:var(--gold)}
+.ref-btn:hover{background:var(--act-fill-h);border-color:var(--gold)}
 .ref-btn:active{transform:scale(.98)}
 
 /* Соцсети под главным экраном: три одинаковые карточки в ряд,
@@ -654,7 +707,7 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
   border-top:1px solid rgba(var(--gold-rgb),.16)
 }
 .soc-t{
-  display:block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  display:block;font-size:13px;letter-spacing:.2em;text-transform:uppercase;
   color:var(--gold-dk);margin-bottom:18px
 }
 .soc-r{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -672,7 +725,7 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 .soc-b:active{transform:translateY(0) scale(.97)}
 .soc-i{width:26px;height:26px;color:var(--gold-lt);display:block}
 .soc-i svg{width:100%;height:100%;display:block}
-.soc-n{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold-dk)}
+.soc-n{font-size:13.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold-dk)}
 @media(max-width:420px){
   .soc-r{gap:9px}
   .soc-b{min-width:0;flex:1;padding:15px 10px}
@@ -680,19 +733,19 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 
 /* Узкие телефоны: 320 точек ширины, из них 30 съедают поля */
 @media(max-width:380px){
-  h1{font-size:26px}
-  .hero h1{font-size:28px}
-  .lede{font-size:15px}
+  h1{font-size:28px}
+  .hero h1{font-size:30px}
+  .lede{font-size:17px}
   .card{padding:17px 16px 15px}
-  .card .ttl{font-size:15px;letter-spacing:.07em}
+  .card .ttl{font-size:17px;letter-spacing:.07em}
   .grid{grid-template-columns:1fr}
-  .fact-n{font-size:31px;min-width:74px}
+  .fact-n{font-size:32.5px;min-width:74px}
   .book-cover{width:112px}
   .book-m{gap:10px}
-  .book-m b{font-size:13px}
+  .book-m b{font-size:15.5px}
   .dl{padding:14px 16px;gap:12px}
-  .soc-n{font-size:10.5px;letter-spacing:.06em}
-  .bestv{font-size:38px}
+  .soc-n{font-size:13px;letter-spacing:.06em}
+  .bestv{font-size:39.5px}
 }
 
 /* Страница книги: обложка слева, выходные данные справа, под ними — скачивание.
@@ -712,10 +765,10 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 }
 .book-m:last-child{border-bottom:0}
 .book-m span{
-  font-size:11px;letter-spacing:.10em;text-transform:uppercase;
+  font-size:13px;letter-spacing:.10em;text-transform:uppercase;
   color:var(--gold-dk);flex:none
 }
-.book-m b{font-weight:400;font-size:14.5px;color:var(--txt);text-align:right;line-height:1.35}
+.book-m b{font-weight:400;font-size:16px;color:var(--txt);text-align:right;line-height:1.35}
 
 /* Где взять книгу. Раньше на этом месте была кнопка скачивания. */
 .buy{
@@ -724,111 +777,111 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
   background:var(--card-fill) padding-box, var(--edge-soft) border-box
 }
 .buy-t{
-  font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  font-size:13.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   color:var(--gold);margin-bottom:9px
 }
-.buy-p{font-size:14px;line-height:1.55;color:var(--txt-2);margin-bottom:15px}
+.buy-p{font-size:16px;line-height:1.55;color:var(--txt-2);margin-bottom:15px}
 .buy-r{display:flex;gap:9px;flex-wrap:wrap}
 .buy-b{
   flex:1 1 auto;min-width:104px;cursor:pointer;font-family:inherit;
   padding:12px 16px;border-radius:var(--r);border:1px solid var(--gold-line);
-  background:rgba(var(--gold-rgb),.07);color:var(--gold-lt);
-  font-size:14.5px;letter-spacing:.02em;transition:background .18s;
+  background:var(--act-fill);color:var(--gold-lt);
+  font-size:16px;letter-spacing:.02em;transition:background .18s;
   -webkit-tap-highlight-color:transparent
 }
-.buy-b:hover{background:rgba(var(--gold-rgb),.14)}
+.buy-b:hover{background:var(--act-fill-h)}
 @media(max-width:560px){
   .book-cover{width:126px}
-  .book-m b{font-size:13.5px}
+  .book-m b{font-size:16px}
 }
 
-.err{background:var(--surf);border-left:3px solid var(--warn);border-radius:0;padding:14px 17px;font-size:14px;color:var(--txt-2);margin:16px 0}
+.err{background:var(--read-fill);border:1px solid var(--read-edge);border-left:6px solid var(--warn);
+  border-radius:var(--r);padding:14px 17px;font-size:16px;color:var(--txt-2);margin:16px 0}
 .err b{color:var(--warn-lt);font-weight:500}
-.tipbox{background:linear-gradient(180deg,rgba(9,40,76,.82),rgba(6,26,54,.88));
-  border:1px solid rgba(244,197,66,.30);border-left:6px solid #E7A62B;border-radius:22px;
-  padding:15px 18px;font-size:14px;color:var(--txt-2);margin:16px 0}
+.tipbox{background:var(--read-fill);
+  border:1px solid var(--read-edge);border-left:6px solid var(--bar-note);border-radius:var(--r);
+  padding:15px 18px;font-size:16px;color:var(--txt-2);margin:16px 0}
 .tipbox b{color:var(--gold);font-weight:500}
 
 .lesson{max-width:760px}
-.lesson .intro{background:linear-gradient(180deg,rgba(13,52,94,.50),rgba(9,38,74,.55));
-  border:1px solid rgba(244,197,66,.45);border-radius:22px;padding:20px 22px;margin-bottom:8px;
-  color:var(--txt-2);font-size:15px;line-height:1.65}
+.lesson .intro{background:var(--read-fill);
+  border:1px solid var(--read-edge);border-radius:var(--r);padding:20px 22px;margin-bottom:8px;
+  color:var(--txt-2);font-size:17px;line-height:1.65}
 .ex{margin:30px 0 0}
 .ex-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
-.ex-n{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:30px;color:var(--gold-dk);line-height:1;min-width:34px}
-.ex-t{font-size:21px;font-weight:500;letter-spacing:.01em;color:var(--txt)}
+.ex-n{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:32.5px;color:var(--gold-dk);line-height:1;min-width:34px}
+.ex-t{font-size:22.5px;font-weight:500;letter-spacing:.01em;color:var(--txt)}
 /* Цитата-плашка из памятки: синий полупрозрачный фон, скругление 22,
    слева золотой бар. Тем же приёмом набраны «цель» и «совет». */
 /* Бар слева заливаем цветом, а не border-image: при border-image
    браузер выключает border-radius, и плашка теряет скругление —
    ровно это и случилось в первой версии. */
-.goal,.hint{display:flex;gap:12px;padding:14px 16px;border-radius:22px;font-size:14.5px;line-height:1.6;
-  margin-bottom:9px;border:1px solid rgba(244,197,66,.30);
-  background:linear-gradient(180deg,rgba(9,40,76,.82),rgba(6,26,54,.88))}
-.goal{border-left:6px solid #F7D162}
-.hint{border-left:6px solid #E7A62B}
-.goal i,.hint i{font-style:normal;color:var(--gold);flex:none;font-size:15px}
+.goal,.hint{display:flex;gap:12px;padding:14px 16px;border-radius:var(--r);font-size:16px;line-height:1.6;
+  margin-bottom:9px;border:1px solid var(--read-edge);background:var(--read-fill)}
+.goal{border-left:6px solid var(--bar-goal)}
+.hint{border-left:6px solid var(--bar-note)}
+.goal i,.hint i{font-style:normal;color:var(--gold);flex:none;font-size:17px}
 .goal b,.hint b{color:var(--gold);font-weight:500}
 .goal span,.hint span{color:var(--txt-2)}
-.vid{margin:14px 0 0;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(var(--gold-rgb),.2)}
+.vid{margin:14px 0 0;border-radius:var(--r2);overflow:hidden;background:#000;border:1px solid rgba(var(--gold-rgb),.2)}
 .vid video{width:100%;display:block;background:#000}
-.vid-cap{padding:9px 14px;font-size:12.5px;color:var(--txt-3);letter-spacing:.03em;background:var(--surf)}
+.vid-cap{padding:9px 14px;font-size:15px;color:var(--txt-3);letter-spacing:.03em;background:var(--read-fill)}
 .vid{position:relative}
 .vid .frame{position:relative;padding-top:56.25%;width:100%;background:#000}
 .vid .frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:block}
 .vid-ph{
   aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  background:rgba(var(--gold-rgb),.04);color:var(--txt-3);font-size:13px;text-align:center;padding:20px
+  background:var(--read-fill);color:var(--txt-3);font-size:15.5px;text-align:center;padding:20px
 }
-.vid-ph b{color:var(--gold);font-weight:500;font-size:15px;letter-spacing:.02em}
+.vid-ph b{color:var(--gold);font-weight:500;font-size:17px;letter-spacing:.02em}
 .snd{
   position:absolute;right:10px;top:10px;z-index:3;
   display:flex;align-items:center;gap:7px;
   background:rgba(var(--bg-rgb),.72);backdrop-filter:blur(6px);
-  border:1px solid rgba(var(--gold-rgb),.4);border-radius:20px;
-  padding:6px 13px;font-size:12px;color:var(--gold);
+  border:1px solid rgba(var(--gold-rgb),.4);border-radius:30px;
+  padding:6px 13px;font-size:14px;color:var(--gold);
   cursor:pointer;pointer-events:none;transition:opacity .25s;letter-spacing:.02em
 }
 .vid.on .snd{opacity:0}
 .vid video{cursor:pointer}
 .land-toggle{
   margin-top:10px;display:flex;align-items:center;gap:6px;
-  cursor:pointer;color:var(--gold);font-size:13.5px;letter-spacing:.02em;
+  cursor:pointer;color:var(--gold);font-size:16px;letter-spacing:.02em;
   user-select:none
 }
-.land-toggle .land-arrow{font-size:11px;line-height:1;transition:transform .25s}
+.land-toggle .land-arrow{font-size:13px;line-height:1;transition:transform .25s}
 .land-toggle.open .land-arrow{transform:rotate(180deg)}
 .land-panel{display:none}
 .land-panel.open{display:block;margin-top:8px}
 /* Тренировки: карточка + золотой разделитель между ними */
 .wks{max-width:780px}
 .wk{
-  background:var(--surf);border:1px solid rgba(var(--gold-rgb),.16);
+  background:var(--read-fill);border:1px solid var(--read-edge);
   border-radius:var(--r);overflow:hidden
 }
 .wk-h{
   display:flex;align-items:center;gap:12px;
-  padding:13px 20px;background:rgba(var(--gold-rgb),.07);
+  padding:13px 20px;background:var(--head-fill);
   border-bottom:1px solid rgba(var(--gold-rgb),.18)
 }
 .wk-n{
-  font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  font-size:14px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   color:var(--gold);flex:1
 }
 .wk-v{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:19px;
   color:var(--gold-lt);letter-spacing:.03em;flex:none
 }
 .wk-i{margin:0;padding:16px 20px 18px 20px;list-style:none;counter-reset:wkstep}
 .wk-i li{
   counter-increment:wkstep;position:relative;
   padding:0 0 0 30px;margin-bottom:11px;
-  font-size:14.5px;line-height:1.6;color:var(--txt-2)
+  font-size:16px;line-height:1.6;color:var(--txt-2)
 }
 .wk-i li:last-child{margin-bottom:0}
 .wk-i li::before{
   content:counter(wkstep);position:absolute;left:0;top:1px;
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;
   color:var(--gold-dk);line-height:1.5
 }
 .wk-sep{display:flex;align-items:center;gap:16px;margin:26px 0}
@@ -841,41 +894,42 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 /* Одна тренировка целиком: разбор, серии, подсказки */
 .one{max-width:780px}
 .story{
-  background:var(--surf);border:1px solid rgba(var(--gold-rgb),.16);border-radius:var(--r);
-  padding:20px 22px;margin-bottom:8px;color:var(--txt-2);font-size:15px;line-height:1.65
+  background:var(--read-fill);border:1px solid var(--read-edge);border-radius:var(--r);
+  padding:20px 22px;margin-bottom:8px;color:var(--txt-2);font-size:17px;line-height:1.65
 }
 .sets{margin-top:2px}
 .set{display:flex;gap:16px;padding:12px 0;border-bottom:1px solid rgba(var(--gold-rgb),.10)}
 .set:last-child{border-bottom:0}
 .set-v{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:800;font-size:15px;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:800;font-size:17px;
   color:var(--gold);min-width:64px;flex:none;text-align:right;letter-spacing:0;padding-top:2px
 }
-.set-t{flex:1;min-width:0;font-size:14.5px;line-height:1.6;color:var(--txt-2)}
+.set-t{flex:1;min-width:0;font-size:16px;line-height:1.6;color:var(--txt-2)}
 .set-hint{
-  display:block;margin-top:9px;padding:10px 14px;border-left:2px solid var(--gold-dk);
-  background:rgba(var(--gold-rgb),.05);font-size:13.5px;line-height:1.55;color:var(--txt-3)
+  display:block;margin-top:9px;padding:10px 14px;border-radius:var(--r2);
+  border-left:4px solid var(--bar-note);
+  background:var(--read-fill);font-size:16px;line-height:1.55;color:var(--txt-3)
 }
 .set-hint b{color:var(--gold-dk);font-weight:500}
 .sets.novol .set-v{display:none}
 .sets.novol .set{gap:0}
 .safebox{
-  background:var(--surf);border-left:3px solid var(--warn);
-  padding:14px 17px;font-size:14px;line-height:1.6;color:var(--txt-2);margin:22px 0 0
+  background:var(--read-fill);border:1px solid var(--read-edge);border-left:6px solid var(--warn);
+  border-radius:var(--r);padding:14px 17px;font-size:16px;line-height:1.6;color:var(--txt-2);margin:22px 0 0
 }
 .safebox b{color:var(--warn-lt);font-weight:500}
 
 /* Текстовая страница: упражнение, ошибка, поворот, часть теории */
 .doc{max-width:760px}
 .doc h3{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:22px;font-weight:600;
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:24px;font-weight:600;
   color:var(--txt);letter-spacing:.01em;margin:28px 0 10px
 }
-.doc p{margin:0 0 12px;font-size:15px;line-height:1.7;color:var(--txt-2)}
+.doc p{margin:0 0 12px;font-size:17px;line-height:1.7;color:var(--txt-2)}
 .doc ul,.doc ol{margin:0 0 14px;padding:0;list-style:none;counter-reset:docstep}
 .doc li{
   position:relative;padding-left:26px;margin-bottom:10px;
-  font-size:14.5px;line-height:1.65;color:var(--txt-2)
+  font-size:16px;line-height:1.65;color:var(--txt-2)
 }
 .doc li:last-child{margin-bottom:0}
 .doc ul li::before{
@@ -885,58 +939,59 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 .doc ol li{counter-increment:docstep;padding-left:30px}
 .doc ol li::before{
   content:counter(docstep);position:absolute;left:0;top:0;
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:16px;color:var(--gold-dk)
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:18px;color:var(--gold-dk)
 }
 .doc h4{
-  font-size:16.5px;font-weight:500;color:var(--gold-lt);
+  font-size:18.5px;font-weight:500;color:var(--gold-lt);
   letter-spacing:.01em;margin:22px 0 8px
 }
-.doc .kv{margin:0 0 8px;font-size:14.5px;line-height:1.6;color:var(--txt-2)}
+.doc .kv{margin:0 0 8px;font-size:16px;line-height:1.6;color:var(--txt-2)}
 .doc .kv b{color:var(--gold-dk);font-weight:500}
 .tbl-wrap{overflow-x:auto;margin:0 0 16px;-webkit-overflow-scrolling:touch}
-.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:340px}
+.tbl{width:100%;border-collapse:collapse;font-size:16px;min-width:340px}
 .tbl th{
-  text-align:left;padding:10px 14px;font-weight:500;font-size:11.5px;
+  text-align:left;padding:10px 14px;font-weight:500;font-size:13.5px;
   letter-spacing:.09em;text-transform:uppercase;color:var(--gold);
-  background:rgba(var(--gold-rgb),.07);border-bottom:1px solid rgba(var(--gold-rgb),.22)
+  background:var(--head-fill);border-bottom:1px solid rgba(var(--gold-rgb),.22)
 }
 .tbl td{padding:11px 14px;color:var(--txt-2);border-bottom:1px solid rgba(var(--gold-rgb),.10);line-height:1.5}
 .tbl tr:last-child td{border-bottom:0}
 .tbl td:first-child{color:var(--txt)}
 .doc .lead-box{
-  background:var(--surf);border:1px solid rgba(var(--gold-rgb),.16);border-radius:var(--r);
-  padding:18px 20px;margin-bottom:6px;color:var(--txt-2);font-size:15px;line-height:1.65
+  background:var(--read-fill);border:1px solid var(--read-edge);border-radius:var(--r);
+  padding:18px 20px;margin-bottom:6px;color:var(--txt-2);font-size:17px;line-height:1.65
 }
 @media(max-width:600px){
   .set{gap:11px}
-  .set-v{min-width:52px;font-size:15px}
-  .set-t{font-size:14px}
+  .set-v{min-width:52px;font-size:17px}
+  .set-t{font-size:16px}
   .story{padding:16px 17px}
 }
 @media(max-width:600px){
   .wk-h{padding:12px 15px}
   .wk-i{padding:14px 15px 16px 15px}
-  .wk-i li{padding-left:26px;font-size:14px}
+  .wk-i li{padding-left:26px;font-size:16px}
 }
 
-.plan{margin-top:14px;border:1px solid rgba(var(--gold-rgb),.2);border-radius:var(--r);overflow:hidden}
-.plan-r{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid rgba(var(--gold-rgb),.14);font-size:14.5px}
+.plan{margin-top:14px;border:1px solid var(--read-edge);border-radius:var(--r);overflow:hidden;
+  background:var(--read-fill)}
+.plan-r{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid rgba(var(--gold-rgb),.14);font-size:16px}
 .plan-r:last-child{border-bottom:0}
 .plan-r b{color:var(--gold);font-weight:500;flex:none;min-width:62px}
 .plan-r span{color:var(--txt-2)}
-@media(max-width:600px){.ex-n{font-size:24px;min-width:26px}.ex-t{font-size:18px}}
-footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22px 0 8px;color:var(--txt-3);font-size:12.5px;letter-spacing:.04em}
+@media(max-width:600px){.ex-n{font-size:26px;min-width:26px}.ex-t{font-size:19.5px}}
+footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22px 0 8px;color:var(--txt-3);font-size:15px;letter-spacing:.04em}
 
 @media(max-width:600px){
   .wrap{
     padding-left:calc(15px + env(safe-area-inset-left, 0px));
     padding-right:calc(15px + env(safe-area-inset-right, 0px))
   }
-  h1{font-size:29px}
-  .hero h1{font-size:32px}
+  h1{font-size:31.5px}
+  .hero h1{font-size:33.5px}
   .hero{padding:26px 0 4px}
   .grid,.grid-2{grid-template-columns:1fr}
-  .wordmark{font-size:19px}
+  .wordmark{font-size:20.5px}
   .mark{width:36px;height:36px}
 }
 </style>
@@ -2688,41 +2743,38 @@ function nDate(d){ return nWhen(d) }
 function homeHTML(){
   let h = "";
   // Знак не печатаем: он уже есть в липкой шапке над экраном.
-  h += `<div class="hm-h">Сегодня</div>`;
+  // «Сегодня» убрано: подарок и шесть плиток говорят сами за себя.
 
   // Карточка дня закрыта: название тренировки на главной не показываем.
   // Если уровень ещё не выбран, ведём на «Воду» — там стоит вопрос о нём.
   const цель = dayPickTarget() || "t_water";
   h += `<button class="hm-gift" onclick="go('${цель}')">
+    <span class="tph" style="background-image:url('gift-day.jpg')"></span>
     <span class="g">&#127873;</span>
     <span class="t">ТРЕНИРОВКА ДНЯ</span>
   </button>`;
 
+  // Плитка меню: экран, название, значок, кадр. Пустой кадр — плитка
+  // остаётся на синей заливке и спокойно стоит в одной сетке с
+  // фотографическими.
+  const МЕНЮ = [
+    ["s1", "Обучение", '<path d="M12 6.5C10.5 5 8.5 4.5 4 4.8v13c4.5-.3 6.5.2 8 1.7 1.5-1.5 3.5-2 8-1.7v-13c-4.5-.3-6.5.2-8 1.7z"/><path d="M12 6.5v13"/>', "tile-obuchenie.jpg"],
+    ["t_water", "Вода", '<path d="M2 9c3-3 5 3 8 0s5-3 8 0"/><path d="M2 15c3-3 5 3 8 0s5-3 8 0"/>', "tile-voda.jpg"],
+    ["s3", "Суша", '<path d="M5 9v6M19 9v6M8 7v10M16 7v10M8 12h8"/>', "tile-susha.jpg"],
+    ["game", "Игра", '<rect x="2" y="7" width="20" height="10" rx="4"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="12" r=".9"/>', "tile-igra.jpg"],
+    ["s4", "Прямой эфир", '<circle cx="12" cy="12" r="3"/><path d="M6.5 6.5a8 8 0 000 11M17.5 6.5a8 8 0 010 11"/>', "tile-efir.jpg"],
+    ["t_more", "Ещё", '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>', "tile-eshe.jpg"],
+  ];
   h += `<div class="hm-grid">`;
-  h += `<button class="hm-tile" onclick="go('s1')">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C10.5 5 8.5 4.5 4 4.8v13c4.5-.3 6.5.2 8 1.7 1.5-1.5 3.5-2 8-1.7v-13c-4.5-.3-6.5.2-8 1.7z"/><path d="M12 6.5v13"/></svg>
-    <b>Обучение</b>
-  </button>`;
-  h += `<button class="hm-tile" onclick="go('t_water')">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9c3-3 5 3 8 0s5-3 8 0"/><path d="M2 15c3-3 5 3 8 0s5-3 8 0"/></svg>
-    <b>Вода</b>
-  </button>`;
-  h += `<button class="hm-tile" onclick="go('s3')">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v6M19 9v6M8 7v10M16 7v10M8 12h8"/></svg>
-    <b>Суша</b>
-  </button>`;
-  h += `<button class="hm-tile" onclick="go('game')">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="10" rx="4"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="12" r=".9"/></svg>
-    <b>Игра</b>
-  </button>`;
-  h += `<button class="hm-tile" onclick="go('s4')">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M6.5 6.5a8 8 0 000 11M17.5 6.5a8 8 0 010 11"/></svg>
-    <b>Прямой эфир</b>
-  </button>`;
-  h += `<button class="hm-tile" onclick="go('t_more')">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
-    <b>Ещё</b>
-  </button>`;
+  for (const [экран, имя, знак, кадр] of МЕНЮ) {
+    // Слой со снимком печатаем первым: значок и название лежат выше по
+    // разметке и по position:relative, иначе снимок закроет их собой.
+    const фото = кадр ? `<span class="tph" style="background-image:url('${кадр}')"></span>` : "";
+    h += `<button class="hm-tile" onclick="go('${экран}')">${фото}
+      <svg viewBox="0 0 24 24" aria-hidden="true">${знак}</svg>
+      <b>${имя}</b>
+    </button>`;
+  }
   h += `</div>`;
   return h;
 }
@@ -2824,13 +2876,20 @@ function paintTab(t){
   /* Снимок вкладки, если он есть, ложится между штриховкой и цветом.
      Затемнение и растворение книзу уже впечатаны в сам файл — там их
      можно было измерить по пикселям, а в градиенте нельзя. */
-  const photo = t.ph ? `url('${t.ph}') top center / 100% auto no-repeat,` : "";
+  /* Снимок уходит в отдельную переменную и в свой слой (body::after).
+     Так его размер задаётся в стилях и может отличаться на телефоне и
+     на компьютере — в одной строке background этого не сделать. */
+  R.style.setProperty("--photo", t.ph ? `url('${t.ph}')` : "none");
+
+  /* Вуаль над снимком. Прежняя версия клала снимок почти без затемнения,
+     и заголовок ложился прямо на светлую воду или на стену зала. Теперь
+     сверху остаётся 40 процентов кадра — достаточно, чтобы понять, где ты,
+     а к середине экрана фон уходит в ровный фирменный синий. */
   R.style.setProperty("--glow",
     `repeating-linear-gradient(115deg, rgba(255,255,255,.022) 0 2px, rgba(255,255,255,0) 2px 9px),` +
-    photo +
-    `radial-gradient(120% 58% at 50% -8%, rgba(${t.g},.85) 0%, rgba(${t.g},.30) 44%, rgba(${t.g},0) 78%),` +
-    `radial-gradient(105% 48% at 50% 106%, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 70%),` +
-    `linear-gradient(var(--bg), var(--bg))`);
+    `radial-gradient(120% 58% at 50% -8%, rgba(${t.g},.34) 0%, rgba(${t.g},.14) 44%, rgba(${t.g},0) 78%),` +
+    `linear-gradient(180deg, rgba(var(--bg-rgb),.60) 0%, rgba(var(--bg-rgb),.84) 30%,` +
+    ` rgba(var(--bg-rgb),.95) 54%, var(--bg) 78%)`);
 
   const meta = document.querySelector && document.querySelector('meta[name="theme-color"]');
   if(meta) meta.setAttribute("content", t.hdr);
@@ -3448,7 +3507,7 @@ function setupBreath(){
 
     if(running){
       ctx.fillStyle = TX2;
-      ctx.font = "600 " + Math.round(Math.min(W, H) * 0.055) + "px Inter, sans-serif";
+      ctx.font = "600 " + Math.round(Math.min(W, H) * 0.060) + "px 'Montserrat', sans-serif";
       // подпись фазы уводим выше: при кегле 0.26 цифра доставала до неё
       ctx.fillText(P.n.toUpperCase(), cx, cy - Math.min(W, H) * 0.145);
 
@@ -3457,14 +3516,14 @@ function setupBreath(){
       ctx.fillText(String(Math.max(1, Math.ceil(SEC - t))), cx, cy + Math.min(W, H) * 0.085);
 
       ctx.fillStyle = TX3;
-      ctx.font = "400 " + Math.round(Math.min(W, H) * 0.040) + "px Inter, sans-serif";
+      ctx.font = "400 " + Math.round(Math.min(W, H) * 0.046) + "px 'Montserrat', sans-serif";
       ctx.fillText(P.hint, cx, cy + Math.min(W, H) * 0.16);
     } else {
       ctx.fillStyle = TX2;
-      ctx.font = "500 " + Math.round(Math.min(W, H) * 0.050) + "px Inter, sans-serif";
+      ctx.font = "500 " + Math.round(Math.min(W, H) * 0.060) + "px 'Montserrat', sans-serif";
       ctx.fillText("Готовы — нажмите «Начать»", cx, cy - Math.min(W, H) * 0.02);
       ctx.fillStyle = TX3;
-      ctx.font = "400 " + Math.round(Math.min(W, H) * 0.040) + "px Inter, sans-serif";
+      ctx.font = "400 " + Math.round(Math.min(W, H) * 0.046) + "px 'Montserrat', sans-serif";
       ctx.fillText(SEC + " секунды на сторону", cx, cy + Math.min(W, H) * 0.06);
     }
     ctx.textAlign = "start";
@@ -3769,7 +3828,7 @@ function setupGame(){
     ctx.font = "900 " + Math.round(H*0.075) + "px 'Montserrat',sans-serif";
     ctx.fillText(big, W/2, H*0.235);
     ctx.fillStyle = GOLD;
-    ctx.font = "500 " + Math.round(H*0.033) + "px Inter,sans-serif";
+    ctx.font = "500 " + Math.round(H*0.038) + "px 'Montserrat',sans-serif";
     ctx.fillText(small, W/2, H*0.315);
   }
 
