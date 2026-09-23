@@ -244,12 +244,12 @@ header{
    шрифт один — Montserrat; два шрифта в одном тексте читались бы как
    сбой, а не как приём. */
 .hm-tile b{position:relative;font-family:'Oswald',-apple-system,BlinkMacSystemFont,sans-serif;
-  font-weight:600;font-size:24px;letter-spacing:.03em;text-transform:uppercase;
+  font-weight:600;font-size:20px;letter-spacing:.03em;text-transform:uppercase;
   line-height:1.12;color:var(--gold)}
 /* На 320 px плитка даёт 107 px ширины. Берём 18, а не 19: модель
    ширины приблизительная, и ровно на границе любая мелочь — другое
    начертание Oswald, иной пересчёт — даст перенос на вторую строку. */
-@media(max-width:340px){ .hm-tile b{font-size:18px;letter-spacing:.03em} }
+@media(max-width:340px){ .hm-tile b{font-size:17px;letter-spacing:.03em} }
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   display:flex;
