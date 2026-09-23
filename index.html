@@ -217,10 +217,13 @@ header{
   gap:9px;aspect-ratio:5/2;min-height:118px;padding:18px 14px;margin:20px auto 12px;max-width:520px;border-radius:var(--r);
   background:var(--card-fill);border:1px solid rgba(var(--gold-rgb),.55);
   cursor:pointer;font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
-.hm-gift .g{position:relative;font-size:33.5px;line-height:1}
+/* Подарок нарисован линией, как значки плиток, а не взят из шрифта
+   смайликов: тот на каждой системе свой и всегда цветной. */
+.hm-gift .g{position:relative;display:block;width:34px;height:34px;color:var(--txt)}
+.hm-gift .g *{stroke:currentColor;fill:none;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round}
 .hm-gift .t{position:relative;font-family:'Oswald',-apple-system,BlinkMacSystemFont,sans-serif;
   font-weight:600;font-size:24px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--gold);text-align:center}
+  color:var(--txt);text-align:center}
 /* 520 — это ширина, на которой плитка остаётся плиткой. Без потолка
    на ноутбуке она растягивается до 515 px при высоте 96, и снимок
    внутри превращается в горизонтальную ленту. */
@@ -245,7 +248,7 @@ header{
    сбой, а не как приём. */
 .hm-tile b{position:relative;font-family:'Oswald',-apple-system,BlinkMacSystemFont,sans-serif;
   font-weight:600;font-size:20px;letter-spacing:.03em;text-transform:uppercase;
-  line-height:1.12;color:var(--gold)}
+  line-height:1.12;color:var(--txt)}
 /* На 320 px плитка даёт 107 px ширины. Берём 18, а не 19: модель
    ширины приблизительная, и ровно на границе любая мелочь — другое
    начертание Oswald, иной пересчёт — даст перенос на вторую строку. */
@@ -2750,7 +2753,13 @@ function homeHTML(){
   const цель = dayPickTarget() || "t_water";
   h += `<button class="hm-gift" onclick="go('${цель}')">
     <span class="tph" style="background-image:url('gift-day.jpg')"></span>
-    <span class="g">&#127873;</span>
+    <svg class="g" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="7.6" width="18" height="4.6" rx="1.2"/>
+      <path d="M5 12.2v7.4a1.6 1.6 0 0 0 1.6 1.6h10.8a1.6 1.6 0 0 0 1.6-1.6v-7.4"/>
+      <path d="M12 7.6V21.2"/>
+      <path d="M12 7.6H8.2a2.25 2.25 0 1 1 0-4.5c2.3 0 3.8 4.5 3.8 4.5z"/>
+      <path d="M12 7.6h3.8a2.25 2.25 0 1 0 0-4.5c-2.3 0-3.8 4.5-3.8 4.5z"/>
+    </svg>
     <span class="t">ТРЕНИРОВКА ДНЯ</span>
   </button>`;
 
