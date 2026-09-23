@@ -230,7 +230,7 @@ header{
 .hm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:520px;margin:0 auto}
 .hm-tile{position:relative;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  aspect-ratio:16/9;min-height:96px;padding:14px;border-radius:var(--r);text-align:center;
+  aspect-ratio:3/2;min-height:104px;padding:14px;border-radius:var(--r);text-align:center;
   background:var(--card-fill);border:1px solid rgba(var(--gold-rgb),.34);
   cursor:pointer;font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
 /* Снимок отдельным слоем, а не заливкой самой плитки: так заливка
@@ -241,18 +241,18 @@ header{
   border-radius:inherit}
 /* Значок набран цветом текста, а не золотом: золото ушло на слово.
    Ищут раздел по названию, значок только подсказывает. */
-.hm-tile svg{position:relative;width:28px;height:28px;display:block;flex:none;color:var(--txt)}
+.hm-tile svg{position:relative;width:26px;height:26px;display:block;flex:none;color:var(--txt)}
 .hm-tile svg *{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 /* Oswald только здесь, на шести плитках меню. В остальном приложении
    шрифт один — Montserrat; два шрифта в одном тексте читались бы как
    сбой, а не как приём. */
 .hm-tile b{position:relative;font-family:'Oswald',-apple-system,BlinkMacSystemFont,sans-serif;
-  font-weight:600;font-size:20px;letter-spacing:.03em;text-transform:uppercase;
+  font-weight:600;font-size:18px;letter-spacing:.03em;text-transform:uppercase;
   line-height:1.12;color:var(--txt)}
 /* На 320 px плитка даёт 107 px ширины. Берём 18, а не 19: модель
    ширины приблизительная, и ровно на границе любая мелочь — другое
    начертание Oswald, иной пересчёт — даст перенос на вторую строку. */
-@media(max-width:340px){ .hm-tile b{font-size:17px;letter-spacing:.03em} }
+@media(max-width:340px){ .hm-tile b{font-size:16px;letter-spacing:.03em} }
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   display:flex;
@@ -1414,7 +1414,10 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     {id:"e_kr",n:"04",t:"Кроль",s:"6 ошибок + тренировка для исправления",m:""}
   ]},
 
-  s2:{title:"Готовые тренировки на воде",lede:"Четыре блока с разной направленностью. В каждом — три уровня и по пятнадцать тренировок.",kids:[
+  /* Сюда ведёт плитка меню. Раньше между плиткой и этим экраном
+     стоял промежуточный «Вода» с двумя карточками; обучение уехало
+     на свою плитку, и прокладка осталась бы экраном из одного пункта. */
+  s2:{water:true,title:"Тренировки в бассейне",lede:"Четыре блока с разной направленностью. В каждом — три уровня и по пятнадцать тренировок.",kids:[
     {id:"b_vy",n:"01",t:"Выносливость",s:"Длинные ровные серии, которые строят базу и учат держать темп до конца дистанции",m:"3 уровня · 5 блоков · 75 тренировок"},
     {id:"b_sk",n:"02",t:"Скорость",s:"Короткие отрезки в полную силу с длинным отдыхом: учимся плыть быстро, а не терпеть",m:"3 уровня · 45 тренировок"},
     {id:"b_mo",n:"03",t:"Мощность",s:"Работа под нагрузкой, где судья не секундомер, а длина гребка",m:"3 уровня · 45 тренировок"},
@@ -1561,14 +1564,14 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
 };
 
 const PARENT = {
-  s1:"t_water",s1_1:"s1",bt0:"s1_1",sp0:"s1_1",br0:"s1_1",kr0:"s1_1",s1_2:"s1",s1_3:"s1",s1_4:"s1",
+  s1:"home",s1_1:"s1",bt0:"s1_1",sp0:"s1_1",br0:"s1_1",kr0:"s1_1",s1_2:"s1",s1_3:"s1",s1_4:"s1",
   e_bt:"s1_4",e_sp:"s1_4",e_br:"s1_4",e_kr:"s1_4",
-  s2:"t_water",b_vy:"s2",b_sk:"s2",b_mo:"s2",b_vo:"s2",
+  s2:"home",b_vy:"s2",b_sk:"s2",b_mo:"s2",b_vo:"s2",
   s3:"home",d1:"s3",d2:"s3",d3:"s3",d4:"s3",d5:"s3",d6:"s3",
   s4:"t_more",s5:"t_lib",m1:"s5",m2:"s5",m3:"s5",s6:"t_lib",s7:"t_more",
   about:"t_more",level:"t_more",t_lib:"t_more",
   game:"home",game_play:"game",game_top:"game",game_win:"game",game_help:"game",
-  t_water:"home",t_more:"home"
+  t_more:"home"
 };
 
 /* ============================================================
@@ -1607,7 +1610,7 @@ const TABS = [
    base:"#3FA396", lt:"#74C9BD", dk:"#2F7C72", rgb:"63,163,150", hi:"150,224,213", sub:"#8CB3AD"},
 
   // Синий притушен: на ярком варианте мелкие серые подписи теряли контраст
-  {id:"water", to:"t_water", n:"Вода", g:"8,46,70", hdr:"#092A40", ph:"bg-water.jpg",
+  {id:"water", to:"s2", n:"Тренировки в бассейне", g:"8,46,70", hdr:"#092A40", ph:"bg-water.jpg",
    ac:"#4FA3D1", acr:"79,163,209",
    base:"#4A9BC9", lt:"#7FC3E6", dk:"#2B617F", rgb:"74,155,201", hi:"168,214,240", sub:"#8FB0C6"},
 
@@ -1712,12 +1715,6 @@ const TAB_ICON = {
     .filter(Boolean)
     .map((k, i) => Object.assign({}, k, {n:"0" + (i+1)}));
 
-  T.t_water = {
-    water: true,               // сверху — тренировка дня под уровень
-    title:"Вода",
-    lede:"Всё, что происходит в бассейне: как освоить стиль, что плыть на занятии и какие ошибки мешают.",
-    kids: pick(["s1","s2"])
-  };
   T.t_lib = {
     title:"Книги",
     lede:"Профессиональная литература по плаванию и подготовке — и то, после чего хочется на тренировку.",
@@ -1731,13 +1728,13 @@ const TAB_ICON = {
     kids: pick(["s7"]).concat([
       {id:"t_lib", n:"02", t:"Книги", s:"Спортивная литература с разбором и то, после чего хочется на тренировку"},
       {id:"s4", n:"03", t:"Прямой эфир", s:"Записи разборов техники — видно, как ошибка находится и исправляется прямо в воде"},
-      {id:"level", n:"04", t:"Уровень подготовки", s:"От него зависит, какую тренировку предлагает вкладка «Вода»"},
+      {id:"level", n:"04", t:"Уровень подготовки", s:"От него зависит, какую тренировку предлагает вкладка «Тренировки в бассейне»"},
       {id:"about", n:"05", t:"О клубе", s:"Что внутри приложения и для кого оно сделано"}
     ])
   };
   T.level = {
     title:"Уровень подготовки",
-    lede:"От него зависит только одно: какую тренировку вам предложит вкладка «Вода». Весь каталог открыт целиком в любом случае — уровень ничего не закрывает.",
+    lede:"От него зависит только одно: какую тренировку вам предложит вкладка «Тренировки в бассейне». Весь каталог открыт целиком в любом случае — уровень ничего не закрывает.",
     levels:true
   };
   // «О клубе» показывает тот же рассказ, что раньше висел на главной.
@@ -2750,7 +2747,7 @@ function homeHTML(){
 
   // Карточка дня закрыта: название тренировки на главной не показываем.
   // Если уровень ещё не выбран, ведём на «Воду» — там стоит вопрос о нём.
-  const цель = dayPickTarget() || "t_water";
+  const цель = dayPickTarget() || "s2";
   h += `<button class="hm-gift" onclick="go('${цель}')">
     <span class="tph" style="background-image:url('gift-day.jpg')"></span>
     <svg class="g" viewBox="0 0 24 24" aria-hidden="true">
@@ -2768,7 +2765,7 @@ function homeHTML(){
   // фотографическими.
   const МЕНЮ = [
     ["s1", "Обучение", '<path d="M12 6.5C10.5 5 8.5 4.5 4 4.8v13c4.5-.3 6.5.2 8 1.7 1.5-1.5 3.5-2 8-1.7v-13c-4.5-.3-6.5.2-8 1.7z"/><path d="M12 6.5v13"/>', "tile-obuchenie.jpg"],
-    ["t_water", "Вода", '<path d="M2 9c3-3 5 3 8 0s5-3 8 0"/><path d="M2 15c3-3 5 3 8 0s5-3 8 0"/>', "tile-voda.jpg"],
+    ["s2", "Тренировки в\u00A0бассейне", '<path d="M2 9c3-3 5 3 8 0s5-3 8 0"/><path d="M2 15c3-3 5 3 8 0s5-3 8 0"/>', "tile-voda.jpg"],
     ["s3", "Суша", '<path d="M5 9v6M19 9v6M8 7v10M16 7v10M8 12h8"/>', "tile-susha.jpg"],
     ["game", "Игра", '<rect x="2" y="7" width="20" height="10" rx="4"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="12" r=".9"/>', "tile-igra.jpg"],
     ["s4", "Прямой эфир", '<circle cx="12" cy="12" r="3"/><path d="M6.5 6.5a8 8 0 000 11M17.5 6.5a8 8 0 010 11"/>', "tile-efir.jpg"],
