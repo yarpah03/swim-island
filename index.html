@@ -488,7 +488,9 @@ h2::after{
 .card{
   -webkit-user-select:none;user-select:none;position:relative;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  aspect-ratio:4/3;min-height:118px;padding:14px 12px 34px;
+  /* 148 — не на глаз: на 320 счётчик «3 уровня · 5 блоков · 75 тренировок»
+     переносится на три строки, и при 132 название налезало на него. */
+  aspect-ratio:5/4;min-height:148px;padding:14px 12px 34px;
   border-radius:var(--r);text-align:center;
   background:var(--card-fill);border:1px solid rgba(var(--gold-rgb),.34);
   cursor:pointer;color:inherit;font:inherit;width:100%;
@@ -506,12 +508,19 @@ h2::after{
 .card:active{transform:translateY(0) scale(.985)}
 /* Номер на карточке раздела больше не печатается: в плитке с
    фотографией он занимал место, а порядок виден по самой сетке. */
+/* Значок — той же линией и того же размера, что на плитках меню.
+   position:relative поднимает его над снимком, лежащим ниже по разметке. */
+.card svg{position:relative;width:26px;height:26px;display:block;flex:none;
+  color:var(--txt);margin-bottom:6px}
+.card svg *{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.card.wide svg{width:30px;height:30px;margin-bottom:9px}
+@media(max-width:340px){ .card svg{width:23px;height:23px;margin-bottom:6px} }
 .card .ttl,.card .ttl.long,.card .ttl.xlong{
   position:relative;font-family:'Oswald',-apple-system,BlinkMacSystemFont,sans-serif;
-  font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;
+  font-weight:600;font-size:18px;letter-spacing:.03em;text-transform:uppercase;
   line-height:1.15;color:var(--txt);text-wrap:balance;overflow-wrap:break-word
 }
-@media(max-width:340px){ .card .ttl{font-size:14px} }
+@media(max-width:340px){ .card .ttl{font-size:15.5px} }
 /* Прежде длинному названию снимали капитель и давали свой кегль.
    В плитке это давало два разных набора в одной сетке, поэтому
    .long и .xlong теперь набраны так же, как обычное название. */
@@ -2732,6 +2741,44 @@ const МЕНЮ = [
    снимок — так любой вложенный экран получает фон своего раздела сам.
    Таблица соответствий вручную рассохлась бы при первой правке
    навигации: мы только что убрали целый экран, и она бы соврала. */
+/* Значки плиток внутри разделов. Те же правила, что у значков меню:
+   рисунок линией, без заливки, 24 на 24. Ключ — экран, в который
+   ведёт плитка. Чего здесь нет — печатается без значка.
+   Внутри одного экрана значки не повторяются: повтор читался бы как
+   «это одно и то же», а это разные вещи. */
+const ЗНАЧКИ = {
+  /* Обучение */
+  s1_1:'<rect x="4.5" y="6.8" width="15" height="6.6" rx="3.1"/><path d="M3 18.6c1.9-1.6 3.8-1.6 5.7 0s3.8 1.6 5.7 0 3.8-1.6 5.6 0"/>',
+  s1_2:'<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.4"/>',
+  s1_3:'<path d="M5 21V3.6"/><path d="M5 4.8h11.6l-2.3 3.3 2.3 3.3H5"/>',
+  s1_4:'<circle cx="11" cy="11" r="6.4"/><path d="m15.7 15.7 4.8 4.8"/>',
+  /* Тренировки в бассейне */
+  b_vy:'<circle cx="12" cy="12" r="8.2"/><path d="M12 7.2V12l3.3 2"/>',
+  b_sk:'<path d="M13.4 2.8 6 13.2h5.1L10.4 21.2 18 10.6h-5.1z"/>',
+  b_mo:'<rect x="5.8" y="3.4" width="12.4" height="14.6" rx="3.6"/><circle cx="12" cy="7" r="1"/><path d="M8.8 11.2h6.4"/><path d="M8.8 14.4h6.4"/>',
+  b_vo:'<circle cx="9.3" cy="9.3" r="2.7"/><circle cx="14.7" cy="9.3" r="2.7"/><circle cx="9.3" cy="14.7" r="2.7"/><circle cx="14.7" cy="14.7" r="2.7"/><path d="M12 17.4c0 2-.8 3.1-2.6 3.6"/>',
+  /* Суша */
+  d1:'<circle cx="12" cy="12" r="3.9"/><path d="M12 2.6V5M12 19v2.4M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2.6 12H5M19 12h2.4M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7"/>',
+  d2:'<path d="M6.2 4.6c-2.6 3.2-2.6 11.6 0 14.8M17.8 4.6c2.6 3.2 2.6 11.6 0 14.8M6.2 12h11.6"/>',
+  d3:'<path d="M12 3.2 5 6.1v5.7c0 4.2 2.9 7.6 7 9.1 4.1-1.5 7-4.9 7-9.1V6.1z"/>',
+  d4:'<path d="M20.2 12a8.2 8.2 0 1 1-2.7-6.1"/><path d="M20.6 3.6v4.7h-4.7"/>',
+  d5:'<path d="M3 17.2c3-8.2 6-8.2 9 0s6 8.2 9 0"/>',
+  d6:'<rect x="5" y="5" width="14" height="14" rx="2.4"/><path d="M9 12h6"/>',
+  /* Игра */
+  game_play:'<path d="M8.6 5.4 18.6 12l-10 6.6z"/>',
+  game_top:'<path d="M6 20.4V11M12 20.4V3.6M18 20.4v-6.2"/>',
+  game_win:'<path d="M8 3.8h8v5.1a4 4 0 0 1-8 0z"/><path d="M8 5.4H5.2v1.3A3.3 3.3 0 0 0 8.5 10"/><path d="M16 5.4h2.8v1.3A3.3 3.3 0 0 1 15.5 10"/><path d="M12 12.9v3.6M8.8 20.2h6.4"/>',
+  game_help:'<circle cx="12" cy="12" r="8.2"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.1 2.4v1.6"/><path d="M12.7 16.4h-1.4"/>',
+  /* Сервис */
+  sv1:'<rect x="3" y="5.6" width="18" height="12.8" rx="2.4"/><path d="M3 10.2h18M6.6 14.8h4.4"/>',
+  sv2:'<rect x="3.4" y="7.8" width="17.2" height="4.4" rx="1.2"/><path d="M5.2 12.2v7.2a1.6 1.6 0 0 0 1.6 1.6h10.4a1.6 1.6 0 0 0 1.6-1.6v-7.2M12 7.8v13.2"/><path d="M12 7.8H8.4a2.2 2.2 0 1 1 0-4.4c2.2 0 3.6 4.4 3.6 4.4zM12 7.8h3.6a2.2 2.2 0 1 0 0-4.4c-2.2 0-3.6 4.4-3.6 4.4z"/>',
+  sv3:'<circle cx="9.2" cy="8.4" r="3.2"/><path d="M3.6 19.6c.7-3.2 2.9-5 5.6-5s4.9 1.8 5.6 5"/><path d="M18.4 7.4v5.2M21 10h-5.2"/>',
+  sv4:'<path d="M20.4 12.4c0 3.8-3.8 6.9-8.4 6.9-1 0-1.9-.14-2.8-.4L4 20.6l1.5-3.3c-1.2-1.2-1.9-2.8-1.9-4.9 0-3.8 3.8-6.9 8.4-6.9s8.4 3.1 8.4 6.9z"/>',
+  sv5:'<rect x="3" y="5.6" width="18" height="12.8" rx="2.2"/><path d="m4.2 7.2 7.8 5.8 7.8-5.8"/>',
+  /* Тренировка дня — день с отметкой */
+  __day:'<rect x="3.4" y="5" width="17.2" height="15.4" rx="2.4"/><path d="M3.4 9.8h17.2M8 3.4v3.2M16 3.4v3.2"/><circle cx="12" cy="15" r="1.7"/>'
+};
+
 function кадрРаздела(id){
   let cur = id;
   for(let i = 0; cur && i < 40; i++){
@@ -2809,6 +2856,7 @@ function dayTileHTML(кадр){
   const подпись = [p[0], p[2]].filter(Boolean).join(" · ");
   return `<button class="card wide" onclick="go('${w}')">
       ${кадр?`<span class="tph" style="background-image:url('${кадр}')"></span>`:""}
+      <svg viewBox="0 0 24 24" aria-hidden="true">${ЗНАЧКИ.__day}</svg>
       <span class="ttl">Тренировка дня</span>
       ${подпись?`<span class="meta">${esc(подпись)}</span>`:""}
     </button>`;
@@ -3021,8 +3069,10 @@ function render(id){
         // раздел можно снабжать фотографиями по одной, и ряд всё это
         // время остаётся однородным.
         const снимок = k.ph || кадр;
+        const знак = ЗНАЧКИ[k.id] || "";
         h += `<button class="card" onclick="go('${k.id}')">
           ${снимок?`<span class="tph" style="background-image:url('${снимок}')"></span>`:""}
+          ${знак?`<svg viewBox="0 0 24 24" aria-hidden="true">${знак}</svg>`:""}
           <span class="ttl">${esc(k.t)}</span>
           ${k.m?`<span class="meta">${esc(k.m)}</span>`:""}
         </button>`;
