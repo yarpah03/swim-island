@@ -295,34 +295,6 @@ header{
 }
 @media(max-width:420px){ .feed-h{font-size:32.5px} }
 
-/* Главная карточка дня: фотография бассейна, поверх — что плыть */
-.pick{
-  display:block;width:100%;text-align:left;border:0;cursor:pointer;font-family:inherit;
-  position:relative;overflow:hidden;border-radius:var(--r);
-  min-height:196px;margin-bottom:12px;padding:0;
-  background:var(--surf-2);border:1px solid rgba(var(--gold-rgb),.22);
-  -webkit-tap-highlight-color:transparent
-}
-.pick-photo{
-  position:absolute;inset:0;
-  background-image:url('hero-mobile.jpg');background-size:cover;background-position:center;
-  opacity:.62
-}
-.pick-veil{
-  position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(var(--bg-rgb),.12) 0%,rgba(var(--bg-rgb),.62) 52%,rgba(var(--bg-rgb),.93) 100%)
-}
-.pick-in{position:relative;z-index:2;padding:110px 18px 18px}
-.pick .k{
-  font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ac);display:block;margin-bottom:8px
-}
-.pick .t{
-  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:29px;font-weight:600;
-  line-height:1.15;color:var(--txt);display:block;margin-bottom:7px
-}
-.pick .d{font-size:16px;line-height:1.5;color:var(--txt-2);display:block}
-
 /* Обычная карточка ленты */
 .fcard{
   display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
@@ -2809,33 +2781,45 @@ function dayPickTarget(){
   try { return byDay(feedPools().work, 1, 0) || null; } catch(e){ return null; }
 }
 
+/* Здесь остался только вопрос об уровне: без него подобрать тренировку
+   не из чего. Сама тренировка дня печатается плиткой в общей сетке —
+   см. dayTileHTML и ветку d.kids ниже. */
 function dayPickHTML(){
   if(!LEVEL) return levelPickHTML(true);
-  const P = feedPools();
+  return "";
+}
+
+/* Тренировка дня плиткой. Тот же <button class="card">, что у блоков
+   раздела, и тот же кадр раздела — отличать её оформлением не нужно,
+   она отличается местом: стоит первой.
+   Если уровень не выбран или занятие почему-то не нашлось, возвращаем
+   пустую строку: в сетке просто будет на одну плитку меньше, а не
+   дырка или сообщение об ошибке. */
+function dayTileHTML(кадр){
+  if(!LEVEL) return "";
+  let w = null;
+  try { w = byDay(feedPools().work, 1, 0) || null; } catch(e){ return ""; }
+  if(!w || !T[w]) return "";
+  const d = T[w], p = d.pills || [];
+  // Направленность и метраж: два числа, по которым человек решает,
+  // плыть сегодня или нет. Название занятия («Тренировка 14») в подписи
+  // не нужно — оно ничего не говорит, пока занятие не открыто.
+  const подпись = [p[0], p[2]].filter(Boolean).join(" · ");
+  return `<button class="card" onclick="go('${w}')">
+      ${кадр?`<span class="tph" style="background-image:url('${кадр}')"></span>`:""}
+      <span class="ttl">Тренировка дня</span>
+      ${подпись?`<span class="meta">${esc(подпись)}</span>`:""}
+    </button>`;
+}
+
+/* Подпись под сеткой: под какой уровень подобрано и где его сменить.
+   Стоит после сетки, а не перед ней, потому что объясняет уже увиденное. */
+function lvlNoteHTML(){
+  if(!LEVEL) return "";
   const lvl = LEVELS.find(l => l.id === LEVEL);
-  const w = byDay(P.work, 1, 0);
-  let h = "";
-  if(w){
-    const d = T[w], p = d.pills || [];
-    h += `<button class="pick" onclick="go('${w}')">
-      <div class="pick-photo"></div><div class="pick-veil"></div>
-      <div class="pick-in">
-        <span class="k">Тренировка дня</span>
-        <span class="t">${esc([p[0], p[1]].filter(Boolean).join(" · ") || d.title)}</span>
-        <span class="d">${esc([d.title, p[2]].filter(Boolean).join(" · "))}</span>
-      </div>
-    </button>`;
-    h += `<div class="lvl-note">Подобрано под уровень «${esc(lvl.n)}»
+  if(!lvl) return "";
+  return `<div class="lvl-note">Подобрано под уровень «${esc(lvl.n)}»
       <a onclick="go('level')">сменить</a></div>`;
-  }
-  const dr = byDay(P.drills, 1, 3);
-  if(dr) h += `<button class="fcard" onclick="go('${dr.id}')">
-      <span class="k">Упражнение дня</span>
-      <span class="t">${esc(dr.t)}</span>
-      <span class="d">${esc(dr.s)}</span>
-      <span class="go">Разобрать &rarr;</span>
-    </button>`;
-  return h;
 }
 
 /* Рекорд месяца. Тоже переехал с главной — к игре, в «Ещё». */
@@ -3028,6 +3012,9 @@ function render(id){
       // которой в него входят.
       const кадр = кадрРаздела(id);
       h += `<div class="grid">`;
+      // Тренировка дня — первой плиткой и только на «Воде»: это
+      // единственное на экране, что открывают не выбирая.
+      if(d.water) h += dayTileHTML(кадр);
       d.kids.forEach(k=>{
         h += `<button class="card" onclick="go('${k.id}')">
           ${кадр?`<span class="tph" style="background-image:url('${кадр}')"></span>`:""}
@@ -3036,6 +3023,7 @@ function render(id){
         </button>`;
       });
       h += `</div>`;
+      if(d.water) h += lvlNoteHTML();
     }
 
 if(d.lesson){
