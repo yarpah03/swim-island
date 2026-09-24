@@ -1551,10 +1551,12 @@ const PARENT = {
   e_bt:"s1_4",e_sp:"s1_4",e_br:"s1_4",e_kr:"s1_4",
   s2:"home",b_vy:"s2",b_sk:"s2",b_mo:"s2",b_vo:"s2",
   s3:"home",d1:"s3",d2:"s3",d3:"s3",d4:"s3",d5:"s3",d6:"s3",
-  s4:"home",s5:"t_lib",m1:"s5",m2:"s5",m3:"s5",s6:"t_lib",s7:"t_more",
-  about:"t_more",level:"t_more",t_lib:"t_more",
-  game:"home",game_play:"game",game_top:"game",game_win:"game",game_help:"game",
-  t_more:"home"
+  s4:"home",s5:"t_lib",m1:"s5",m2:"s5",m3:"s5",s6:"t_lib",s7:"home",
+  /* «Ещё» больше нет. Эти три экрана остались в приложении, но ни одна
+     плитка на них не ведёт: открыть их можно только по прямой ссылке.
+     Родителем назначена главная — иначе крошки на них обрывались бы. */
+  about:"home",level:"home",t_lib:"home",
+  game:"home",game_play:"game",game_top:"game",game_win:"game",game_help:"game"
 };
 
 /* ============================================================
@@ -1605,8 +1607,8 @@ const TABS = [
    ac:"#6FB25F", acr:"111,178,95",
    base:"#5F9A55", lt:"#93C486", dk:"#3F7A46", rgb:"95,154,85", hi:"170,220,160", sub:"#9BB795"},
 
-  // «Ещё» намеренно нейтрально: это склад, а не самостоятельный раздел
-  {id:"more", to:"t_more", n:"Ещё", g:"24,30,40", hdr:"#171C26", ph:"bg-vip.jpg",
+  // «Сервис» намеренно нейтрален: это служебный раздел, а не содержание
+  {id:"service", to:"s7", n:"Сервис", g:"24,30,40", hdr:"#171C26", ph:"bg-vip.jpg",
    ac:"#8FA0B6", acr:"143,160,182",
    base:"#8FA0B6", lt:"#B3C1D2", dk:"#5E6C7E", rgb:"143,160,182", hi:"200,214,230", sub:"#9AA8BA"}
 ];
@@ -1687,7 +1689,7 @@ const TAB_ICON = {
   water:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M2 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 10c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg>`,
   land:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5 8v8M19 8v8M8 12h8M3 10v4M21 10v4"/></svg>`,
   game:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M15.5 12h.01M18 14h.01"/></svg>`,
-  more:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg>`
+  service:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg>`
 };
 
 /* Экраны-развилки вкладок. Тексты карточек не дублируем: берём те же,
@@ -1703,19 +1705,9 @@ const TAB_ICON = {
     lede:"Профессиональная литература по плаванию и подготовке — и то, после чего хочется на тренировку.",
     kids: pick(["s6","s5"])
   };
-  /* «Книги» уехали с панели внутрь «Ещё»: их открывают редко и
-     вдумчиво, а место в панели дороже — оно досталось игре.
-     Эфир отсюда убран: он есть плиткой на главной, и одно и то же
-     место в двух списках читается как два разных. */
-  T.t_more = {
-    title:"Ещё",
-    lede:"Книги, подписка и всё остальное, что открывают не каждый день.",
-    kids: pick(["s7"]).concat([
-      {id:"t_lib", n:"02", t:"Книги", s:"Спортивная литература с разбором и то, после чего хочется на тренировку"},
-      {id:"level", n:"03", t:"Уровень подготовки", s:"От него зависит, какую тренировку предлагает вкладка «Тренировки в бассейне»"},
-      {id:"about", n:"04", t:"О клубе", s:"Что внутри приложения и для кого оно сделано"}
-    ])
-  };
+  /* Экрана «Ещё» больше нет: шестая плитка главной ведёт прямо
+     в «Сервис». Книги, уровень и рассказ о клубе остались экранами,
+     но из навигации убраны. */
   T.level = {
     title:"Уровень подготовки",
     lede:"От него зависит только одно: какую тренировку вам предложит вкладка «Тренировки в бассейне». Весь каталог открыт целиком в любом случае — уровень ничего не закрывает.",
@@ -2733,7 +2725,7 @@ const МЕНЮ = [
     ["s3", "Суша", '<path d="M5 9v6M19 9v6M8 7v10M16 7v10M8 12h8"/>', "tile-susha.jpg"],
     ["game", "Игра", '<rect x="2" y="7" width="20" height="10" rx="4"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="12" r=".9"/>', "tile-igra.jpg"],
     ["s4", "Прямой эфир", '<circle cx="12" cy="12" r="3"/><path d="M6.5 6.5a8 8 0 000 11M17.5 6.5a8 8 0 010 11"/>', "tile-efir.jpg"],
-    ["t_more", "Ещё", '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>', "tile-eshe.jpg"],
+    ["s7", "Сервис", '<rect x="3" y="5.6" width="18" height="12.8" rx="2.4"/><path d="M3 10.2h18"/><path d="M6.6 14.8h4.4"/>', "tile-eshe.jpg"],
 ];
 
 /* Кадр раздела. Поднимаемся по родителям до плитки меню и берём её
