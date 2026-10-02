@@ -828,6 +828,22 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 }
 .book-m b{font-weight:400;font-size:16px;color:var(--txt);text-align:right;line-height:1.35}
 
+/* Кнопка-действие: ведёт наружу, поэтому и выглядит кнопкой. Базовых
+   правил у неё не было вовсе — в стилях лежала только поправка на узкий
+   экран. Из-за этого ссылка печаталась строчной, и значок, название и
+   подпись слипались в одну строку без единого пробела. */
+.dl{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 20px;border-radius:var(--r);cursor:pointer;
+  border:1px solid var(--gold-line);background:var(--act-fill);
+  color:var(--gold-lt);font-size:17px;letter-spacing:.02em;
+  transition:background .18s;-webkit-tap-highlight-color:transparent
+}
+.dl:hover{background:var(--act-fill-h)}
+.dl-i{flex:none;font-size:19px;line-height:1;color:var(--gold)}
+.dl-t{flex:1;min-width:0;line-height:1.35}
+.dl-t span{display:block;margin-top:4px;font-size:14.5px;color:var(--txt-3);letter-spacing:.01em}
+
 /* Где взять книгу. Раньше на этом месте была кнопка скачивания. */
 .buy{
   margin-top:22px;padding:18px 20px;border-radius:var(--r);
@@ -2536,7 +2552,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       .filter(k=>ORDER.indexOf(k) >= 0)
       .sort((a,b)=>ORDER.indexOf(a) - ORDER.indexOf(b));
 
-    const rows = keys.map(k=>{
+    const tiles = keys.map((k,i)=>{
       const S = B.strokes[k], name = S.name || SN[k] || k, d = [];
 
       external(d, typeof REZINA_WARMUP !== "undefined" ? REZINA_WARMUP : null);
@@ -2566,7 +2582,9 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         pills: [plural((S.phases||[]).length,["фаза гребка","фазы гребка","фаз гребка"])],
         doc: d
       }, "d2");
-      return ["", name, plural((S.phases||[]).length,["фаза гребка","фазы гребка","фаз гребка"]), id];
+      return {id, n: "0" + (i+1), t: name,
+              m: plural((S.phases||[]).length,["фаза гребка","фазы гребка","фаз гребка"]),
+              ph: "tile-rezina.jpg"};
     });
 
     const d = [];
@@ -2575,7 +2593,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d2", {
       title: B.title,
       lede: "Выберите стиль — внутри вся тренировка целиком, от разминки до заминки.",
-      slot: false, rows, doc: d
+      slot: false, kids: tiles, doc: d
     }, "s3");
   }
 
@@ -2606,9 +2624,9 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       lede: "Справочник: техника, дозировка и варианты полегче и посложнее у каждого упражнения.",
       pills: [nDrills(nSt + nDy)],
       slot: false,
-      rows: [
-        ["", "Статика", nDrills(nSt), "d3_st"],
-        ["", "Динамика", nDrills(nDy), "d3_dy"]
+      kids: [
+        {id:"d3_st", n:"01", t:"Статика",  m:nDrills(nSt), ph:"tile-kor.jpg"},
+        {id:"d3_dy", n:"02", t:"Динамика", m:nDrills(nDy), ph:"tile-kor.jpg"}
       ]
     }, "d3");
 
@@ -2625,7 +2643,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       tip(d, c.watch);
       const id = "d3_c" + c.n;
       put(id, { title: c.title, lede: c.tag, doc: d }, "d3_cx");
-      cx.push([String(c.n), c.title, c.tag, id]);
+      cx.push({id, n: String(c.n).padStart(2,"0"), t: c.title, m: c.tag, ph: "tile-kor.jpg"});
     });
 
     if(typeof SUSHA_DRESSEL !== "undefined"){
@@ -2643,22 +2661,25 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       tip(d, R.watch);
       warn(d, R.safety);
       put("d3_dr", { title: R.title, lede: R.tag, doc: d }, "d3_cx");
-      cx.push(["", R.title, R.short || R.tag, "d3_dr"]);
+      cx.push({id:"d3_dr", n: String(cx.length+1).padStart(2,"0"),
+               t: R.title, m: R.short || R.tag, ph: "tile-kor.jpg"});
     }
 
     put("d3_cx", {
       title: "Комплексы упражнений",
       lede: "Готовые связки по таймеру. В каждом комплексе есть и список упражнений, и правила выполнения.",
       pills: [plural(cx.length,["комплекс","комплекса","комплексов"])],
-      slot: false, rows: cx
+      slot: false, kids: cx
     }, "d3");
 
     put("d3", { title: "Кор и стабилизация",
       lede: "Справочник удержаний и движений плюс готовые комплексы по таймеру.",
       slot: false,
-      rows: [
-        ["", "Упражнения", nDrills(nSt + nDy) + " · статика и динамика", "d3_ex"],
-        ["", "Комплексы упражнений", plural(cx.length,["комплекс","комплекса","комплексов"]) + " · таймер 45/15", "d3_cx"]
+      kids: [
+        {id:"d3_ex", n:"01", t:"Упражнения",
+         m:nDrills(nSt + nDy) + " · статика и динамика", ph:"tile-kor.jpg"},
+        {id:"d3_cx", n:"02", t:"Комплексы упражнений",
+         m:plural(cx.length,["комплекс","комплекса","комплексов"]) + " · таймер 45/15", ph:"tile-kor.jpg"}
       ]
     }, "s3");
   }
@@ -2706,9 +2727,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d4", { title: "Круговые тренировки",
       lede: "Общая физподготовка: всё тело, высокий пульс, около тридцати минут.",
       slot: false,
-      rows: [
-        ["", "Упражнения", nDrills(nEx) + " · техника и дозировка", "d4_ex"],
-        ["", "Круговые тренировки", plural(w.length,["тренировка","тренировки","тренировок"]) + " · таймер 45/15", "d4_cx"]
+      kids: [
+        {id:"d4_ex", n:"01", t:"Упражнения",
+         m:nDrills(nEx) + " · техника и дозировка", ph:"tile-krug.jpg"},
+        {id:"d4_cx", n:"02", t:"Круговые тренировки",
+         m:plural(w.length,["тренировка","тренировки","тренировок"]) + " · таймер 45/15", ph:"tile-krug.jpg"}
       ]
     }, "s3");
   }
@@ -3069,7 +3092,7 @@ function openExt(url){
   T.sv5 = {
     title: "Написать нам",
     lede: "Отвечаем сами, без ботов и операторов.",
-    act: S.support ? [{t:"Написать в телеграм", sub:"обычно отвечаем в тот же день", u:S.support, i:"↗"}] : [],
+    act: S.support ? [{t:"Написать в телеграм", u:S.support, i:"↗"}] : [],
     doc: [
       ["h2","С чем можно писать"],
       ["ul",[
@@ -3748,7 +3771,7 @@ if(d.lesson){
       d.act.forEach(a=>{
         h += `<a class="dl" onclick="openExt('${esc(a.u)}')">
           <span class="dl-i">${esc(a.i||"↗")}</span>
-          <span class="dl-t">${esc(a.t)}<span>${esc(a.sub||"")}</span></span>
+          <span class="dl-t">${esc(a.t)}${a.sub ? `<span>${esc(a.sub)}</span>` : ""}</span>
         </a>`;
       });
       h += `</div>`;
