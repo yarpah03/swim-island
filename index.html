@@ -490,7 +490,11 @@ h2::after{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   /* 148 — не на глаз: на 320 счётчик «3 уровня · 5 блоков · 75 тренировок»
      переносится на три строки, и при 132 название налезало на него. */
-  aspect-ratio:5/4;min-height:148px;padding:14px 12px 34px;
+  /* 48, а не 34: подпись лежит абсолютно, и нижний отступ — единственное,
+     что держит её в стороне от названия. Одна строка занимает 25 пикселей
+     вместе с отбивкой, две — 40. На 34 всё, что переносилось на вторую
+     строку, ложилось прямо на название. */
+  aspect-ratio:5/4;min-height:148px;padding:14px 12px 48px;
   border-radius:var(--r);text-align:center;
   background:var(--card-fill);border:1px solid rgba(var(--gold-rgb),.34);
   cursor:pointer;color:inherit;font:inherit;width:100%;
@@ -502,7 +506,7 @@ h2::after{
 .grid.stack{grid-template-columns:1fr}
 /* Высота не пропорцией, а по содержимому: внутри значок и название,
    и растягивать под них 144 пикселя незачем. */
-.grid.stack .card{aspect-ratio:auto;min-height:100px;padding:16px 16px 30px}
+.grid.stack .card{aspect-ratio:auto;min-height:100px;padding:16px 16px 44px}
 /* Нет счётчика — нет и запаса под него. */
 .grid.stack .card.nometa{padding-bottom:16px}
 
@@ -545,7 +549,10 @@ h2::after{
 .card .meta{
   position:absolute;left:12px;right:12px;bottom:10px;text-align:left;
   font-size:11.5px;font-weight:500;letter-spacing:.01em;line-height:1.3;
-  color:var(--gold-lt)
+  color:var(--gold-lt);
+  /* Отступ держит ровно две строки, поэтому третью обрезаем многоточием:
+     длинный счётчик лучше не дочитать, чем получить его поверх названия. */
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden
 }
 /* Тренировка дня лежит во всю ширину сетки — как подарок на главной:
    та же пропорция 5:2, та же рамка поярче. Четыре блока раздела
@@ -2043,12 +2050,16 @@ Object.keys(BLOCKS).forEach(dir=>{
       lede: "Пятнадцать готовых тренировок. Порядок свободный — берите ту, что подходит по задаче.",
       pills: [L.level, L.vol + " за занятие"],
       slot: false,
+      /* Под названием — метраж, а не описание занятия: описание в плитку
+         не влезает и переносится на вторую строку, а метраж короткий и
+         как раз отвечает на вопрос, потяну ли я это сегодня. Сам разбор
+         ждёт внутри, на странице тренировки. */
       kids: L.w.map(w=>({
         id: k + "_" + w.n,
         n: String(w.n).padStart(2, "0"),
         t: "Тренировка " + w.n,
         s: w.note,
-        m: w.note,
+        m: w.vol ? w.vol + " м" : w.note,
         ph: кадр
       }))
     };
