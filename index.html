@@ -1345,6 +1345,26 @@ const KINESCOPE = {
   "Разминка_12_Разгибание_руки_из_за_головы.mp4": "uARsa5auVriN3k1jPztzFT",
   "Разминка_13_Наружная_ротация_плеча.mp4": "2uEkRan7kxkZiTwae7WFpF",
   "Разминка_14_Внутренняя_ротация_плеча.mp4": "8BA9K317DgLBj391ScK4Fu",
+  "Статика_С01_Планка_на_предплечьях.mp4": "t7hiTkptqPyFi3PTLiRKaG",
+  "Статика_С02_Планка_на_прямых_руках.mp4": "64HFHJwELmSSaM5zig2fFH",
+  "Статика_С03_Планка_с_вытянутой_рукой.mp4": "5vYwj54TNtkZqMFD2u9MYM",
+  "Статика_С04_Планка_с_поднятой_ногой.mp4": "sKMhpSUcgNVx5RvBhyaedF",
+  "Статика_С05_Планка_накрест.mp4": "vCcAT2kVfany3sU162rTXv",
+  "Статика_С06_Планка_с_руками_впереди.mp4": "fGxwehxBG2RkeV6aJ6N9vB",
+  "Статика_С07_Планка_со_стопами_на_возвышении.mp4": "5NcLoGJGgfEiZLJzCX4jwV",
+  "Статика_С08_Боковая_планка_на_предплечье.mp4": "vZXTaoje1YpNFTa1FfYeho",
+  "Статика_С10_Боковая_планка_с_поднятой_ногой.mp4": "itEeshrzq45qDqhoMsbuNi",
+  "Статика_С11_Боковая_планка_со_стрелкой.mp4": "x6oCedca4ZbTmiFv12rqtZ",
+  "Статика_С12_Лодочка_на_спине.mp4": "64eooU6gCVdowUtyRvESkW",
+  "Статика_С13_Лодочка_на_спине_в_стрелке.mp4": "0KjjA9SVeGcAb4AsCmedwy",
+  "Статика_С15_Обратная_планка.mp4": "kwD8nfdrjwK6FTv9KQzTN8",
+  "Статика_С16_Удержание_мёртвого_жука.mp4": "bNHjCeXuaCGaq6epN9Uois",
+  "Статика_С17_Лодочка_на_животе.mp4": "t2a394DqcMALkPwcQS2vNv",
+  "Статика_С19_Удержание_накрест_на_животе.mp4": "e1Q7VDV87fDjKeqZNevhiF",
+  "Разминка_17_Растяжка_голеностопа_колени_к_груди.mp4": "2XD5ZttJdSxjL7LtKd8YgX",
+  "Разминка_18_Домик.mp4": "fDbNZ48u2Q3xXDpa2jDS3U",
+  "Разминка_19_Кошка_сердится.mp4": "4NrjWuHxFkwM43mLoTnXkE",
+  "Разминка_20_Кошка_под_забором.mp4": "0bA2Lgq4zXep4ENWmgBX9E",
 };
 
 
@@ -2491,9 +2511,20 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   // нет ключа или нет id — окна нет совсем, а не пустая заглушка.
   const vid = (d,k)=>{ if(k) d.push(["vid", k]); };
 
+  /* Правило для разделов, которые наполняются видео. Пока в списке нет
+     ни одного ролика — показываем всё как есть. Как только у какого-то
+     упражнения ролик появился, текст остаётся только у тех, у кого есть
+     видео, а у остальных видны одни названия (у них можно оставить текст
+     вручную признаком keepText). Данные при этом не удаляются: добавили
+     видео к упражнению — текст вернулся сам. */
+  const hasVid = x => !!(x && x.v && (KINESCOPE[x.v] || "").trim());
+  const showText = (strict, x) => !strict || hasVid(x) || !!x.keepText;
+
   // Карточка упражнения из каталога: код, название и всё, что к нему приложено
-  const exBlocks = (d, x)=>{
+  const exBlocks = (d, x, strict)=>{
+    if(!showText(strict, x)) return;
     d.push(["h4", (x.code ? x.code + ". " : (x.n ? x.n + ". " : "")) + x.name]);
+    vid(d, x.v);
     kv(d, "Как выполнять", x.how);
     kv(d, "Что даёт в воде", x.benefit || x.why);
     kv(d, "Дозировка", x.dose);
@@ -2506,10 +2537,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   const catalogue = (id, src, parent, lede)=>{
     const d = [];
     p(d, src.intro);
-    (src.zones||[]).forEach(z=>{ h3(d, z.title); (z.items||[]).forEach(x=>exBlocks(d, x)); });
+    const strict = (src.zones||[]).some(z=>(z.items||[]).some(hasVid));
+    (src.zones||[]).forEach(z=>{ h3(d, z.title); (z.items||[]).forEach(x=>exBlocks(d, x, strict)); });
     tip(d, src.watch);
     warn(d, src.safety);
-    const n = (src.zones||[]).reduce((s,z)=>s+(z.items||[]).length,0);
+    const n = (src.zones||[]).reduce((s,z)=>s+(z.items||[]).filter(x=>showText(strict,x)).length,0);
     put(id, { title: src.title, lede, pills: [nDrills(n)], doc: d }, parent);
     return n;
   };
@@ -2527,7 +2559,10 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
 
     const tiles = (W.parts||[]).map((part,i)=>{
       const pd = [];
+      // Часть без единого ролика показываем целиком; с роликами — по правилу выше
+      const strict = (part.items||[]).some(hasVid);
       (part.items||[]).forEach(x=>{
+        if(!showText(strict, x)) return;
         pd.push(["h4", x.n + ". " + x.name]);
         vid(pd, x.v);
         kv(pd, "Как выполнять", x.how);
@@ -2539,11 +2574,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         if(x.table && x.table.length)
           pd.push(["tbl", [["Упражнение", "Повторы"]].concat(x.table)]);
       });
-      const cnt = (part.items||[]).length, id = "d1_p" + (i+1);
+      const cnt = (part.items||[]).filter(x=>showText(strict,x)).length, id = "d1_p" + (i+1);
       put(id, { title: part.title, lede: part.note, pills: [nDrills(cnt)], doc: pd }, "d1");
       return {id, n: "0" + (i+1), t: part.title, m: nDrills(cnt), ph: "tile-razminka.jpg"};
     });
-    const n = (W.parts||[]).reduce((s,x)=>s+(x.items||[]).length,0);
+    const n = tiles.reduce((s,t)=>s+(parseInt(t.m)||0),0);
     /* Название берём своё, а не из данных: в susha.js экран назван
        «Перед водой», а плитка, из которой в него входят, — «Разминка
        перед водой». Два разных названия у одного места читаются как
@@ -2591,7 +2626,10 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
 
       h2(d, "Фазы гребка");
       p(d, S.note);
+      const strictP = (S.phases||[]).some(hasVid);
+      const nPh = (S.phases||[]).filter(f=>showText(strictP,f)).length;
       (S.phases||[]).forEach(f=>{
+        if(!showText(strictP, f)) return;
         d.push(["h4", f.n + ". " + f.name]);
         vid(d, f.v);
         kv(d, "Дозировка", f.dose);
@@ -2610,11 +2648,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       put(id, {
         title: name + " на резине",
         lede: S.note || "Разбираем гребок по фазам, потом собираем в рабочую серию.",
-        pills: [plural((S.phases||[]).length,["фаза гребка","фазы гребка","фаз гребка"])],
+        pills: [plural(nPh,["фаза гребка","фазы гребка","фаз гребка"])],
         doc: d
       }, "d2");
       return {id, n: "0" + (i+1), t: name,
-              m: plural((S.phases||[]).length,["фаза гребка","фазы гребка","фаз гребка"]),
+              m: plural(nPh,["фаза гребка","фазы гребка","фаз гребка"]),
               ph: "tile-rezina.jpg"};
     });
 
