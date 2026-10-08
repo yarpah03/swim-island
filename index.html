@@ -509,6 +509,15 @@ h2::after{
 .grid.stack .card{aspect-ratio:auto;min-height:100px;padding:16px 16px 44px}
 /* Нет счётчика — нет и запаса под него. */
 .grid.stack .card.nometa{padding-bottom:16px}
+/* Нет счётчика — нет и запаса под него, иначе название висит выше
+   середины плитки. Правило общее, не только для столбца. */
+.card.nometa{padding-bottom:14px}
+/* Крупная подпись. На плитках «Суши» остаётся одно слово, и прежний
+   кегль терялся на фотографии. Ставится признаком big у экрана,
+   чтобы разделы с длинными названиями его не подхватили. */
+.grid.big .card .ttl{font-size:26px;letter-spacing:.02em;line-height:1.1}
+@media(min-width:460px){ .grid.big .card .ttl{font-size:30px} }
+@media(max-width:340px){ .grid.big .card .ttl{font-size:21px} }
 
 /* Снимок раздела. Лежит первым в разметке, а название и счёт подняты
    над ним через position:relative. */
@@ -680,6 +689,38 @@ body.noscroll .gamebox canvas{height:min(calc(var(--vh, 100vh) * 0.56), 420px)}
 }
 .g-hud span:first-child{color:var(--gold-lt);font-weight:500}
 .g-hud span:last-child{color:var(--gold-dk)}
+
+/* ============================================================
+   ЗАПЛЫВ ВО ВЕСЬ ЭКРАН
+   ------------------------------------------------------------
+   На телефоне над холстом стояли шапка, крошки, заголовок и
+   подзаголовок. Поле уезжало вниз, и играть приходилось в нижней
+   трети экрана — пальцу неудобно, а просвет не видно. Здесь всё
+   лишнее убрано, холст занимает экран целиком, а вернуться можно
+   кнопкой в углу.
+   ============================================================ */
+body.gamefull header,body.gamefull footer,body.gamefull .crumb,
+body.gamefull h1,body.gamefull .lede,body.gamefull .pills{display:none}
+body.gamefull,body.noscroll.gamefull{padding-bottom:0}
+body.gamefull .wrap{max-width:none;padding-left:0;padding-right:0}
+body.gamefull .gamebox{
+  margin:0;border:0;border-radius:0;max-width:none;background:none
+}
+body.gamefull .gamebox canvas,
+body.noscroll.gamefull .gamebox canvas{
+  height:var(--vh, 100vh);width:100%;max-height:none
+}
+/* Полоса счёта уходит под вырез, если не отступить от него */
+body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
+.g-back{
+  position:absolute;left:12px;z-index:4;
+  bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+  font:inherit;font-size:15px;letter-spacing:.04em;cursor:pointer;
+  padding:9px 15px;border-radius:30px;color:var(--gold-lt);
+  border:1px solid rgba(var(--gold-rgb),.45);
+  background:rgba(var(--bg-rgb),.72);backdrop-filter:blur(6px);
+  -webkit-tap-highlight-color:transparent
+}
 
 /* Квадратное дыхание. Холст держим квадратным: шарик ходит по сторонам,
    и на вытянутом прямоугольнике «вдох» стал бы длиннее «задержки»
@@ -1711,13 +1752,13 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     {id:"vy_s",n:"02",t:"Средний",s:"Серии длиннее, отдых по интервалу — задача держать один темп до конца",m:"2200–2800 м · 25 тренировок"},
     {id:"vy_p",n:"03",t:"Продвинутый",s:"Большой объём и минимальный отдых — задача правильно распределить силы",m:"4000–4600 м · 25 тренировок"}
   ]},
-  s3:{title:"Суша для пловца",lede:"Пять вкладок. В каждой — справочник упражнений и готовые тренировки.",kids:[
-    {id:"d1",n:"01",t:"Разминка перед водой",s:"Пятнадцать минут перед водой, после которых плечи и голеностоп готовы к нагрузке",m:"21 упражнение · 15 минут",ph:"tile-razminka.jpg"},
-    {id:"d2",n:"02",t:"Гребковые тренировки на резине",s:"Отрабатываем гребок на суше по фазам, а потом собираем его в рабочую серию",m:"3 стиля",ph:"tile-rezina.jpg"},
-    {id:"d3",n:"03",t:"Кор и стабилизация",s:"Упражнения на удержание корпуса и готовые комплексы, которые делаются по таймеру",m:"45 упражнений · 11 комплексов",ph:"tile-kor.jpg"},
-    {id:"d4",n:"04",t:"Круговые тренировки",s:"Общая физподготовка на всё тело: полчаса, высокий пульс, минимум инвентаря",m:"32 станции · 9 тренировок",ph:"tile-krug.jpg"},
-    {id:"d5",n:"05",t:"Гибкость",s:"Работаем над тем, что мешает мышцам работать: плечи, голеностоп, таз и спина",m:"34 упражнения · 5 комплексов",ph:"tile-gibkost.jpg"},
-    {id:"d6",n:"06",t:"Квадратное дыхание",s:"Успокоить пульс перед стартом и уйти с симпатики после тяжёлой тренировки",m:"упражнение с таймером",ph:"tile-dyhanie.jpg"}
+  s3:{title:"Суша для пловца",lede:"Пять вкладок. В каждой — справочник упражнений и готовые тренировки.",big:true,kids:[
+    {id:"d1",n:"01",t:"Разминка перед водой",s:"Пятнадцать минут перед водой, после которых плечи и голеностоп готовы к нагрузке",m:"",ph:"tile-razminka.jpg"},
+    {id:"d2",n:"02",t:"Гребковые тренировки на резине",s:"Отрабатываем гребок на суше по фазам, а потом собираем его в рабочую серию",m:"",ph:"tile-rezina.jpg"},
+    {id:"d3",n:"03",t:"Кор и стабилизация",s:"Упражнения на удержание корпуса и готовые комплексы, которые делаются по таймеру",m:"",ph:"tile-kor.jpg"},
+    {id:"d4",n:"04",t:"Круговые тренировки",s:"Общая физподготовка на всё тело: полчаса, высокий пульс, минимум инвентаря",m:"",ph:"tile-krug.jpg"},
+    {id:"d5",n:"05",t:"Гибкость",s:"Работаем над тем, что мешает мышцам работать: плечи, голеностоп, таз и спина",m:"",ph:"tile-gibkost.jpg"},
+    {id:"d6",n:"06",t:"Квадратное дыхание",s:"Успокоить пульс перед стартом и уйти с симпатики после тяжёлой тренировки",m:"",ph:"tile-dyhanie.jpg"}
   ]},
 
   /* Квадратное дыхание. Четыре равных отрезка — вдох, задержка, выдох,
@@ -2158,7 +2199,12 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       lede: "Техническая работа для тех, кто уже держится на воде и хочет плыть длиннее и легче.",
       pills: [nDrills(g.items.length)],
       slot: false,
-      rows: g.items.map(x=>[String(x.n), x.title, x.cat, g.key + "_" + x.n])
+      /* Кадр берём с плитки самого стиля: внутри раздела фотография
+         не должна меняться, иначе переход читается как уход в другое место. */
+      kids: g.items.map(x=>({
+        id: g.key + "_" + x.n, n: String(x.n).padStart(2,"0"),
+        t: x.title, m: x.cat, ph: (плитка && плитка.ph) || ""
+      }))
     }, "s1_2");
     g.items.forEach(x=>{
       const base = "Техника_" + g.name + "_" + String(x.n).padStart(2,"0");
@@ -2490,6 +2536,47 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     }
   }, "s1_3");
 
+  /* ============================================================
+     УРОК → СЕТКА ПЛИТОК
+     ------------------------------------------------------------
+     Урок — одна длинная страница, где упражнения идут подряд. Для
+     ошибок и отработки элементов это неудобно: туда приходят не
+     читать всё, а найти своё. Поэтому экран превращается в сетку —
+     плитка на упражнение, за каждой свой разбор с видео.
+
+     Сам урок не переписываем: каждому экрану отдаём копию исходного
+     объекта с единственным упражнением внутри. Правки в данных
+     продолжают работать, а разметку рисует прежний код.
+     ============================================================ */
+  const кадрПлитки = (экран, id) =>
+    ((T[экран] && T[экран].kids) || [])
+      .reduce((r, k) => k.id === id ? (k.ph || r) : r, "");
+
+  function наПлитки(id, кадр){
+    const base = T[id], L = base && base.lesson;
+    if(!L || !L.ex || !L.ex.length) return;
+    const kids = L.ex.map(e=>{
+      const kid = id + "_" + e.n;
+      T[kid] = {
+        title: e.t,
+        pills: [(L.cap || "Упражнение") + " № " + e.n],
+        lesson: Object.assign({}, L, {intro:"", plan:null, ex:[e]})
+      };
+      PARENT[kid] = id;
+      return {id:kid, n:String(e.n).padStart(2,"0"), t:e.t, m:"", ph:кадр};
+    });
+    /* Столбцом, а не в два ряда: названия ошибок — это целые фразы,
+       и в узкой квадратной плитке они не помещаются. */
+    T[id] = {
+      title: base.title, lede: base.lede, slot:false, stack:true, kids,
+      doc: L.intro ? [["p", L.intro]] : null
+    };
+  }
+
+  наПлитки("st_d0", кадрПлитки("s1_3", "st_d0"));
+  наПлитки("tn_d0", кадрПлитки("s1_3", "tn_d0"));
+  ["e_bt","e_sp","e_br","e_kr"].forEach(k => наПлитки(k, кадрПлитки("s1_4", k)));
+
 })();
 
 /* Раздел «Суша для пловца» из susha.js.
@@ -2651,9 +2738,9 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         pills: [plural(nPh,["фаза гребка","фазы гребка","фаз гребка"])],
         doc: d
       }, "d2");
-      return {id, n: "0" + (i+1), t: name,
-              m: plural(nPh,["фаза гребка","фазы гребка","фаз гребка"]),
-              ph: "tile-rezina.jpg"};
+      /* Счётчик фаз с плитки убран: на ней остаётся одно слово,
+         и набрано оно крупно — см. признак big у экрана. */
+      return {id, n: "0" + (i+1), t: name, m: "", ph: "tile-rezina.jpg"};
     });
 
     const d = [];
@@ -2662,7 +2749,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d2", {
       title: B.title,
       lede: "Выберите стиль — внутри вся тренировка целиком, от разминки до заминки.",
-      slot: false, kids: tiles, doc: d
+      slot: false, big: true, kids: tiles, doc: d
     }, "s3");
   }
 
@@ -2744,11 +2831,12 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d3", { title: "Кор и стабилизация",
       lede: "Справочник удержаний и движений плюс готовые комплексы по таймеру.",
       slot: false,
+      big: true,
+      /* Комплексы первыми: с них и начинают заниматься, а справочник
+         упражнений открывают потом, когда нужно уточнить технику. */
       kids: [
-        {id:"d3_ex", n:"01", t:"Упражнения",
-         m:nDrills(nSt + nDy) + " · статика и динамика", ph:"tile-kor.jpg"},
-        {id:"d3_cx", n:"02", t:"Комплексы упражнений",
-         m:plural(cx.length,["комплекс","комплекса","комплексов"]) + " · таймер 45/15", ph:"tile-kor.jpg"}
+        {id:"d3_cx", n:"01", t:"Комплексы упражнений", m:"", ph:"tile-kor.jpg"},
+        {id:"d3_ex", n:"02", t:"Упражнения",           m:"", ph:"tile-kor.jpg"}
       ]
     }, "s3");
   }
@@ -2796,11 +2884,10 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d4", { title: "Круговые тренировки",
       lede: "Общая физподготовка: всё тело, высокий пульс, около тридцати минут.",
       slot: false,
+      big: true,
       kids: [
-        {id:"d4_ex", n:"01", t:"Упражнения",
-         m:nDrills(nEx) + " · техника и дозировка", ph:"tile-krug.jpg"},
-        {id:"d4_cx", n:"02", t:"Круговые тренировки",
-         m:plural(w.length,["тренировка","тренировки","тренировок"]) + " · таймер 45/15", ph:"tile-krug.jpg"}
+        {id:"d4_cx", n:"01", t:"Круговые тренировки", m:"", ph:"tile-krug.jpg"},
+        {id:"d4_ex", n:"02", t:"Упражнения",          m:"", ph:"tile-krug.jpg"}
       ]
     }, "s3");
   }
@@ -3722,7 +3809,7 @@ function render(id){
       // Тренировка дня стоит над сеткой и только на «Воде»: это
       // единственное на экране, что открывают не выбирая.
       if(d.water) h += dayCapHTML();
-      h += `<div class="grid${d.stack ? " stack" : ""}">`;
+      h += `<div class="grid${d.stack ? " stack" : ""}${d.big ? " big" : ""}">`;
       d.kids.forEach(k=>{
         // Свой снимок, если он есть; иначе общий кадр раздела. Так
         // раздел можно снабжать фотографиями по одной, и ряд всё это
@@ -3760,7 +3847,7 @@ function render(id){
 
 if(d.lesson){
       const L=d.lesson;
-      h += `<div class="lesson"><div class="intro">${esc(L.intro)}</div>`;
+      h += `<div class="lesson">${L.intro ? `<div class="intro">${esc(L.intro)}</div>` : ""}`;
       L.ex.forEach(e=>{
         const kid = (KINESCOPE[e.v] || "").trim();
         const player = kid
@@ -3821,6 +3908,7 @@ if(d.lesson){
       h += `<div class="gamebox">
         <canvas id="gcv"></canvas>
         <div class="g-hud"><span id="gdist">0 м</span><span id="gbest"></span></div>
+        <button class="g-back" onclick="go('game')">&lsaquo; назад</button>
       </div>`;
     }
 
@@ -4025,7 +4113,11 @@ if(d.lesson){
   stopGame();                    // уходим с экрана — гасим цикл игры
   stopBreath();                  // и цикл дыхания: они живут независимо
   // На заплыве палец управляет пловцом, а не страницей.
-  if(document.body) document.body.classList.toggle("noscroll", !!d.game);
+  if(document.body){
+    document.body.classList.toggle("noscroll", !!d.game);
+    // Заплыв занимает весь экран: шапка, крошки и заголовок прячутся
+    document.body.classList.toggle("gamefull", !!d.game);
+  }
 
   // Вкладка красит страницу и подсвечивает себя в нижней панели
   const tab = tabOf(id);
@@ -4104,7 +4196,7 @@ function loadGameBg(){
   const im = new Image();
   im.onload = () => { if(im.width && im.height) bgImg = im; };
   im.onerror = () => { bgImg = null; };
-  im.src = "hero-mobile.jpg";
+  im.src = "game-bg.jpg";
 }
 
 // Хранилище браузера бывает запрещено настройками или режимом инкогнито.
@@ -4385,7 +4477,9 @@ function setupGame(){
 
   // Просвет сужается с расстоянием, но не бесконечно: ниже 0.20 высоты
   // проход становится делом удачи, а не умения.
-  function gapFor(){ return H * Math.max(0.26, 0.44 - dist * 0.0012); }
+  /* К просвету добавлен ровно один поплавок: на телефоне прежней щели
+     не хватало, чтобы успеть довести пловца до середины. */
+  function gapFor(){ return H * Math.max(0.26, 0.44 - dist * 0.0012) + ROPE_W(); }
   function speedFor(){ return W * (0.34 + Math.min(dist, 60) * 0.0030); }
 
   function addRope(x){
@@ -4452,10 +4546,9 @@ function setupGame(){
     if(y + r > H || y - r < 0) die();       // дно и поверхность
   }
 
-  /* Фон — настоящий снимок бассейна, тот же, что на главной. Он медленно
-     уезжает влево: если оставить его неподвижным, мозг замечает, что всё
-     движется, а бассейн стоит. Плитки чередуем зеркально — у фотографии
-     левый и правый края не совпадают, а зеркальная укладка сходится всегда. */
+  /* Фон — снимок воды, и он неподвижен. Раньше он медленно уезжал влево
+     вместе с дорожками; на телефоне это читалось как рябь и мешало целиться
+     в просвет. Теперь двигаются только дорожки, а вода стоит. */
   function drawWater(sh){
     if(!bgImg){                                   // снимок ещё не загрузился
       const grd = ctx.createLinearGradient(0,0,0,H);
@@ -4471,22 +4564,10 @@ function setupGame(){
       return;
     }
     const k = Math.max(W/bgImg.width, H/bgImg.height);
-    const dw = bgImg.width*k, dh = bgImg.height*k, y0 = (H-dh)/2 - Math.abs(sh);
-    const shift = t * speedFor() * 0.12;          // фон идёт много медленнее дорожек
-    const first = Math.floor(shift/dw) - 1;
-    for(let i = first; i*dw - shift < W; i++){
-      const x = i*dw - shift;
-      ctx.save();
-      if((((i % 2) + 2) % 2) === 1){               // зеркальная плитка
-        ctx.translate(x + dw, y0); ctx.scale(-1, 1);
-        ctx.drawImage(bgImg, 0, 0, dw, dh + Math.abs(sh)*2);
-      } else {
-        ctx.drawImage(bgImg, x, y0, dw, dh + Math.abs(sh)*2);
-      }
-      ctx.restore();
-    }
+    const dw = bgImg.width*k, dh = bgImg.height*k;
+    ctx.drawImage(bgImg, (W-dw)/2, (H-dh)/2 - Math.abs(sh), dw, dh + Math.abs(sh)*2);
     // затемняем, иначе золотые тросы теряются на светлой воде
-    ctx.fillStyle = "rgba(6,11,20,.58)";
+    ctx.fillStyle = "rgba(6,11,20,.46)";
     ctx.fillRect(0, -Math.abs(sh), W, H + Math.abs(sh)*2);
   }
 
@@ -4517,18 +4598,18 @@ function setupGame(){
      Цвета идут по кругу бело-сине-красным. Порядок считаем от общей
      сетки, а не от начала куска, — иначе верхний и нижний отрезки
      одной дорожки начинались бы с разного цвета. */
+  /* Отрезок делим на целое число поплавков и подгоняем их размер под
+     длину, а не режем последний по краю. Раньше отрезок обрезался
+     прямоугольником, и у просвета всегда висел кусок шарика. */
   function drawRope(x, y0, y1, w){
-    const r = w/2;
-    ctx.save(); ctx.beginPath(); ctx.rect(x-r, y0, w, Math.max(0,y1-y0)); ctx.clip();
-    const start = Math.floor((y0 - w) / w);
-    for(let n = start; n * w < y1 + w; n++){
-      const yy = n * w;
-      ctx.beginPath(); ctx.arc(x, yy + r, r*0.96, 0, 6.284);
-      ctx.fillStyle = LANE[((n % 3) + 3) % 3]; ctx.fill();
+    const len = Math.max(0, y1 - y0);
+    if(len <= 0) return;
+    const n = Math.max(1, Math.round(len / w));
+    const d = len / n, r = d / 2;
+    for(let i = 0; i < n; i++){
+      ctx.beginPath(); ctx.arc(x, y0 + d*i + r, r*0.96, 0, 6.284);
+      ctx.fillStyle = LANE[((i % 3) + 3) % 3]; ctx.fill();
     }
-    ctx.restore();
-    ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.lineWidth = 1;
-    ctx.strokeRect(x-r, y0, w, Math.max(0,y1-y0));
   }
 
   /* Пловец — тот же силуэт, что у клуба: кроль в профиль, рука в проносе
