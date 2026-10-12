@@ -917,6 +917,9 @@ body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
   border:1px solid var(--read-edge);border-left:6px solid var(--bar-note);border-radius:var(--r);
   padding:15px 18px;font-size:16px;color:var(--txt-2);margin:16px 0}
 .tipbox b{color:var(--gold);font-weight:500}
+.whybox{background:var(--read-fill);border:1px solid var(--bar-note);border-radius:var(--r);
+  padding:14px 18px;font-size:16px;color:var(--txt);margin:4px 0 18px}
+.whybox b{display:block;color:var(--gold);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
 
 .lesson{max-width:760px}
 .lesson .intro{background:var(--read-fill);
@@ -1282,9 +1285,9 @@ const KINESCOPE = {
   "Техника_Брасс_09_Суша.mp4": "w3b6ashLwFN5jScZnqJu3z",
   "Техника_Брасс_10.mp4": "daEm3BJJZbBQy7VG22ohD4",
   "Техника_Брасс_10_Суша.mp4": "eYChugg9sXXDH9WGvFWJx4",
-  "Техника_Брасс_11.mp4": "2pjw5rJq2TBRE9p3S56Qjb",
+  "Техника_Брасс_11.mp4": "kvreH543r2SE9padVTWj2q",
   "Техника_Брасс_11_Суша.mp4": "cdSvKM1bavbfnumT1ppVAc",
-  "Техника_Брасс_12.mp4": "kvreH543r2SE9padVTWj2q",
+  "Техника_Брасс_12.mp4": "2pjw5rJq2TBRE9p3S56Qjb",
   "Техника_Брасс_12_Суша.mp4": "aCGaZq4t9RdPGx11vcKzEF",
   // Совершенствование техники — Кроль (13)
   "Техника_Кроль_01.mp4": "5M7zGGaSKrg7JFMLR3jAMf",
@@ -2209,7 +2212,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     g.items.forEach(x=>{
       const base = "Техника_" + g.name + "_" + String(x.n).padStart(2,"0");
       put(g.key + "_" + x.n, {
-        title: x.title, pills: [g.name, x.cat, x.level], doc: x.doc,
+        title: x.title, pills: [g.name, x.cat, x.level].filter(Boolean), doc: x.doc,
         v: base + ".mp4", vland: base + "_Суша.mp4"
       }, g.key);
     });
@@ -3990,6 +3993,7 @@ if(d.lesson){
               frameborder="0" allowfullscreen loading="lazy"></iframe></div>
             <div class="vid-cap">Показ упражнения</div></div>`;
         }
+        else if(type==="why") h += `<div class="whybox"><b>Зачем это нужно</b>${esc(val)}</div>`;
         else if(type==="tip") h += `<div class="tipbox"><b>Совет.</b> ${esc(val)}</div>`;
         else if(type==="warn") h += `<div class="safebox"><b>Безопасность.</b> ${esc(val)}</div>`;
       });
