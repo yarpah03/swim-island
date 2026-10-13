@@ -2212,7 +2212,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     g.items.forEach(x=>{
       const base = "Техника_" + g.name + "_" + String(x.n).padStart(2,"0");
       put(g.key + "_" + x.n, {
-        title: x.title, pills: [g.name, x.cat, x.level].filter(Boolean), doc: x.doc,
+        title: x.title, doc: x.doc,
         v: base + ".mp4", vland: base + "_Суша.mp4"
       }, g.key);
     });
