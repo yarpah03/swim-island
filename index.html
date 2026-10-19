@@ -1077,6 +1077,34 @@ body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
 .doc .vid{margin:4px 0 14px}
 .doc .kv{margin:0 0 8px;font-size:16px;line-height:1.6;color:var(--txt-2)}
 .doc .kv b{color:var(--gold-dk);font-weight:500}
+
+/* ============================================================
+   СПОКОЙНАЯ СТРАНИЦА
+   ------------------------------------------------------------
+   Разминка — самая пёстрая страница приложения: подряд идут
+   название части, название упражнения, три подписи у каждого,
+   таблица и две плашки. Каждый элемент был своим оттенком золота,
+   и глазу не за что зацепиться — всё одинаково яркое.
+
+   Здесь золото остаётся только у заголовков частей. Названия
+   упражнений и подписи набраны белым, разницу между ними держит
+   кегль, а упражнения отделены друг от друга тонкой чертой —
+   структуру задаёт расстояние, а не цвет.
+   ============================================================ */
+.doc.calm h4{
+  color:var(--txt);font-weight:600;font-size:19.5px;
+  margin:26px 0 10px;padding-top:20px;
+  border-top:1px solid rgba(var(--gold-rgb),.12)
+}
+/* Первое упражнение части идёт сразу под её заголовком — черта там лишняя */
+.doc.calm h3 + h4,.doc.calm h2 + h4,.doc.calm p + h4:first-of-type{
+  border-top:0;padding-top:0;margin-top:18px
+}
+.doc.calm .kv b{color:var(--txt);font-weight:600}
+.doc.calm ul li::before{background:var(--txt-3)}
+.doc.calm ol li::before{color:var(--txt-3)}
+.doc.calm .tbl th{color:var(--txt-3);background:transparent}
+.doc.calm .tipbox b{color:var(--txt)}
 .tbl-wrap{overflow-x:auto;margin:0 0 16px;-webkit-overflow-scrolling:touch}
 .tbl{width:100%;border-collapse:collapse;font-size:16px;min-width:340px}
 .tbl th{
@@ -2815,7 +2843,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
        «Перед водой», а плитка, из которой в него входят, — «Разминка
        перед водой». Два разных названия у одного места читаются как
        две разные вкладки. */
-    put("d1", { title: "Разминка перед водой", lede: W.subtitle, pills: [nDrills(n)],
+    put("d1", { title: "Разминка перед водой", lede: W.subtitle, calm: true,
                 slot: false, stack: true, kids: tiles, doc: d }, "s3");
   }
 
@@ -4020,7 +4048,7 @@ if(d.lesson){
           <div class="hint"><i>&#10003;</i><span><b>Совет.</b> ${esc(e.hint)}</span></div>
           <div class="vid">
             ${player}
-            <div class="vid-cap">${L.cap ? esc(L.cap) + " №" + e.n : "Упражнение " + e.n + " — показ"}</div>
+            <div class="vid-cap">${L.cap ? "Неправильная техника" : "Упражнение " + e.n + " — показ"}</div>
           </div>`;
         if(L.right){
           h += `<div class="land-toggle" onclick="toggleLand(this)">
@@ -4121,9 +4149,19 @@ if(d.lesson){
     }
 
     if(d.doc){
-      h += `<div class="doc">`;
+      /* Дозировку больше не показываем: объём каждый подбирает себе сам.
+         Отсеиваем на выводе, а не в данных, — иначе пришлось бы чистить
+         четыре файла, и блок всплыл бы снова при первом же пополнении. */
+      const блоки = [];
+      for(let i = 0; i < d.doc.length; i++){
+        const b = d.doc[i];
+        if(b[0] === "kv" && b[1] && b[1][0] === "Дозировка") continue;
+        if((b[0] === "h2" || b[0] === "h3") && b[1] === "Дозировка"){ i++; continue; }
+        блоки.push(b);
+      }
+      h += `<div class="doc${d.calm ? " calm" : ""}">`;
       if(d.lead) h += `<div class="lead-box">${esc(d.lead)}</div>`;
-      d.doc.forEach(([type,val])=>{
+      блоки.forEach(([type,val])=>{
         if(type==="h2") h += `<h2>${esc(val)}</h2>`;
         else if(type==="h3") h += `<h3>${esc(val)}</h3>`;
         else if(type==="h4") h += `<h4>${esc(val)}</h4>`;
