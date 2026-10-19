@@ -1077,34 +1077,6 @@ body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
 .doc .vid{margin:4px 0 14px}
 .doc .kv{margin:0 0 8px;font-size:16px;line-height:1.6;color:var(--txt-2)}
 .doc .kv b{color:var(--gold-dk);font-weight:500}
-
-/* ============================================================
-   СПОКОЙНАЯ СТРАНИЦА
-   ------------------------------------------------------------
-   Разминка — самая пёстрая страница приложения: подряд идут
-   название части, название упражнения, три подписи у каждого,
-   таблица и две плашки. Каждый элемент был своим оттенком золота,
-   и глазу не за что зацепиться — всё одинаково яркое.
-
-   Здесь золото остаётся только у заголовков частей. Названия
-   упражнений и подписи набраны белым, разницу между ними держит
-   кегль, а упражнения отделены друг от друга тонкой чертой —
-   структуру задаёт расстояние, а не цвет.
-   ============================================================ */
-.doc.calm h4{
-  color:var(--txt);font-weight:600;font-size:19.5px;
-  margin:26px 0 10px;padding-top:20px;
-  border-top:1px solid rgba(var(--gold-rgb),.12)
-}
-/* Первое упражнение части идёт сразу под её заголовком — черта там лишняя */
-.doc.calm h3 + h4,.doc.calm h2 + h4,.doc.calm p + h4:first-of-type{
-  border-top:0;padding-top:0;margin-top:18px
-}
-.doc.calm .kv b{color:var(--txt);font-weight:600}
-.doc.calm ul li::before{background:var(--txt-3)}
-.doc.calm ol li::before{color:var(--txt-3)}
-.doc.calm .tbl th{color:var(--txt-3);background:transparent}
-.doc.calm .tipbox b{color:var(--txt)}
 .tbl-wrap{overflow-x:auto;margin:0 0 16px;-webkit-overflow-scrolling:touch}
 .tbl{width:100%;border-collapse:collapse;font-size:16px;min-width:340px}
 .tbl th{
@@ -2780,17 +2752,34 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   const hasVid = x => !!(x && x.v && (KINESCOPE[x.v] || "").trim());
   const showText = (strict, x) => !strict || hasVid(x) || !!x.keepText;
 
+
+  /* ============================================================
+     УПРАЖНЕНИЕ «СУШИ» — В СТРУКТУРЕ ОБУЧЕНИЯ
+     ------------------------------------------------------------
+     Раньше всё лежало подписями подряд: «Как выполнять», «Что даёт
+     в воде», «На что смотреть» — три строки с золотым началом, и так
+     двадцать раз на странице. Теперь блоки те же, что в обучении:
+     зачем — в рамку, порядок действий и ошибки — под заголовки.
+
+     Поля в данных называются по-разному от файла к файлу, поэтому
+     берём первое, которое нашлось, и пустые пропускаем.
+     ============================================================ */
+  const блокУпражнения = (d, x)=>{
+    const зачем = x.benefit || x.why;
+    if(зачем) d.push(["why", зачем]);
+    if(x.how){ d.push(["h2", "Как выполнять"]); d.push(["p", x.how]); }
+    const ошибки = [x.watch, x.mistake].filter(Boolean);
+    if(ошибки.length){ d.push(["h2", "Частые ошибки"]); d.push(["ul", ошибки]); }
+  };
+
   // Карточка упражнения из каталога: код, название и всё, что к нему приложено
   const exBlocks = (d, x, strict)=>{
     if(!showText(strict, x)) return;
     d.push(["h4", (x.code ? x.code + ". " : (x.n ? x.n + ". " : "")) + x.name]);
     vid(d, x.v);
-    kv(d, "Как выполнять", x.how);
-    kv(d, "Что даёт в воде", x.benefit || x.why);
-    kv(d, "Дозировка", x.dose);
+    блокУпражнения(d, x);
     kv(d, "Легче", x.easier);
     kv(d, "Сложнее", x.harder);
-    kv(d, "На что смотреть", x.watch);
   };
 
   // Каталог: зоны с упражнениями на одной странице
@@ -2825,9 +2814,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         if(!showText(strict, x)) return;
         pd.push(["h4", x.n + ". " + x.name]);
         vid(pd, x.v);
-        kv(pd, "Как выполнять", x.how);
-        kv(pd, "Зачем", x.why);
-        kv(pd, "На что смотреть", x.watch);
+        блокУпражнения(pd, x);
         /* У финальной серии в данных лежит состав круга, но отрисовка
            его молча пропускала: на экране было «три круга подряд» без
            единого упражнения. Печатаем таблицей. */
@@ -2843,7 +2830,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
        «Перед водой», а плитка, из которой в него входят, — «Разминка
        перед водой». Два разных названия у одного места читаются как
        две разные вкладки. */
-    put("d1", { title: "Разминка перед водой", lede: W.subtitle, calm: true,
+    put("d1", { title: "Разминка перед водой", lede: W.subtitle,
                 slot: false, stack: true, kids: tiles, doc: d }, "s3");
   }
 
@@ -2892,10 +2879,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         if(!showText(strictP, f)) return;
         d.push(["h4", f.n + ". " + f.name]);
         vid(d, f.v);
-        kv(d, "Дозировка", f.dose);
-        kv(d, "Как выполнять", f.how);
-        kv(d, "На что смотреть", f.watch);
-        kv(d, "Частая ошибка", f.mistake);
+        блокУпражнения(d, f);
       });
 
       external(d, typeof REZINA_SERIES !== "undefined" ? REZINA_SERIES : null);
@@ -3106,9 +3090,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       p(d, z.note);
       (z.items||[]).forEach(x=>{
         d.push(["h4", (++num) + ". " + x.name]);
-        kv(d, "Как выполнять", x.how);
-        kv(d, "Зачем это пловцу", x.benefit);
-        kv(d, "На что смотреть", x.watch);
+        блокУпражнения(d, x);
         if(x.safety) d.push(["warn", x.safety]);
       });
     });
@@ -4159,7 +4141,7 @@ if(d.lesson){
         if((b[0] === "h2" || b[0] === "h3") && b[1] === "Дозировка"){ i++; continue; }
         блоки.push(b);
       }
-      h += `<div class="doc${d.calm ? " calm" : ""}">`;
+      h += `<div class="doc">`;
       if(d.lead) h += `<div class="lead-box">${esc(d.lead)}</div>`;
       блоки.forEach(([type,val])=>{
         if(type==="h2") h += `<h2>${esc(val)}</h2>`;
