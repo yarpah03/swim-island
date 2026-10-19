@@ -420,6 +420,7 @@ h1{
 h1.long {font-size:clamp(26px, 7.6vw, 34.5px);line-height:1.18}
 h1.xlong{font-size:clamp(22.5px, 6.5vw, 30px);line-height:1.24;letter-spacing:.005em}
 .lede{color:var(--txt-sub);font-size:18px;max-width:660px;margin-bottom:18px}
+.lede.wh{color:var(--txt)}
 h2{
   font-size:15px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
   margin:38px 0 16px;display:flex;align-items:center;gap:10px;
@@ -943,6 +944,7 @@ body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
 .excard > :first-child{margin-top:0}
 .excard > :last-child{margin-bottom:0}
 .excard h4{margin-top:0;font-size:19.5px}
+.doc.wh h4{color:var(--txt)}
 .excard h2{margin:20px 0 10px}
 .excard .whybox{
   background:transparent;border:0;border-left:3px solid var(--bar-note);
@@ -2790,12 +2792,12 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
      Поля в данных называются по-разному от файла к файлу, поэтому
      берём первое, которое нашлось, и пустые пропускаем.
      ============================================================ */
-  const блокУпражнения = (d, x)=>{
+  const блокУпражнения = (d, x, безОшибок)=>{
     const зачем = x.benefit || x.why;
     if(зачем) d.push(["why", зачем]);
     if(x.how){ d.push(["h2", "Как выполнять"]); d.push(["p", x.how]); }
     const ошибки = [x.watch, x.mistake].filter(Boolean);
-    if(ошибки.length){ d.push(["h2", "Частые ошибки"]); d.push(["ul", ошибки]); }
+    if(ошибки.length && !безОшибок){ d.push(["h2", "Частые ошибки"]); d.push(["ul", ошибки]); }
   };
 
   // Карточка упражнения из каталога: код, название и всё, что к нему приложено
@@ -2843,7 +2845,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         pd.push(["exo"]);
         pd.push(["h4", x.n + ". " + x.name]);
         vid(pd, x.v);
-        блокУпражнения(pd, x);
+        блокУпражнения(pd, x, true);   // в разминке «Частые ошибки» не показываем
         /* У финальной серии в данных лежит состав круга, но отрисовка
            его молча пропускала: на экране было «три круга подряд» без
            единого упражнения. Печатаем таблицей. */
@@ -2852,7 +2854,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         pd.push(["exc"]);
       });
       const cnt = (part.items||[]).filter(x=>showText(strict,x)).length, id = "d1_p" + (i+1);
-      put(id, { title: part.title, lede: part.note, pills: [nDrills(cnt)], doc: pd }, "d1");
+      put(id, { title: part.title, lede: part.note, whiteLede: true, whiteH4: true, pills: [nDrills(cnt)], doc: pd }, "d1");
       return {id, n: "0" + (i+1), t: part.title, m: nDrills(cnt), ph: "tile-razminka.jpg"};
     });
     const n = tiles.reduce((s,t)=>s+(parseInt(t.m)||0),0);
@@ -3965,7 +3967,7 @@ function render(id){
   } else {
     h += crumbs(id);
     h += `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
-    if(d.lede) h += `<p class="lede">${esc(d.lede)}</p>`;
+    if(d.lede) h += `<p class="lede${d.whiteLede ? " wh" : ""}">${esc(d.lede)}</p>`;
     if(d.pills) h += `<div class="pills">${d.pills.map(p=>`<span class="pill">${esc(p)}</span>`).join("")}</div>`;
 
     // Тренировка дня и рекорд месяца — на своих вкладках
@@ -4175,7 +4177,7 @@ if(d.lesson){
         if((b[0] === "h2" || b[0] === "h3") && b[1] === "Дозировка"){ i++; continue; }
         блоки.push(b);
       }
-      h += `<div class="doc">`;
+      h += `<div class="doc${d.whiteH4 ? " wh" : ""}">`;
       if(d.lead) h += `<div class="lead-box">${esc(d.lead)}</div>`;
       блоки.forEach(([type,val])=>{
         if(type==="h2") h += `<h2>${esc(val)}</h2>`;
