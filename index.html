@@ -924,6 +924,32 @@ body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
   padding:14px 18px;font-size:16px;color:var(--txt);margin:4px 0 18px}
 .whybox b{display:block;color:var(--gold);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
 
+/* ============================================================
+   КАРТОЧКА УПРАЖНЕНИЯ НА СПЛОШНОЙ СТРАНИЦЕ
+   ------------------------------------------------------------
+   В «Суше» упражнения идут одно за другим на одной странице, и
+   без границы они сливаются: непонятно, где кончилось предыдущее
+   и началось следующее. Рамка делит их явно.
+
+   Внутри карточки «зачем это нужно» теряет собственную рамку:
+   коробка в коробке читается как ошибка вёрстки. Вместо неё —
+   полоса слева тем же цветом, что была у рамки. Приём остаётся
+   узнаваемым, а веса на экране вдвое меньше.
+   ============================================================ */
+.excard{
+  border:1px solid rgba(var(--gold-rgb),.20);border-radius:var(--r);
+  background:var(--card-fill);padding:20px 22px;margin:0 0 14px
+}
+.excard > :first-child{margin-top:0}
+.excard > :last-child{margin-bottom:0}
+.excard h4{margin-top:0;font-size:19.5px}
+.excard h2{margin:20px 0 10px}
+.excard .whybox{
+  background:transparent;border:0;border-left:3px solid var(--bar-note);
+  border-radius:0;padding:2px 0 2px 14px;margin:4px 0 16px
+}
+@media(max-width:600px){ .excard{padding:17px 16px} }
+
 .lesson{max-width:760px}
 .lesson .intro{background:var(--read-fill);
   border:1px solid var(--read-edge);border-radius:var(--r);padding:20px 22px;margin-bottom:8px;
@@ -2775,11 +2801,13 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   // Карточка упражнения из каталога: код, название и всё, что к нему приложено
   const exBlocks = (d, x, strict)=>{
     if(!showText(strict, x)) return;
+    d.push(["exo"]);
     d.push(["h4", (x.code ? x.code + ". " : (x.n ? x.n + ". " : "")) + x.name]);
     vid(d, x.v);
     блокУпражнения(d, x);
     kv(d, "Легче", x.easier);
     kv(d, "Сложнее", x.harder);
+    d.push(["exc"]);
   };
 
   // Каталог: зоны с упражнениями на одной странице
@@ -2812,6 +2840,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       const strict = (part.items||[]).some(hasVid);
       (part.items||[]).forEach(x=>{
         if(!showText(strict, x)) return;
+        pd.push(["exo"]);
         pd.push(["h4", x.n + ". " + x.name]);
         vid(pd, x.v);
         блокУпражнения(pd, x);
@@ -2820,6 +2849,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
            единого упражнения. Печатаем таблицей. */
         if(x.table && x.table.length)
           pd.push(["tbl", [["Упражнение", "Повторы"]].concat(x.table)]);
+        pd.push(["exc"]);
       });
       const cnt = (part.items||[]).filter(x=>showText(strict,x)).length, id = "d1_p" + (i+1);
       put(id, { title: part.title, lede: part.note, pills: [nDrills(cnt)], doc: pd }, "d1");
@@ -2877,9 +2907,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       const nPh = (S.phases||[]).filter(f=>showText(strictP,f)).length;
       (S.phases||[]).forEach(f=>{
         if(!showText(strictP, f)) return;
+        d.push(["exo"]);
         d.push(["h4", f.n + ". " + f.name]);
         vid(d, f.v);
         блокУпражнения(d, f);
+        d.push(["exc"]);
       });
 
       external(d, typeof REZINA_SERIES !== "undefined" ? REZINA_SERIES : null);
@@ -3089,9 +3121,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       h2(d, z.title);
       p(d, z.note);
       (z.items||[]).forEach(x=>{
+        d.push(["exo"]);
         d.push(["h4", (++num) + ". " + x.name]);
         блокУпражнения(d, x);
         if(x.safety) d.push(["warn", x.safety]);
+        d.push(["exc"]);
       });
     });
 
@@ -4164,6 +4198,8 @@ if(d.lesson){
             <div class="vid-cap">Показ упражнения</div></div>`;
         }
         else if(type==="why") h += `<div class="whybox"><b>Зачем это нужно</b>${esc(val)}</div>`;
+        else if(type==="exo") h += `<div class="excard">`;
+        else if(type==="exc") h += `</div>`;
         else if(type==="tip") h += `<div class="tipbox"><b>Совет.</b> ${esc(val)}</div>`;
         else if(type==="warn") h += `<div class="safebox"><b>Безопасность.</b> ${esc(val)}</div>`;
       });
