@@ -2796,7 +2796,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     const зачем = x.benefit || x.why;
     if(зачем) d.push(["why", зачем]);
     if(x.how){ d.push(["h2", "Как выполнять"]); d.push(["p", x.how]); }
-    const ошибки = [x.watch, x.mistake].filter(Boolean);
+    const ошибки = [x.watch, x.mistake].flat().filter(Boolean);
     if(ошибки.length && !безОшибок){ d.push(["h2", "Частые ошибки"]); d.push(["ul", ошибки]); }
   };
 
@@ -2876,7 +2876,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     // Ровно три вкладки и в этом порядке. В данных есть ещё спина,
     // но на резине её не отрабатывают — в раздел она не идёт.
     const ORDER = ["crawl", "breast", "breaststroke", "fly", "dolphin", "butterfly"];
-    const SN = { crawl:"Кроль", breast:"Брасс", breaststroke:"Брасс", fly:"Дельфин", dolphin:"Дельфин", butterfly:"Дельфин" };
+    const SN = { crawl:"Кроль", breast:"Брасс", breaststroke:"Брасс", fly:"Баттерфляй", dolphin:"Баттерфляй", butterfly:"Баттерфляй" };
 
     // общий кусок: заголовок раздела и его содержимое
     const chunk = (d, o)=>{
@@ -2901,31 +2901,27 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
 
       external(d, typeof REZINA_WARMUP !== "undefined" ? REZINA_WARMUP : null);
       chunk(d, B.setup);
-      chunk(d, B.fit);
 
       h2(d, "Фазы гребка");
-      p(d, S.note);
       const strictP = (S.phases||[]).some(hasVid);
       const nPh = (S.phases||[]).filter(f=>showText(strictP,f)).length;
+      let номерФазы = 0;
       (S.phases||[]).forEach(f=>{
         if(!showText(strictP, f)) return;
         d.push(["exo"]);
-        d.push(["h4", f.n + ". " + f.name]);
+        d.push(["h4", (++номерФазы) + ". " + f.name]);
         vid(d, f.v);
         блокУпражнения(d, f);
         d.push(["exc"]);
       });
 
       external(d, typeof REZINA_SERIES !== "undefined" ? REZINA_SERIES : null);
-      chunk(d, B.cooldown);
-
-      if(B.checklist){ h2(d, "Короткий чек-лист"); ul(d, B.checklist); }
       warn(d, B.safety);
 
       const id = "d2_" + k;
       put(id, {
         title: name + " на резине",
-        lede: S.note || "Разбираем гребок по фазам, потом собираем в рабочую серию.",
+        lede: "На резине проще контролировать и отрабатывать все фазы гребка, поэтому эти упражнения крайне эффективны. Их можно использовать как в разминке перед водой, так и добавлять в основную часть тренировки на суше.",
         pills: [plural(nPh,["фаза гребка","фазы гребка","фаз гребка"])],
         doc: d
       }, "d2");
@@ -2939,7 +2935,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     ul(d, B.equip);
     put("d2", {
       title: B.title,
-      lede: "Выберите стиль — внутри вся тренировка целиком, от разминки до заминки.",
+      lede: "Выберите стиль — внутри вся тренировка целиком, от разминки до рабочей серии.",
       slot: false, big: true, kids: tiles, doc: d
     }, "s3");
   }
