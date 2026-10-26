@@ -1008,6 +1008,11 @@ body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
 }
 .land-toggle .land-arrow{font-size:13px;line-height:1;transition:transform .25s}
 .land-toggle.open .land-arrow{transform:rotate(180deg)}
+.ex-acc{margin:0;padding:11px 0;border-bottom:1px solid rgba(var(--gold-rgb),.18);justify-content:space-between;gap:12px;font-size:17px;line-height:1.35}
+.ex-acc.plain{color:var(--txt);cursor:default}
+.ex-acc .land-arrow{flex:none}
+.excard .ex-acc{border-bottom:0;padding:0 0 8px;font-size:19.5px}
+.excard .ex-acc.open + .land-panel{margin-bottom:12px}
 .land-panel{display:none}
 .land-panel.open{display:block;margin-top:8px}
 /* Тренировки: карточка + золотой разделитель между ними */
@@ -2812,12 +2817,25 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     d.push(["exc"]);
   };
 
+  // «С-1» → «СТАТИКА-1», «Д-1» → «ДИНАМИКА-1»
+  const codeFull = c => String(c||"").replace(/^[СC]-/, "СТАТИКА-").replace(/^Д-/, "ДИНАМИКА-");
+
+  // Карточка упражнения «Кор и стабилизация»: название-аккордеон с видео,
+  // ниже «Зачем это нужно» и «Как выполнять». Без «Частых ошибок», «Легче» и «Сложнее».
+  const coreBlocks = (d, x, strict)=>{
+    if(!showText(strict, x)) return;
+    d.push(["exo"]);
+    d.push(["acc", {t: codeFull(x.code) + ". " + x.name, v: x.v || ""}]);
+    блокУпражнения(d, x, true);
+    d.push(["exc"]);
+  };
+
   // Каталог: зоны с упражнениями на одной странице
-  const catalogue = (id, src, parent, lede)=>{
+  const catalogue = (id, src, parent, lede, core)=>{
     const d = [];
     p(d, src.intro);
     const strict = (src.zones||[]).some(z=>(z.items||[]).some(hasVid));
-    (src.zones||[]).forEach(z=>{ h3(d, z.title); (z.items||[]).forEach(x=>exBlocks(d, x, strict)); });
+    (src.zones||[]).forEach(z=>{ h3(d, z.title); (z.items||[]).forEach(x=>core ? coreBlocks(d, x, strict) : exBlocks(d, x, strict)); });
     tip(d, src.watch);
     warn(d, src.safety);
     const n = (src.zones||[]).reduce((s,z)=>s+(z.items||[]).filter(x=>showText(strict,x)).length,0);
@@ -2952,17 +2970,16 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       h2(d, H.title || "Как выполнять");
       p(d, H.intro);
       ul(d, H.points);
-      p(d, H.scale);
       tip(d, H.watch);
       warn(d, H.safety);
     };
 
     // 3.3.1 Упражнения → статика и динамика
-    const nSt = catalogue("d3_st", SUSHA_STATICS, "d3_ex", "Удержания: справочник с техникой и дозировкой.");
-    const nDy = catalogue("d3_dy", SUSHA_DYNAMICS, "d3_ex", "Движения: справочник с техникой и дозировкой.");
+    const nSt = catalogue("d3_st", SUSHA_STATICS, "d3_ex", "Справочник с правильной техникой и дозировкой.", true);
+    const nDy = catalogue("d3_dy", SUSHA_DYNAMICS, "d3_ex", "Справочник с правильной техникой и дозировкой.", true);
     put("d3_ex", {
       title: "Упражнения",
-      lede: "Справочник: техника, дозировка и варианты полегче и посложнее у каждого упражнения.",
+      lede: "Справочник с правильной техникой и дозировкой.",
       pills: [nDrills(nSt + nDy)],
       slot: false,
       kids: [
@@ -2974,14 +2991,24 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     // 3.3.2 Комплексы → каждый своей страницей
     const cx = [];
 
+    const byCode = {};
+    [typeof SUSHA_STATICS !== "undefined" ? SUSHA_STATICS : null, typeof SUSHA_DYNAMICS !== "undefined" ? SUSHA_DYNAMICS : null]
+      .forEach(src=>(src && src.zones || []).forEach(z=>(z.items||[]).forEach(x=>{ byCode[x.code] = x; })));
+
     (typeof SUSHA_CORE_COMPLEXES !== "undefined" ? SUSHA_CORE_COMPLEXES : []).forEach(c=>{
       const d = [];
       p(d, c.desc);
       howto(d);
       h2(d, "Что делаем");
-      (c.items||[]).forEach(x=>d.push(["kv", [x.code + ". " + x.name,
-        (x.intervals ? plural(x.intervals,["интервал","интервала","интервалов"]) : "") + (x.note ? " — " + x.note : "")]]));
-      tip(d, c.watch);
+      (c.items||[]).forEach(x=>{
+        const ex = byCode[x.code] || {};
+        const sub = (x.intervals ? plural(x.intervals,["подход","подхода","подходов"]) : "") + (x.note ? " — " + x.note : "");
+        const t = codeFull(x.code) + ". " + x.name + (sub ? ". " + sub : "");
+        /* Аккордеон с видео — у динамики (пока с заглушкой) и у статики, где ролик есть.
+           Статика без ролика остаётся строкой с названием. */
+        const динамика = /^Д-/.test(x.code);
+        d.push(["acc", {t, v: ex.v || "", plain: !динамика && !hasVid(ex)}]);
+      });
       const id = "d3_c" + c.n;
       put(id, { title: c.title, lede: c.tag, doc: d }, "d3_cx");
       cx.push({id, n: String(c.n).padStart(2,"0"), t: c.title, m: c.tag, ph: "tile-kor.jpg"});
@@ -3008,7 +3035,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
 
     put("d3_cx", {
       title: "Комплексы упражнений",
-      lede: "Готовые связки по таймеру. В каждом комплексе есть и список упражнений, и правила выполнения.",
+      lede: "Готовые связки упражнений в статическом и динамическом положении. В каждом комплексе есть и список упражнений, и правила выполнения.",
       pills: [plural(cx.length,["комплекс","комплекса","комплексов"])],
       slot: false, kids: cx
     }, "d3");
@@ -4177,6 +4204,11 @@ if(d.lesson){
         if(type==="h2") h += `<h2>${esc(val)}</h2>`;
         else if(type==="h3") h += `<h3>${esc(val)}</h3>`;
         else if(type==="h4") h += `<h4>${esc(val)}</h4>`;
+        else if(type==="acc"){
+          if(val.plain) h += `<div class="ex-acc plain"><span class="ex-acc-t">${esc(val.t)}</span></div>`;
+          else h += `<div class="land-toggle ex-acc" onclick="toggleLand(this)"><span class="ex-acc-t">${esc(val.t)}</span><span class="land-arrow">&#8964;</span></div>
+            <div class="land-panel" data-v="${esc(val.v||"")}" data-cap="Показ упражнения"></div>`;
+        }
         else if(type==="kv") h += `<div class="kv"><b>${esc(val[0])}.</b> ${esc(val[1])}</div>`;
         else if(type==="tbl") h += `<div class="tbl-wrap"><table class="tbl">` +
           val.map((row,i)=>`<tr>${row.map(c=>i===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("") +
