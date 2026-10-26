@@ -1795,7 +1795,7 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
     {id:"vy_s",n:"02",t:"Средний",s:"Серии длиннее, отдых по интервалу — задача держать один темп до конца",m:"2200–2800 м · 25 тренировок"},
     {id:"vy_p",n:"03",t:"Продвинутый",s:"Большой объём и минимальный отдых — задача правильно распределить силы",m:"4000–4600 м · 25 тренировок"}
   ]},
-  s3:{title:"Суша для пловца",lede:"Пять вкладок. В каждой — справочник упражнений и готовые тренировки.",big:true,kids:[
+  s3:{title:"Суша для пловца",lede:"Пять вкладок. В каждой — справочник упражнений и готовые тренировки.",kids:[
     {id:"d1",n:"01",t:"Разминка перед водой",s:"Пятнадцать минут перед водой, после которых плечи и голеностоп готовы к нагрузке",m:"",ph:"tile-razminka.jpg"},
     {id:"d2",n:"02",t:"Гребковые тренировки на резине",s:"Отрабатываем гребок на суше по фазам, а потом собираем его в рабочую серию",m:"",ph:"tile-rezina.jpg"},
     {id:"d3",n:"03",t:"Кор и стабилизация",s:"Упражнения на удержание корпуса и готовые комплексы, которые делаются по таймеру",m:"",ph:"tile-kor.jpg"},
@@ -2806,14 +2806,16 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   };
 
   // Карточка упражнения из каталога: код, название и всё, что к нему приложено
-  const exBlocks = (d, x, strict)=>{
+  const exBlocks = (d, x, strict, lite)=>{
     if(!showText(strict, x)) return;
     d.push(["exo"]);
     d.push(["h4", (x.code ? x.code + ". " : (x.n ? x.n + ". " : "")) + x.name]);
     vid(d, x.v);
-    блокУпражнения(d, x);
-    kv(d, "Легче", x.easier);
-    kv(d, "Сложнее", x.harder);
+    блокУпражнения(d, x, !!lite);
+    if(!lite){
+      kv(d, "Легче", x.easier);
+      kv(d, "Сложнее", x.harder);
+    }
     d.push(["exc"]);
   };
 
@@ -2835,7 +2837,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     const d = [];
     p(d, src.intro);
     const strict = (src.zones||[]).some(z=>(z.items||[]).some(hasVid));
-    (src.zones||[]).forEach(z=>{ h3(d, z.title); (z.items||[]).forEach(x=>core ? coreBlocks(d, x, strict) : exBlocks(d, x, strict)); });
+    (src.zones||[]).forEach(z=>{ h3(d, z.title); (z.items||[]).forEach(x=>core === true ? coreBlocks(d, x, strict) : exBlocks(d, x, strict, core === "lite")); });
     tip(d, src.watch);
     warn(d, src.safety);
     const n = (src.zones||[]).reduce((s,z)=>s+(z.items||[]).filter(x=>showText(strict,x)).length,0);
@@ -3000,10 +3002,10 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       p(d, c.desc);
       howto(d);
       h2(d, "Что делаем");
-      (c.items||[]).forEach(x=>{
+      (c.items||[]).forEach((x,i)=>{
         const ex = byCode[x.code] || {};
         const sub = (x.intervals ? plural(x.intervals,["подход","подхода","подходов"]) : "") + (x.note ? " — " + x.note : "");
-        const t = codeFull(x.code) + ". " + x.name + (sub ? ". " + sub : "");
+        const t = (i+1) + ") " + codeFull(x.code) + ". " + x.name + (sub ? ". " + sub : "");
         /* Аккордеон с видео — у динамики (пока с заглушкой) и у статики, где ролик есть.
            Статика без ролика остаётся строкой с названием. */
         const динамика = /^Д-/.test(x.code);
@@ -3071,7 +3073,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       warn(d, H.safety);
     };
 
-    const nEx = catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка и варианты полегче.");
+    const nEx = catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка.", "lite");
 
     const w = [];
     (typeof SUSHA_CIRCUIT_WORKOUTS !== "undefined" ? SUSHA_CIRCUIT_WORKOUTS : []).forEach(c=>{
@@ -3090,7 +3092,8 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       title: "Круговые тренировки",
       lede: "Готовые круги по станциям. В каждой тренировке сразу написано, как её выполнять.",
       pills: [plural(w.length,["тренировка","тренировки","тренировок"])],
-      slot: false, rows: w
+      slot: false,
+      kids: w.map(([n,t,tag,id])=>({id, n:String(n).padStart(2,"0"), t, m: String(tag).split(" · ")[0], ph:"tile-krug.jpg"}))
     }, "d4");
 
     put("d4", { title: "Круговые тренировки",
