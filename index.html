@@ -2954,7 +2954,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d2", {
       title: B.title,
       lede: "Выберите стиль — внутри вся тренировка целиком, от разминки до рабочей серии.",
-      slot: false, big: true, kids: tiles, doc: d
+      slot: false, kids: tiles, doc: d
     }, "s3");
   }
 
@@ -3045,7 +3045,6 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d3", { title: "Кор и стабилизация",
       lede: "Справочник удержаний и движений плюс готовые комплексы по таймеру.",
       slot: false,
-      big: true,
       /* Комплексы первыми: с них и начинают заниматься, а справочник
          упражнений открывают потом, когда нужно уточнить технику. */
       kids: [
@@ -3067,10 +3066,23 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       h2(d, H.title || "Как выполнять");
       p(d, H.intro);
       ul(d, H.points);
-      kv(d, "Разминка", H.warmup);
-      kv(d, "Заминка", H.cooldown);
-      p(d, H.scale);
-      warn(d, H.safety);
+      /* Разминка, заминка и шкала — не строки, а объекты со своим
+         составом. Их печатали подписью, и на экран выходило
+         «[object Object]». Разбираем по полям. */
+      [H.warmup, H.cooldown].forEach(блок=>{
+        if(!блок) return;
+        h3(d, блок.title + (блок.duration ? " — " + блок.duration : ""));
+        p(d, блок.note);
+        const пункты = (блок.items || []).map(x =>
+          Array.isArray(x) ? x[0] + " — " + x[1] : x);
+        ul(d, пункты);
+      });
+      if(H.scale){
+        h3(d, "Если тяжело или, наоборот, легко");
+        ul(d, [["Тяжело", H.scale.hard], ["Совсем тяжело", H.scale.veryHard],
+               ["Легко", H.scale.easy]]
+              .filter(x => x[1]).map(x => x[0] + ": " + x[1]));
+      }
     };
 
     const nEx = catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка.", "lite");
@@ -3099,7 +3111,6 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     put("d4", { title: "Круговые тренировки",
       lede: "Общая физподготовка: всё тело, высокий пульс, около тридцати минут.",
       slot: false,
-      big: true,
       kids: [
         {id:"d4_cx", n:"01", t:"Круговые тренировки", m:"", ph:"tile-krug.jpg"},
         {id:"d4_ex", n:"02", t:"Упражнения",          m:"", ph:"tile-krug.jpg"}
