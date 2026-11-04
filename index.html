@@ -1036,15 +1036,39 @@ body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
   color:var(--gold-lt);letter-spacing:.03em;flex:none
 }
 .wk-i{margin:0;padding:16px 20px 18px 20px;list-style:none;counter-reset:wkstep}
-.wk-i li{
+.wk-i > li{
   counter-increment:wkstep;position:relative;
   padding:0 0 0 30px;margin-bottom:11px;
   font-size:16px;line-height:1.6;color:var(--txt-2)
 }
-.workout-ex{color:var(--gold-lt);text-decoration:underline;text-underline-offset:3px}
+.workout-ex{
+  appearance:none;border:0;background:none;padding:0;display:inline;
+  color:var(--gold-lt);font:inherit;text-align:inherit;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px
+}
+.workout-ex[aria-expanded="true"]{color:var(--gold)}
+.workout-ex-panel{
+  margin:14px 0 4px;padding:18px;border:1px solid var(--read-edge);
+  border-radius:var(--r);background:var(--read-fill);text-decoration:none
+}
+.workout-ex-panel[hidden]{display:none}
+.workout-ex-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px}
+.workout-ex-head h3{flex:1;min-width:0;margin:0;color:var(--gold-lt);font-size:19px;line-height:1.4}
+.workout-ex-close{
+  flex:none;border:1px solid var(--read-edge);border-radius:var(--r2);
+  padding:6px 10px;color:var(--txt-2);background:transparent;font:inherit;font-size:13px;cursor:pointer
+}
+.workout-ex-close:focus-visible{outline:2px solid var(--gold-lt);outline-offset:3px}
+.workout-ex-panel .doc h3:first-child{margin-top:0}
+.workout-ex-panel .vid:last-child{margin-bottom:0}
+@media(max-width:420px){
+  .workout-ex-panel{padding:14px 12px}
+  .workout-ex-head{flex-wrap:wrap;gap:8px}
+  .workout-ex-head h3{flex-basis:100%}
+}
 .workout-ex:focus-visible{outline:2px solid var(--gold-lt);outline-offset:3px}
-.wk-i li:last-child{margin-bottom:0}
-.wk-i li::before{
+.wk-i > li:last-child{margin-bottom:0}
+.wk-i > li::before{
   content:counter(wkstep);position:absolute;left:0;top:1px;
   font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;font-size:17px;
   color:var(--gold-dk);line-height:1.5
@@ -1136,7 +1160,7 @@ body.gamefull .g-hud{padding-top:calc(12px + env(safe-area-inset-top, 0px))}
 @media(max-width:600px){
   .wk-h{padding:12px 15px}
   .wk-i{padding:14px 15px 16px 15px}
-  .wk-i li{padding-left:26px;font-size:16px}
+  .wk-i > li{padding-left:26px;font-size:16px}
 }
 
 .plan{margin-top:14px;border:1px solid var(--read-edge);border-radius:var(--r);overflow:hidden;
@@ -2264,6 +2288,158 @@ const TAB_ICON = {
   L.blocks = L.blocks.filter(b => String(b.n) !== "2");
   L.blocks.forEach(b => { if(updates[String(b.n)]) b.w = updates[String(b.n)]; });
   L.vol = "4000–5500 м";
+})();
+
+/* Авторские обновления: первые пять тренировок «Скорость. Продвинутый». */
+(function(){
+  const updates = [
+    {
+      n: 1,
+      story: "Короткие отрезки основным стилем, полный отдых, максимальная скорость. Задача — каждый раз начинать скоростной отрезок свежим и сохранять технику при ускорении.",
+      warm: [
+        [null, "600 м кроль спокойно: чередовать 50 м с произвольным дыханием и 50 м с дыханием 3×3."],
+        [null, "8 × 25 м, отдых 20 секунд: нечётные — упражнение на брасс «руки брасс / ноги кроль», чётные — брасс на минимальное число гребков."],
+        [null, "12 × 50 м ноги кроль в ластах: ускоряться от первого отрезка к четвёртому, повторить три раза. Интервал между 50-метровками — 45 секунд."],
+        [null, "200 м на спине двумя руками одновременно."]
+      ],
+      main: [
+        [null, "8 × 25 м основным стилем: нечётные — максимально быстро, чётные — спокойно. Интервал между 25-метровками — 25 секунд."],
+        [null, "800 м откупка: кроль на руках, можно в трубке."],
+        [null, "4 × 50 м основным стилем максимально быстро. Интервал между 50-метровками — 1,5 минуты.", "На своём стиле техника рассыпается первой. Следите за длиной гребка."],
+        [null, "200 м откупка: на спине двумя руками одновременно."],
+        [null, "4 × 50 м: 25 м максимально быстро основным стилем + 25 м кроль свободно. Интервал между 50-метровками — 1 минута.", "Вторая половина — не выключение, а спокойное продолжение. Тело остаётся вытянутым, гребок длинным: учимся сбрасывать усилие, не теряя положения тела."]
+      ],
+      cool: [
+        [null, "8 × 50 м кроль: нечётные — упражнение «два гребка правой рукой, два гребка левой», чётные — кроль на минимальное число гребков."],
+        [null, "100 м произвольно."]
+      ]
+    },
+    {
+      n: 2,
+      story: "Ноги дают до трети скорости в спринте, но тренируют их обычно медленно и долго. Здесь наоборот: короткие максимальные отрезки, предельная частота и разные положения тела.",
+      warm: [
+        [null, "800 м спокойно: чередовать 150 м кроль и 50 м скайлинг."],
+        [null, "400 м ноги на боку: чередовать 100 м кроль и 100 м дельфин."],
+        [null, "6 × 50 м ноги в ластах: ускоряться от первого отрезка к третьему. Первые три отрезка — кроль, вторые три — основным стилем. Интервал — 45 секунд."],
+        [null, "400 м на руках: чередовать кроль и спину по 50 м."]
+      ],
+      main: [
+        [null, "12 × 25 м ноги кроль без доски на 90% от максимальной скорости, режим 1:15."],
+        [null, "200 м откупка: на руках на спине двумя руками одновременно."],
+        [null, "6 × 50 м ноги с доской, режим 1:30: 25 м основным стилем максимально быстро + 25 м на спине свободно."],
+        [null, "200 м откупка: кроль в лёгком темпе."]
+      ],
+      cool: [
+        [null, "400 м кроль в трубке."],
+        [null, "4 × 50 м брасс на минимальное число гребков."]
+      ]
+    },
+    {
+      n: 3,
+      story: "Спринт выигрывается в первые секунды, а тренируют обычно всё остальное. Сегодня разгон разбирается на части.",
+      warm: [
+        [null, "400 м спокойно: 200 м кроль — чередовать 50 м на кулаках и 50 м с выпрямленными ладонями; затем 200 м упражнения основным стилем."],
+        [null, "12 × 50 м в ластах, отдых 30 секунд. Повторить три круга: 1–3-й отрезки — ноги дельфин на спине; 4-й — 25 м проныр + 25 м произвольно."],
+        [null, "4 × 50 м основным стилем с места, отдых 30 секунд: вытянуться в стрелку у бортика, без толчка. Первые 5 гребков — в полную силу, дальше свободно."],
+        [null, "200 м произвольно."]
+      ],
+      main: [
+        [null, "8 × 25 м на руках основным стилем с места, отдых 45 секунд. Вытянуться в стрелку у бортика, ноги стенки не касаются — толчка нет. Повторить два круга: 1-й отрезок — 10 м быстро + 15 м спокойно; 2-й — 15 м быстро + 10 м спокойно; 3-й — 20 м быстро + 5 м спокойно; 4-й — 25 м быстро.", "Стенка не помогает — видно чистую работу рук. Первые три гребка короткие и частые: длинный гребок появляется, только когда скорость уже набрана. Если к концу серии отрезок ощущается заметно тяжелее, отдыхайте дольше."],
+        [null, "400 м откупка: кроль в трубке."],
+        [null, "4 × 100 м кроль / основной стиль, отдых 60 секунд: выход 15 м максимально быстро, затем 10 м максимально быстро без дыхания, остаток спокойно."],
+        [null, "400 м откупка: кроль в лёгком темпе, дыхание 3×3."],
+        [null, "4 × 50 м основным стилем, без выхода, отдых 60 секунд: 5 м на 80% от максимальной скорости, следующие 5 м — на 90%, дальше максимально быстро до отметки 25 м. Вторые 25 м — спокойно.", "Меняйте темп на заданных отрезках и сохраняйте технику при каждом ускорении."],
+        [null, "200 м откупка: на спине на ногах, руки в стрелку."],
+        [null, "4 × 50 м основным стилем на поворот, отдых 60 секунд: 5 м до стенки и 10 м после — максимально быстро, остальное свободно.", "Поворот — половина дистанции в коротком бассейне. Вход делаем на скорости: тормозить перед стенкой привычнее, но именно это и стоит секунд."],
+        [null, "400 м: первые 10 м каждой сотни — в полную силу основным стилем, дальше кроль свободно.", "Задача — не проплыть сотню быстро, а каждый раз выйти на скорость заново и не потерять положение тела, когда усилие сбрасывается."]
+      ],
+      cool: [
+        [null, "200 м на спине двумя руками одновременно, спокойно."]
+      ]
+    },
+    {
+      n: 4,
+      story: "Скорость — это в первую очередь ощущение, а ощущение нужно чем-то сдвинуть. Сегодня три круга одной и той же серии: с сопротивлением, без ничего и в ластах. Смысл не в том, чтобы устать, а в том, что происходит между кругами: чистый круг после тяжёлого ощущается легче, а после ластов обычная скорость кажется медленной. Последняя серия проверяет, осталось ли что-нибудь от этого ощущения.",
+      warm: [
+        [null, "600 м по 50 м: кроль с дыханием 3×3 + кроль с дыханием 5×5 + кроль с дыханием 7×7 + спина в полной координации. Повторить три раза."],
+        [null, "200 м: чередовать 25 м кроль на минимальное число гребков и 25 м ноги кроль, руки в стрелке."],
+        [null, "200 м ноги дельфин на спине в ластах."]
+      ],
+      main: [
+        [null, "6 × 50 м с парашютом / тормозами, отдых 45 секунд: 25 м в полную силу основным стилем + 25 м кроль свободно."],
+        [null, "100 м откупка: на спине."],
+        [null, "6 × 50 м без инвентаря, отдых 45 секунд: 25 м в полную силу основным стилем + 25 м кроль свободно.", "Тот же отрезок без сопротивления. Первые метры будут казаться пустыми — это нормально, вода никуда не делась, просто рука привыкла к большей нагрузке."],
+        [null, "100 м откупка: брасс на скольжение."],
+        [null, "6 × 50 м в ластах, отдых 45 секунд: 25 м в полную силу основным стилем + 25 м кроль свободно."],
+        [null, "200 м откупка: кроль в лёгком темпе, дыхание на 3 гребка."],
+        [null, "8 × 25 м основным стилем без инвентаря, отдых 60 секунд: нечётные — в полную силу, чётные — спокойно."],
+        [null, "200 м кроль свободно."]
+      ],
+      cool: [
+        [null, "400 м ноги кроль в ластах и трубке."]
+      ]
+    },
+    {
+      n: 5,
+      story: "В 25-метровом бассейне поворотов больше, чем прямых кусков, но тренируют обычно только прямые. Сегодня поворот разобран на части. Увеличение скорости здесь почти не стоит сил: вы не плывёте быстрее, вы просто перестаёте тормозить.",
+      warm: [
+        [null, "200 м комплекс."],
+        [null, "400 м ноги дельфин на спине, руки в стрелке."],
+        [null, "8 × 25 м от флажков, отдых 20 секунд: подход к стенке спокойно, кувырок и толчок в полную силу, 5–7 ударов дельфином под водой быстро, дальше свободно."]
+      ],
+      main: [
+        [null, "4 × 50 м основным стилем, отдых 40 секунд: 5 м до поворота и 5 м после — в полную силу, остальное свободно."],
+        [null, "200 м откупка: на спине."],
+        [null, "6 × 50 м основным стилем, отдых 45 секунд: первые 25 м спокойно, быстрый поворот, вторые 25 м — в полную силу."],
+        [null, "200 м откупка: брасс на скольжение."],
+        [null, "6 × 50 м основным стилем, отдых 45 секунд: первые 25 м в полную силу, вторые 25 м — спокойно.", "Самая частая ошибка — сбросить скорость перед стенкой, чтобы «удобно» развернуться. Заходим на полном ходу."],
+        [null, "200 м откупка: кроль в лёгком темпе, дыхание на 3 гребка."],
+        [null, "6 × 100 м основным стилем, отдых 60 секунд: вокруг каждого поворота 5 м до и 10 м после — в полную силу, остальное свободно."]
+      ],
+      cool: [
+        [null, "400 м спокойно: чередовать 100 м спина и 100 м брасс с долгим скольжением."],
+        [null, "4 × 25 м скольжение от бортика до полной остановки, руки в стрелке."]
+      ]
+    }
+  ];
+  const L = BLOCKS.b_sk.levels.sk_p;
+  updates.forEach(update => {
+    const workout = L.w.find(w => String(w.n) === String(update.n));
+    if(!workout) return;
+    // Считаем только общий объём задания, а не его внутренние части.
+    update.vol = ["warm", "main", "cool"].reduce((sum, section) =>
+      sum + update[section].reduce((s, row) => {
+        const match = row[1].match(/^(\d+)(?:\s*×\s*(\d+))?\s*м(?:\s|$|[.,:])/);
+        if(!match) throw new Error("Не указан объём задания: " + row[1]);
+        return s + Number(match[1]) * Number(match[2] || 1);
+      }, 0), 0);
+    Object.assign(workout, update);
+  });
+  const volumes = L.w.map(w => w.vol).filter(Number.isFinite);
+  L.vol = Math.min(...volumes) + "–" + Math.max(...volumes) + " м";
+})();
+
+/* Единая формулировка интенсивности во всех тренировках и подсказках.
+   Доли от максимальной скорости сохраняем, чтобы не менять нагрузку. */
+(function(){
+  const wording = value => value
+    .replace(/Дельфин на максимуме идёт/g, "Когда плывёте дельфином максимально быстро, движение идёт")
+    .replace(/Максимум держится/g, "Плыть максимально быстро получается")
+    .replace(/чистый максимум/g, "плавание максимально быстро")
+    .replace(/разгоняется до максимума/g, "разгоняется и плывёт максимально быстро")
+    .replace(/близко к максимуму/g, "почти максимально быстро")
+    .replace(/уходит на максимум/g, "начинает плыть максимально быстро")
+    .replace(/от максимума/g, "от максимальной скорости")
+    .replace(/(^|[^а-яё])максимум(?=$|[^а-яё])/gi, (_, before) => before + "максимально быстро");
+  function walk(value){
+    if(typeof value === "string") return wording(value);
+    if(value && typeof value === "object"){
+      Object.keys(value).forEach(key => { value[key] = walk(value[key]); });
+    }
+    return value;
+  }
+  walk(AERO);
+  walk(BLOCKS);
 })();
 
 /* Разворачиваем данные выносливости в экраны: уровень → пять блоков → пять тренировок.
@@ -3669,13 +3845,14 @@ const lenCls = (t, mid, big) => {
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-// Текст остаётся экранированным; ссылки ведут только на существующие экраны.
+// Кнопка раскрывает описание под заданием, сохраняя страницу тренировки.
+let workoutExerciseSeq = 0;
 function workoutText(value){
-  const aliases = [["скайлинг", "dr_kr_7"], ["руки кроль / ноги дельфин", "dr_kr_5"], ["кроль на кулаках", "dr_kr_10"], ["один гребок руками, два толчка ногами", "dr_br_5"], ["два гребка руками, один толчок ногами", "dr_br_6"], ["на спине двумя руками одновременно", "dr_sp_7"], ["работа двумя руками одновременно", "dr_sp_7"], ["одна рука работает, вторая у бедра", "dr_sp_5"], ["гребок только одной рукой, вторая вдоль туловища", "dr_kr_2"], ["только первая фаза гребка", "dr_kr_8"], ["переходы", "dr_kr_4"], ["ноги дельфин на боку", "dr_bt_7"]];
+  const aliases = [["скайлинг", "dr_kr_7"], ["руки кроль / ноги дельфин", "dr_kr_5"], ["кроль на кулаках", "dr_kr_10"], ["один гребок руками, два толчка ногами", "dr_br_5"], ["два гребка руками, один толчок ногами", "dr_br_6"], ["на спине двумя руками одновременно", "dr_sp_7"], ["работа двумя руками одновременно", "dr_sp_7"], ["одна рука работает, вторая у бедра", "dr_sp_5"], ["гребок только одной рукой, вторая вдоль туловища", "dr_kr_2"], ["только первая фаза гребка", "dr_kr_8"], ["переходы", "dr_kr_4"], ["ноги дельфин на боку", "dr_bt_7"], ["на руках на спине двумя руками одновременно", "dr_sp_7"]];
   const candidates = aliases.concat(UCH.drills.flatMap(g => g.items.map(x => [x.title, g.key + "_" + x.n])))
     .filter(([label,id]) => label && T[id]).sort((a,b) => b[0].length-a[0].length);
   const text = String(value), lower = text.toLowerCase();
-  let html = "", pos = 0;
+  let html = "", pos = 0, panels = "";
   while(pos < text.length){
     let match = null;
     for(const [label,id] of candidates){
@@ -3684,11 +3861,115 @@ function workoutText(value){
     }
     if(!match){ html += esc(text.slice(pos)); break; }
     html += esc(text.slice(pos,match.at));
-    html += `<a class="workout-ex" href="#${match.id}">${esc(text.slice(match.at, match.at+match.label.length))}</a>`;
+    const key = "workout-ex-" + (++workoutExerciseSeq);
+    html += `<button type="button" class="workout-ex" id="${key}" data-exercise="${esc(match.id)}"
+      aria-expanded="false" aria-controls="${key}-panel" onclick="toggleWorkoutExercise(this)">${esc(text.slice(match.at, match.at+match.label.length))}</button>`;
+    panels += `<section class="workout-ex-panel" id="${key}-panel" aria-labelledby="${key}" hidden></section>`;
     pos = match.at + match.label.length;
   }
-  return html;
+  return html + panels;
 }
+
+function toggleWorkoutExercise(btn){
+  const panel = document.getElementById(btn.getAttribute("aria-controls"));
+  const exercise = T[btn.dataset.exercise];
+  if(!panel || !exercise) return;
+  const open = btn.getAttribute("aria-expanded") !== "true";
+  btn.setAttribute("aria-expanded", String(open));
+  if(open){
+    panel.innerHTML = `<div class="workout-ex-head"><h3>${esc(exercise.title)}</h3>
+      <button type="button" class="workout-ex-close" onclick="closeWorkoutExercise(this)">Свернуть</button></div>`
+      + exerciseDocHTML(exercise) + exerciseVideoHTML(exercise);
+    panel.hidden = false;
+    setupFrames();
+  } else {
+    // Удаляем плеер: закрытое упражнение не продолжает играть в фоне.
+    panel.hidden = true;
+    panel.innerHTML = "";
+  }
+}
+
+function closeWorkoutExercise(btn){
+  const panel = btn.closest(".workout-ex-panel");
+  const trigger = panel && document.getElementById(panel.getAttribute("aria-labelledby"));
+  if(trigger){ toggleWorkoutExercise(trigger); trigger.focus({preventScroll:true}); }
+}
+
+function exerciseDocHTML(d){
+  let h = "";
+    if(d.doc){
+      /* Дозировку больше не показываем: объём каждый подбирает себе сам.
+         Отсеиваем на выводе, а не в данных, — иначе пришлось бы чистить
+         четыре файла, и блок всплыл бы снова при первом же пополнении. */
+      const блоки = [];
+      for(let i = 0; i < d.doc.length; i++){
+        const b = d.doc[i];
+        if(b[0] === "kv" && b[1] && b[1][0] === "Дозировка") continue;
+        if((b[0] === "h2" || b[0] === "h3") && b[1] === "Дозировка"){ i++; continue; }
+        блоки.push(b);
+      }
+      h += `<div class="doc${d.whiteH4 ? " wh" : ""}">`;
+      if(d.lead) h += `<div class="lead-box">${esc(d.lead)}</div>`;
+      блоки.forEach(([type,val])=>{
+        if(type==="h2") h += `<h2>${esc(val)}</h2>`;
+        else if(type==="h3") h += `<h3>${esc(val)}</h3>`;
+        else if(type==="h4") h += `<h4>${esc(val)}</h4>`;
+        else if(type==="acc"){
+          if(val.plain) h += `<div class="ex-acc plain"><span class="ex-acc-t">${esc(val.t)}</span></div>`;
+          else h += `<div class="land-toggle ex-acc" onclick="toggleLand(this)"><span class="ex-acc-t">${esc(val.t)}</span><span class="land-arrow">&#8964;</span></div>
+            <div class="land-panel" data-v="${esc(val.v||"")}" data-cap="Показ упражнения"></div>`;
+        }
+        else if(type==="kv") h += `<div class="kv"><b>${esc(val[0])}.</b> ${esc(val[1])}</div>`;
+        else if(type==="tbl") h += `<div class="tbl-wrap"><table class="tbl">` +
+          val.map((row,i)=>`<tr>${row.map(c=>i===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("") +
+          `</table></div>`;
+        else if(type==="p") h += `<p>${esc(val)}</p>`;
+        else if(type==="ul") h += `<ul>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+        else if(type==="num") h += `<ol>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
+        else if(type==="vid"){
+          // Одно основное окно с показом. Ролика ещё нет — не рисуем ничего.
+          const kid = (KINESCOPE[val] || "").trim();
+          if(kid) h += `<div class="vid"><div class="frame"><iframe
+              data-src="https://kinescope.io/embed/${encodeURIComponent(kid)}?autoplay=1&muted=1&loop=1&autopause=1&playsinline=1&title=0"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media;"
+              frameborder="0" allowfullscreen loading="lazy"></iframe></div>
+            <div class="vid-cap">Показ упражнения</div></div>`;
+        }
+        else if(type==="why") h += `<div class="whybox"><b>Зачем это нужно</b>${esc(val)}</div>`;
+        else if(type==="exo") h += `<div class="excard">`;
+        else if(type==="exc") h += `</div>`;
+        else if(type==="tip") h += `<div class="tipbox"><b>Совет.</b> ${esc(val)}</div>`;
+        else if(type==="warn") h += `<div class="safebox"><b>Безопасность.</b> ${esc(val)}</div>`;
+      });
+      h += `</div>`;
+    }
+
+  return h;
+}
+
+function exerciseVideoHTML(d){
+  let h = "";
+    if(d.v){
+      const kid = (KINESCOPE[d.v] || "").trim();
+      const player = kid
+        ? `<div class="frame"><iframe
+              data-src="https://kinescope.io/embed/${encodeURIComponent(kid)}?autoplay=1&muted=1&loop=1&autopause=1&playsinline=1&title=0"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media;"
+              frameborder="0" allowfullscreen loading="lazy"></iframe></div>`
+        : `<div class="vid-ph"><b>&#9654; Видео скоро появится</b>Ролик готовится к публикации</div>`;
+      h += `<div class="vid">
+        ${player}
+        <div class="vid-cap">Показ упражнения</div>
+      </div>
+      ${d.vland ? `<div class="land-toggle" onclick="toggleLand(this)">
+        <span>Отрабатываем на суше</span><span class="land-arrow">&#8964;</span>
+      </div>
+      <div class="land-panel" data-v="${esc(d.vland)}"></div>` : ""}`;
+    }
+
+  return h;
+}
+
 
 
 /* ============================================================
@@ -4172,6 +4453,7 @@ function crumbs(id){
 
 function render(id){
   const d = T[id]; if(!d) return;
+  workoutExerciseSeq = 0;
   let h = "";
 
   if(d.feed){
@@ -4391,70 +4673,9 @@ if(d.lesson){
       </div>`;
     }
 
-    if(d.doc){
-      /* Дозировку больше не показываем: объём каждый подбирает себе сам.
-         Отсеиваем на выводе, а не в данных, — иначе пришлось бы чистить
-         четыре файла, и блок всплыл бы снова при первом же пополнении. */
-      const блоки = [];
-      for(let i = 0; i < d.doc.length; i++){
-        const b = d.doc[i];
-        if(b[0] === "kv" && b[1] && b[1][0] === "Дозировка") continue;
-        if((b[0] === "h2" || b[0] === "h3") && b[1] === "Дозировка"){ i++; continue; }
-        блоки.push(b);
-      }
-      h += `<div class="doc${d.whiteH4 ? " wh" : ""}">`;
-      if(d.lead) h += `<div class="lead-box">${esc(d.lead)}</div>`;
-      блоки.forEach(([type,val])=>{
-        if(type==="h2") h += `<h2>${esc(val)}</h2>`;
-        else if(type==="h3") h += `<h3>${esc(val)}</h3>`;
-        else if(type==="h4") h += `<h4>${esc(val)}</h4>`;
-        else if(type==="acc"){
-          if(val.plain) h += `<div class="ex-acc plain"><span class="ex-acc-t">${esc(val.t)}</span></div>`;
-          else h += `<div class="land-toggle ex-acc" onclick="toggleLand(this)"><span class="ex-acc-t">${esc(val.t)}</span><span class="land-arrow">&#8964;</span></div>
-            <div class="land-panel" data-v="${esc(val.v||"")}" data-cap="Показ упражнения"></div>`;
-        }
-        else if(type==="kv") h += `<div class="kv"><b>${esc(val[0])}.</b> ${esc(val[1])}</div>`;
-        else if(type==="tbl") h += `<div class="tbl-wrap"><table class="tbl">` +
-          val.map((row,i)=>`<tr>${row.map(c=>i===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("") +
-          `</table></div>`;
-        else if(type==="p") h += `<p>${esc(val)}</p>`;
-        else if(type==="ul") h += `<ul>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
-        else if(type==="num") h += `<ol>${val.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
-        else if(type==="vid"){
-          // Одно основное окно с показом. Ролика ещё нет — не рисуем ничего.
-          const kid = (KINESCOPE[val] || "").trim();
-          if(kid) h += `<div class="vid"><div class="frame"><iframe
-              data-src="https://kinescope.io/embed/${encodeURIComponent(kid)}?autoplay=1&muted=1&loop=1&autopause=1&playsinline=1&title=0"
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media;"
-              frameborder="0" allowfullscreen loading="lazy"></iframe></div>
-            <div class="vid-cap">Показ упражнения</div></div>`;
-        }
-        else if(type==="why") h += `<div class="whybox"><b>Зачем это нужно</b>${esc(val)}</div>`;
-        else if(type==="exo") h += `<div class="excard">`;
-        else if(type==="exc") h += `</div>`;
-        else if(type==="tip") h += `<div class="tipbox"><b>Совет.</b> ${esc(val)}</div>`;
-        else if(type==="warn") h += `<div class="safebox"><b>Безопасность.</b> ${esc(val)}</div>`;
-      });
-      h += `</div>`;
-    }
+    h += exerciseDocHTML(d);
 
-    if(d.v){
-      const kid = (KINESCOPE[d.v] || "").trim();
-      const player = kid
-        ? `<div class="frame"><iframe
-              data-src="https://kinescope.io/embed/${encodeURIComponent(kid)}?autoplay=1&muted=1&loop=1&autopause=1&playsinline=1&title=0"
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media;"
-              frameborder="0" allowfullscreen loading="lazy"></iframe></div>`
-        : `<div class="vid-ph"><b>&#9654; Видео скоро появится</b>Ролик готовится к публикации</div>`;
-      h += `<div class="vid">
-        ${player}
-        <div class="vid-cap">Показ упражнения</div>
-      </div>
-      ${d.vland ? `<div class="land-toggle" onclick="toggleLand(this)">
-        <span>Отрабатываем на суше</span><span class="land-arrow">&#8964;</span>
-      </div>
-      <div class="land-panel" data-v="${esc(d.vland)}"></div>` : ""}`;
-    }
+    h += exerciseVideoHTML(d);
 
     if(d.one){
       const W = d.one;
@@ -4466,7 +4687,7 @@ if(d.lesson){
         return `<h2>${title}</h2><div class="sets${novol?" novol":""}">` + arr.map(x=>`
           <div class="set">
             <span class="set-v">${x[0]==null?"":x[0]+" м"}</span>
-            <span class="set-t">${workoutText(x[1])}${x[2]?`<span class="set-hint"><b>На что смотреть.</b> ${esc(x[2])}</span>`:""}</span>
+            <div class="set-t">${workoutText(x[1])}${x[2]?`<span class="set-hint"><b>На что смотреть.</b> ${esc(x[2])}</span>`:""}</div>
           </div>`).join("") + `</div>`;
       };
       h += `<div class="one">`;
