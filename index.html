@@ -3183,7 +3183,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     tip(d, src.watch);
     warn(d, src.safety);
     const n = (src.zones||[]).reduce((s,z)=>s+(z.items||[]).filter(x=>showText(strict,x)).length,0);
-    put(id, { title: src.title, lede, pills: [nDrills(n)], doc: d }, parent);
+    put(id, { title: src.title, lede, pills: [nDrills(n)], doc: d, noSelfCrumb: core === true }, parent);
     return n;
   };
 
@@ -4442,6 +4442,7 @@ function crumbs(id){
   while(cur && cur!=="home"){chain.unshift(cur);cur=PARENT[cur];}
   let h='<a onclick="go(\'home\')">Главное</a>';
   chain.forEach((c,i)=>{
+    if(i===chain.length-1 && T[c].noSelfCrumb) return;   // на справочниках статики и динамики название страницы над заголовком не повторяем
     h+=' <span class="sep">/</span> ';
     h+= i===chain.length-1 ? esc(T[c].title) : `<a onclick="go('${c}')">${esc(T[c].title)}</a>`;
   });
