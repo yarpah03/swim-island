@@ -1192,6 +1192,8 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 }
 .circuit-table .station-order{width:42px}
 .circuit-table .station-dose{width:110px}
+.circuit-table.round-table .station-dose{width:64px}
+.circuit-table.round-table .station-amount,.circuit-table .round-head{text-align:center}
 .circuit-table th{
   padding:11px 8px;background:var(--head-fill);color:var(--txt-2);
   font-size:12px;font-weight:700;border-bottom:1px solid var(--read-edge)
@@ -1211,7 +1213,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
   color:var(--gold-lt);font-weight:650;text-decoration:none
 }
 .circuit-table .station-name{text-decoration:underline;text-underline-offset:.2em}
-.circuit-table .station-video{display:block;margin-top:3px;font-size:11px;color:var(--txt-2)}
+.circuit-table .station-video,.circuit-table .station-note{display:block;margin-top:3px;font-size:11px;color:var(--txt-2)}
 .station-chevron{flex:none;font-size:16px;line-height:1;transition:transform .18s}
 .station-trigger[aria-expanded="true"] .station-chevron{transform:rotate(180deg)}
 .circuit-detail[hidden]{display:none}
@@ -1224,6 +1226,9 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 @media(max-width:420px){
   .circuit-table .station-order{width:33px}
   .circuit-table .station-dose{width:80px}
+  .circuit-table.round-table .station-order{width:25px}
+  .circuit-table.round-table .station-dose{width:33px}
+  .circuit-table.round-table .round-head{padding-inline:2px;font-size:11px}
   .circuit-table th,.circuit-table td{padding-inline:6px}
   .circuit-table .station-amount{font-size:12px}
   .circuit-table .station-trigger{font-size:14px}
@@ -3186,6 +3191,22 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   const hasVid = x => !!(x && x.v && (KINESCOPE[x.v] || "").trim());
   const showText = (strict, x) => !strict || hasVid(x) || !!x.keepText;
 
+  const exerciseRow = (exercise, values, note)=>{
+    const doc = [], video = hasVid(exercise);
+    p(doc, exercise.how ? сТочкой(exercise.how) : "Описание готовится.");
+    if(video) vid(doc, exercise.v);
+    const purpose = exercise.benefit || exercise.why;
+    if(purpose) doc.push(["why", сТочкой(purpose)]);
+    const mistakes = [exercise.watch, exercise.mistake].flat().filter(Boolean);
+    if(mistakes.length){
+      h3(doc, "Частые ошибки");
+      ul(doc, mistakes);
+    }
+    kv(doc, "Легче", exercise.easier);
+    kv(doc, "Сложнее", exercise.harder);
+    return {name:exercise.name, values, note, doc, video};
+  };
+
 
   /* ============================================================
      УПРАЖНЕНИЕ «СУШИ» — В СТРУКТУРЕ ОБУЧЕНИЯ
@@ -3324,21 +3345,26 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     const tiles = keys.map((k,i)=>{
       const S = B.strokes[k], name = S.name || SN[k] || k, d = [];
 
-      external(d, typeof REZINA_WARMUP !== "undefined" ? REZINA_WARMUP : null);
+      const warmup = typeof REZINA_WARMUP !== "undefined" ? REZINA_WARMUP : null;
+      if(warmup && typeof REZINA_WARMUP_TECHNIQUE !== "undefined"){
+        h2(d, warmup.title);
+        (warmup.doc || []).forEach(([type, value])=>{
+          if(type !== "tbl"){
+            d.push([type, value]);
+            return;
+          }
+          const rows = value.slice(1).map(([name, amount]) =>
+            exerciseRow({name, how:REZINA_WARMUP_TECHNIQUE[name]}, [amount]));
+          d.push(["workout-table", {label:"Разминка", columns:["Количество"], rows}]);
+        });
+      } else {
+        external(d, warmup);
+      }
       chunk(d, B.setup);
 
       h2(d, "Фазы гребка");
-      const strictP = (S.phases||[]).some(hasVid);
-      const nPh = (S.phases||[]).filter(f=>showText(strictP,f)).length;
-      let номерФазы = 0;
-      (S.phases||[]).forEach(f=>{
-        if(!showText(strictP, f)) return;
-        d.push(["exo"]);
-        d.push(["h4", (++номерФазы) + ". " + f.name]);
-        vid(d, f.v);
-        блокУпражнения(d, f);
-        d.push(["exc"]);
-      });
+      const phases = S.phases || [];
+      d.push(["workout-table", {label:"Фазы гребка", rows:phases.map(f => exerciseRow(f, [f.dose]))}]);
 
       external(d, typeof REZINA_SERIES !== "undefined" ? REZINA_SERIES : null);
       warn(d, B.safety);
@@ -3347,7 +3373,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       put(id, {
         title: name + " на резине",
         lede: "На резине проще контролировать и отрабатывать все фазы гребка, поэтому эти упражнения крайне эффективны. Их можно использовать как в разминке перед водой, так и добавлять в основную часть тренировки на суше.",
-        pills: [plural(nPh,["фаза гребка","фазы гребка","фаз гребка"])],
+        pills: [plural(phases.length,["фаза гребка","фазы гребка","фаз гребка"])],
         doc: d
       }, "d2");
       /* Счётчик фаз с плитки убран: на ней остаётся одно слово,
@@ -3401,20 +3427,23 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     const byCode = {};
     [typeof SUSHA_STATICS !== "undefined" ? SUSHA_STATICS : null, typeof SUSHA_DYNAMICS !== "undefined" ? SUSHA_DYNAMICS : null]
       .forEach(src=>(src && src.zones || []).forEach(z=>(z.items||[]).forEach(x=>{ byCode[x.code] = x; })));
+    const extras = typeof SUSHA_CORE_COMPLEX_TECHNIQUE === "undefined" ? {} : SUSHA_CORE_COMPLEX_TECHNIQUE;
+    const circuitByName = new Map((typeof SUSHA_CIRCUIT_EX === "undefined" ? [] : SUSHA_CIRCUIT_EX.zones)
+      .flatMap(zone => zone.items.map(exercise => [exercise.name, exercise])));
 
     (typeof SUSHA_CORE_COMPLEXES !== "undefined" ? SUSHA_CORE_COMPLEXES : []).forEach(c=>{
       const d = [];
       p(d, c.desc);
       howto(d);
       h2(d, "Что делаем");
-      (c.items||[]).forEach((x,i)=>{
-        const ex = byCode[x.code] || {};
-        const sub = (x.intervals ? plural(x.intervals,["подход","подхода","подходов"]) : "") + (x.note ? " — " + x.note : "");
-        const t = (i+1) + ") " + (x.code ? codeFull(x.code) + ". " : "") + x.name + (sub ? ". " + sub : "");
-        /* Аккордеон с видео — у динамики (пока с заглушкой) и у статики, где ролик есть.
-           Статика без ролика остаётся строкой с названием. */
-        d.push(["acc", {t, v: ex.v || "", plain: !hasVid(ex)}]);
+      const rows = (c.items || []).map(x => {
+        const extra = extras[x.name];
+        const exercise = byCode[x.code] || circuitByName.get(x.name) || extra;
+        const video = byCode[extra?.videoRef]?.v || exercise?.v;
+        return exerciseRow({...exercise, name:x.name, v:video}, [x.intervals], x.note);
       });
+      d.push(["workout-table", {label:"Упражнения комплекса", columns:["Подходы"], rows}]);
+      warn(d, c.safety);
       const id = "d3_c" + c.n;
       put(id, { title: c.title, lede: c.tag, doc: d }, "d3_cx");
       cx.push({id, n: String(c.n).padStart(2,"0"), t: c.title, m: c.tag, ph: "tile-kor.jpg"});
@@ -3424,12 +3453,18 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       const R = SUSHA_DRESSEL, d = [];
       p(d, R.about);
       ul(d, R.rules);
-      h2(d, "Упражнения");
-      (R.items||[]).forEach(x=>exBlocks(d, x));
-      if(R.table){
-        h2(d, "Схема раундов");
-        d.push(["tbl", [R.table.head].concat(R.table.rows||[])]);
-      }
+      h2(d, "Схема раундов");
+      const videoCodes = {
+        "Складка с касанием носков": "Д-3",
+        "Обычные скручивания": "Д-1",
+        "Подъёмы ног": "Д-4",
+        "Работа ногами кролем на четыре счёта": "Д-6"
+      };
+      const columns = R.table?.head?.slice(1).map((label, i) => ({label, short:(i + 1) + "-й"})) || [];
+      const rows = (R.items || []).map(x => exerciseRow(
+        {...x, v:x.v || byCode[videoCodes[x.name]]?.v}, R.table?.rows?.[x.n - 1]?.slice(1) || []));
+      d.push(["workout-table", {label:"Схема раундов", columns, rows}]);
+      p(d, "В последней строке указаны счёты: каждый счёт равен четырём движениям ногами. В остальных строках указаны повторы.");
       kv(d, "Коротко", R.short);
       kv(d, "Как часто", R.frequency);
       tip(d, R.watch);
@@ -3964,20 +3999,21 @@ function closeWorkoutExercise(btn){
   if(trigger){ toggleWorkoutExercise(trigger); trigger.focus({preventScroll:true}); }
 }
 
-function circuitTableHTML(stations){
-  const rows = stations.map((station, index) => {
+function workoutTableHTML({rows: exercises, label = "Станции", columns = ["Объём"]}){
+  const roundTable = columns.length > 1;
+  const rows = exercises.map((station, index) => {
     const key = "workout-ex-" + (++workoutExerciseSeq);
     return `<tr>
       <td class="station-number">${index + 1}</td>
       <td><button type="button" class="workout-ex station-trigger" id="${key}"
         aria-expanded="false" aria-controls="${key}-panel" onclick="toggleWorkoutExercise(this)">
-        <span><span class="station-name">${esc(station.name)}</span>${station.video ? '<small class="station-video">Видео</small>' : ''}</span>
+        <span><span class="station-name">${esc(station.name)}</span>${station.note ? `<small class="station-note">${esc(station.note)}</small>` : ""}${station.video ? '<small class="station-video">Видео</small>' : ""}</span>
         <span class="station-chevron" aria-hidden="true">⌄</span>
       </button></td>
-      <td class="station-amount">${esc(station.amount || "")}</td>
+      ${columns.map((_,i) => `<td class="station-amount">${esc(station.values ? station.values[i] ?? "—" : station.amount || "")}</td>`).join("")}
     </tr>
     <tr class="circuit-detail" hidden>
-      <td colspan="3">
+      <td colspan="${2 + columns.length}">
         <section class="workout-ex-panel" id="${key}-panel" aria-labelledby="${key}"></section>
         <template>
           <div class="workout-ex-head"><h3>Как выполнять</h3>
@@ -3988,9 +4024,11 @@ function circuitTableHTML(stations){
       </td>
     </tr>`;
   }).join("");
-  return `<table class="circuit-table" aria-label="Станции">
-    <colgroup><col class="station-order"><col><col class="station-dose"></colgroup>
-    <thead><tr><th class="station-number" scope="col">№</th><th scope="col">Упражнение</th><th scope="col">Объём</th></tr></thead>
+  return `<table class="circuit-table${roundTable ? " round-table" : ""}" aria-label="${esc(label)}">
+    <colgroup><col class="station-order"><col>${columns.map(() => '<col class="station-dose">').join("")}</colgroup>
+    <thead><tr><th class="station-number" scope="col">№</th><th scope="col">Упражнение</th>${columns.map(column =>
+      typeof column === "string" ? `<th scope="col">${esc(column)}</th>`
+        : `<th scope="col" class="round-head" aria-label="${esc(column.label)}">${esc(column.short)}</th>`).join("")}</tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
 }
@@ -4020,7 +4058,8 @@ function exerciseDocHTML(d){
             <div class="land-panel" data-v="${esc(val.v||"")}" data-cap="Показ упражнения"></div>`;
         }
         else if(type==="kv") h += `<div class="kv"><b>${esc(val[0])}.</b> ${esc(val[1])}</div>`;
-        else if(type==="circuit") h += circuitTableHTML(val);
+        else if(type==="circuit") h += workoutTableHTML({rows:val});
+        else if(type==="workout-table") h += workoutTableHTML(val);
         else if(type==="tbl") h += `<div class="tbl-wrap"><table class="tbl">` +
           val.map((row,i)=>`<tr>${row.map(c=>i===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("") +
           `</table></div>`;
