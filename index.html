@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Цвет строки состояния и адресной строки в мобильных браузерах.
      Держать в одном тоне с --bg: иначе сверху остаётся чужая полоса. -->
-<meta name="theme-color" content="#060B14">
+<meta name="theme-color" content="#09151b">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Плавательный остров VIP">
+<meta property="og:description" content="Закрытый клуб для тех, кто плавает для себя — но хочет плавать хорошо.">
+<meta property="og:image" content="https://yarpah03.github.io/swim-island/vip-cover.webp">
 <title>Плавательный остров VIP</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    ЦВЕТ — всё в одном месте
@@ -1180,21 +1181,87 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
   .wordmark{font-size:20.5px}
   .mark{width:36px;height:36px}
 }
+
+/* Таблица станций раскрывает технику на всю ширину экрана. */
+.circuit-table{
+  width:100%;table-layout:fixed;border:1px solid var(--read-edge);
+  border-spacing:0;border-radius:var(--r2);background:var(--surf);margin:0 0 22px;
+  text-align:left
+}
+.circuit-table .station-order{width:42px}
+.circuit-table .station-dose{width:110px}
+.circuit-table.round-table .station-dose{width:64px}
+.circuit-table.round-table .station-amount,.circuit-table .round-head{text-align:center}
+.circuit-table th{
+  padding:11px 8px;background:var(--head-fill);color:var(--txt-2);
+  font-size:12px;font-weight:700;border-bottom:1px solid var(--read-edge)
+}
+.circuit-table th:first-child{border-top-left-radius:var(--r2)}
+.circuit-table th:last-child{border-top-right-radius:var(--r2)}
+.circuit-table td{
+  padding:0 8px;color:var(--txt-2);font-size:14px;
+  border-bottom:1px solid var(--read-edge);overflow-wrap:anywhere
+}
+.circuit-table tr:last-child td,.circuit-table tr:nth-last-child(2) td{border-bottom:0}
+.circuit-table .station-number{color:var(--gold-lt);text-align:center;font-variant-numeric:tabular-nums}
+.circuit-table .station-amount{font-variant-numeric:tabular-nums}
+.circuit-table .station-trigger{
+  display:flex;align-items:center;justify-content:space-between;gap:7px;width:100%;
+  min-height:48px;padding:10px 0;text-align:left;line-height:1.38;
+  color:var(--gold-lt);font-weight:650;text-decoration:none
+}
+.circuit-table .station-name{text-decoration:underline;text-underline-offset:.2em}
+.circuit-table .station-video,.circuit-table .station-note{display:block;margin-top:3px;font-size:11px;color:var(--txt-2)}
+.station-chevron{flex:none;font-size:16px;line-height:1;transition:transform .18s}
+.station-trigger[aria-expanded="true"] .station-chevron{transform:rotate(180deg)}
+.circuit-detail[hidden]{display:none}
+.circuit-detail td{padding:0 9px 10px}
+.circuit-detail .workout-ex-panel{margin:0;padding:13px;background:var(--read-fill)}
+.circuit-detail .workout-ex-head{align-items:center;flex-wrap:nowrap;margin-bottom:9px}
+.circuit-detail .workout-ex-head h3{flex:1;font-size:16px}
+.circuit-detail .workout-ex-close{min-height:36px;padding:6px 9px;font-size:12px}
+.circuit-detail .doc p{font-size:15px;margin-bottom:9px}
+@media(max-width:420px){
+  .circuit-table .station-order{width:33px}
+  .circuit-table .station-dose{width:80px}
+  .circuit-table.round-table .station-order{width:25px}
+  .circuit-table.round-table .station-dose{width:33px}
+  .circuit-table.round-table .round-head{padding-inline:2px;font-size:11px}
+  .circuit-table th,.circuit-table td{padding-inline:6px}
+  .circuit-table .station-amount{font-size:12px}
+  .circuit-table .station-trigger{font-size:14px}
+  .circuit-detail td{padding-inline:7px}
+}
 </style>
+<link rel="stylesheet" href="vip-theme.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="markpath" viewBox="0 0 512 512"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></symbol></defs></svg>
 
 <header>
   <div class="wrap hd">
-    <svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></svg>
-    <div class="wordmark">ПЛАВАТЕЛЬНЫЙ<br>ОСТРОВ<small>VIP</small></div>
+    <a class="brand-link" href="#home" aria-label="Плавательный остров VIP — главное">
+      <span class="brand-emblem"><svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></svg></span>
+      <div class="wordmark">ПЛАВАТЕЛЬНЫЙ<br>ОСТРОВ<small>VIP</small></div>
+    </a>
+    <nav class="club-nav" aria-label="Разделы клуба"></nav>
+    <details class="club-menu">
+      <summary>Разделы <svg class="club-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary>
+      <nav class="club-nav" aria-label="Разделы клуба"></nav>
+    </details>
   </div>
 </header>
 
 <main class="wrap" id="app"></main>
 
-<footer class="wrap">ПЛАВАТЕЛЬНЫЙ ОСТРОВ VIP · прототип интерфейса</footer>
+<footer class="wrap">
+  <span>ПЛАВАТЕЛЬНЫЙ ОСТРОВ VIP</span>
+  <nav class="club-footer-links" aria-label="Дополнительно">
+    <a href="#about">О клубе</a>
+    <a href="#t_lib">Книги</a>
+    <a href="#level">Уровень подготовки</a>
+  </nav>
+</footer>
 
 <!-- Нижняя панель. Содержимое кнопок рисует renderTabs(): подписи и
      значки лежат в TABS, чтобы вкладку можно было переименовать
@@ -1206,10 +1273,10 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="trenirovki.js"></script>
 <script src="obuchenie.js"></script>
-<script src="susha.js"></script>
+<script src="susha.js?v=75ddf705"></script>
 <script src="gibkost.js"></script>
 <script src="motivaciya.js"></script>
-<script src="rezina.js"></script>
+<script src="rezina.js?v=00cc0d91"></script>
 <script src="literatura.js"></script>
 <script src="news.js"></script>
 <script>
@@ -2139,7 +2206,7 @@ const TAB_ICON = {
      но из навигации убраны. */
   T.level = {
     title:"Уровень подготовки",
-    lede:"От него зависит только одно: какую тренировку вам предложит вкладка «Тренировки в бассейне». Весь каталог открыт целиком в любом случае — уровень ничего не закрывает.",
+    lede:"Весь каталог открыт целиком в любом случае — уровень ничего не закрывает.",
     levels:true
   };
   // «О клубе» показывает тот же рассказ, что раньше висел на главной.
@@ -3123,6 +3190,22 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   const hasVid = x => !!(x && x.v && (KINESCOPE[x.v] || "").trim());
   const showText = (strict, x) => !strict || hasVid(x) || !!x.keepText;
 
+  const exerciseRow = (exercise, values, note)=>{
+    const doc = [], video = hasVid(exercise);
+    p(doc, exercise.how ? сТочкой(exercise.how) : "Описание готовится.");
+    if(video) vid(doc, exercise.v);
+    const purpose = exercise.benefit || exercise.why;
+    if(purpose) doc.push(["why", сТочкой(purpose)]);
+    const mistakes = [exercise.watch, exercise.mistake].flat().filter(Boolean);
+    if(mistakes.length){
+      h3(doc, "Частые ошибки");
+      ul(doc, mistakes);
+    }
+    kv(doc, "Легче", exercise.easier);
+    kv(doc, "Сложнее", exercise.harder);
+    return {name:exercise.name, values, note, doc, video};
+  };
+
 
   /* ============================================================
      УПРАЖНЕНИЕ «СУШИ» — В СТРУКТУРЕ ОБУЧЕНИЯ
@@ -3175,10 +3258,10 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
   };
 
   // Каталог: зоны с упражнениями на одной странице
-  const catalogue = (id, src, parent, lede, core)=>{
+  const catalogue = (id, src, parent, lede, core, keepUnfilmed = false)=>{
     const d = [];
     p(d, src.intro);
-    const strict = (src.zones||[]).some(z=>(z.items||[]).some(hasVid));
+    const strict = !keepUnfilmed && (src.zones||[]).some(z=>(z.items||[]).some(hasVid));
     (src.zones||[]).forEach(z=>{ h3(d, z.title); (z.items||[]).forEach(x=>core === true ? coreBlocks(d, x, strict) : exBlocks(d, x, strict, core === "lite")); });
     tip(d, src.watch);
     warn(d, src.safety);
@@ -3261,21 +3344,26 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     const tiles = keys.map((k,i)=>{
       const S = B.strokes[k], name = S.name || SN[k] || k, d = [];
 
-      external(d, typeof REZINA_WARMUP !== "undefined" ? REZINA_WARMUP : null);
+      const warmup = typeof REZINA_WARMUP !== "undefined" ? REZINA_WARMUP : null;
+      if(warmup && typeof REZINA_WARMUP_TECHNIQUE !== "undefined"){
+        h2(d, warmup.title);
+        (warmup.doc || []).forEach(([type, value])=>{
+          if(type !== "tbl"){
+            d.push([type, value]);
+            return;
+          }
+          const rows = value.slice(1).map(([name, amount]) =>
+            exerciseRow({name, how:REZINA_WARMUP_TECHNIQUE[name]}, [amount]));
+          d.push(["workout-table", {label:"Разминка", columns:["Количество"], rows}]);
+        });
+      } else {
+        external(d, warmup);
+      }
       chunk(d, B.setup);
 
       h2(d, "Фазы гребка");
-      const strictP = (S.phases||[]).some(hasVid);
-      const nPh = (S.phases||[]).filter(f=>showText(strictP,f)).length;
-      let номерФазы = 0;
-      (S.phases||[]).forEach(f=>{
-        if(!showText(strictP, f)) return;
-        d.push(["exo"]);
-        d.push(["h4", (++номерФазы) + ". " + f.name]);
-        vid(d, f.v);
-        блокУпражнения(d, f);
-        d.push(["exc"]);
-      });
+      const phases = S.phases || [];
+      d.push(["workout-table", {label:"Фазы гребка", rows:phases.map(f => exerciseRow(f, [f.dose]))}]);
 
       external(d, typeof REZINA_SERIES !== "undefined" ? REZINA_SERIES : null);
       warn(d, B.safety);
@@ -3284,7 +3372,7 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       put(id, {
         title: name + " на резине",
         lede: "На резине проще контролировать и отрабатывать все фазы гребка, поэтому эти упражнения крайне эффективны. Их можно использовать как в разминке перед водой, так и добавлять в основную часть тренировки на суше.",
-        pills: [plural(nPh,["фаза гребка","фазы гребка","фаз гребка"])],
+        pills: [plural(phases.length,["фаза гребка","фазы гребка","фаз гребка"])],
         doc: d
       }, "d2");
       /* Счётчик фаз с плитки убран: на ней остаётся одно слово,
@@ -3338,20 +3426,23 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
     const byCode = {};
     [typeof SUSHA_STATICS !== "undefined" ? SUSHA_STATICS : null, typeof SUSHA_DYNAMICS !== "undefined" ? SUSHA_DYNAMICS : null]
       .forEach(src=>(src && src.zones || []).forEach(z=>(z.items||[]).forEach(x=>{ byCode[x.code] = x; })));
+    const extras = typeof SUSHA_CORE_COMPLEX_TECHNIQUE === "undefined" ? {} : SUSHA_CORE_COMPLEX_TECHNIQUE;
+    const circuitByName = new Map((typeof SUSHA_CIRCUIT_EX === "undefined" ? [] : SUSHA_CIRCUIT_EX.zones)
+      .flatMap(zone => zone.items.map(exercise => [exercise.name, exercise])));
 
     (typeof SUSHA_CORE_COMPLEXES !== "undefined" ? SUSHA_CORE_COMPLEXES : []).forEach(c=>{
       const d = [];
       p(d, c.desc);
       howto(d);
       h2(d, "Что делаем");
-      (c.items||[]).forEach((x,i)=>{
-        const ex = byCode[x.code] || {};
-        const sub = (x.intervals ? plural(x.intervals,["подход","подхода","подходов"]) : "") + (x.note ? " — " + x.note : "");
-        const t = (i+1) + ") " + (x.code ? codeFull(x.code) + ". " : "") + x.name + (sub ? ". " + sub : "");
-        /* Аккордеон с видео — у динамики (пока с заглушкой) и у статики, где ролик есть.
-           Статика без ролика остаётся строкой с названием. */
-        d.push(["acc", {t, v: ex.v || "", plain: !hasVid(ex)}]);
+      const rows = (c.items || []).map(x => {
+        const extra = extras[x.name];
+        const exercise = byCode[x.code] || circuitByName.get(x.name) || extra;
+        const video = byCode[extra?.videoRef]?.v || exercise?.v;
+        return exerciseRow({...exercise, name:x.name, v:video}, [x.intervals], x.note);
       });
+      d.push(["workout-table", {label:"Упражнения комплекса", columns:["Подходы"], rows}]);
+      warn(d, c.safety);
       const id = "d3_c" + c.n;
       put(id, { title: c.title, lede: c.tag, doc: d }, "d3_cx");
       cx.push({id, n: String(c.n).padStart(2,"0"), t: c.title, m: c.tag, ph: "tile-kor.jpg"});
@@ -3361,12 +3452,18 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       const R = SUSHA_DRESSEL, d = [];
       p(d, R.about);
       ul(d, R.rules);
-      h2(d, "Упражнения");
-      (R.items||[]).forEach(x=>exBlocks(d, x));
-      if(R.table){
-        h2(d, "Схема раундов");
-        d.push(["tbl", [R.table.head].concat(R.table.rows||[])]);
-      }
+      h2(d, "Схема раундов");
+      const videoCodes = {
+        "Складка с касанием носков": "Д-3",
+        "Обычные скручивания": "Д-1",
+        "Подъёмы ног": "Д-4",
+        "Работа ногами кролем на четыре счёта": "Д-6"
+      };
+      const columns = R.table?.head?.slice(1).map((label, i) => ({label, short:(i + 1) + "-й"})) || [];
+      const rows = (R.items || []).map(x => exerciseRow(
+        {...x, v:x.v || byCode[videoCodes[x.name]]?.v}, R.table?.rows?.[x.n - 1]?.slice(1) || []));
+      d.push(["workout-table", {label:"Схема раундов", columns, rows}]);
+      p(d, "В последней строке указаны счёты: каждый счёт равен четырём движениям ногами. В остальных строках указаны повторы.");
       kv(d, "Коротко", R.short);
       kv(d, "Как часто", R.frequency);
       tip(d, R.watch);
@@ -3401,43 +3498,45 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
      а не после списка станций. */
   if(typeof SUSHA_CIRCUIT_EX !== "undefined"){
 
-    const howto = d=>{
-      if(typeof SUSHA_CIRCUIT_HOWTO === "undefined") return;
-      const H = SUSHA_CIRCUIT_HOWTO;
-      h2(d, H.title || "Как выполнять");
-      p(d, H.intro);
-      ul(d, H.points);
-      /* Разминка, заминка и шкала — не строки, а объекты со своим
-         составом. Их печатали подписью, и на экран выходило
-         «[object Object]». Разбираем по полям. */
-      [H.warmup, H.cooldown].forEach(блок=>{
-        if(!блок) return;
-        h3(d, блок.title + (блок.duration ? " — " + блок.duration : ""));
-        p(d, блок.note);
-        const пункты = (блок.items || []).map(x =>
-          Array.isArray(x) ? x[0] + " — " + x[1] : x);
-        ul(d, пункты);
-      });
-      if(H.scale){
-        h3(d, "Если тяжело или, наоборот, легко");
-        ul(d, [["Тяжело", H.scale.hard], ["Совсем тяжело", H.scale.veryHard],
-               ["Легко", H.scale.easy]]
-              .filter(x => x[1]).map(x => x[0] + ": " + x[1]));
-      }
+    const plan = typeof SUSHA_CIRCUIT_HOWTO === "undefined" ? {} : SUSHA_CIRCUIT_HOWTO;
+    const exercises = new Map(SUSHA_CIRCUIT_EX.zones.flatMap(zone =>
+      zone.items.map(exercise => [exercise.name, exercise])));
+    const phase = (d, block)=>{
+      if(!block) return;
+      h3(d, block.title + (block.duration ? " — " + block.duration : ""));
+      p(d, block.note);
+      ul(d, (block.items || []).map(item => Array.isArray(item) ? item.join(" — ") : item));
     };
 
-    const nEx = catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка.", "lite");
+    catalogue("d4_ex", SUSHA_CIRCUIT_EX, "d4", "Станции: техника, дозировка.", "lite", true);
 
     const w = [];
     (typeof SUSHA_CIRCUIT_WORKOUTS !== "undefined" ? SUSHA_CIRCUIT_WORKOUTS : []).forEach(c=>{
-      const d = [];
+      const d = [], how = c.howTo || plan, scale = c.scale || plan.scale;
       p(d, c.desc);
-      howto(d);
+      h2(d, how.title || "Как выполнять");
+      p(d, how.intro);
+      ul(d, how.points);
+      warn(d, c.safety);
+      phase(d, c.warmup || plan.warmup);
       h2(d, "Станции");
-      (c.stations||[]).forEach(x=>d.push(["kv", [(x.code ? codeFull(x.code) + ". " : "") + x.name, x.amount || ""]]));
+      d.push(["circuit", (c.stations || []).map(station => {
+        const exercise = exercises.get(station.name);
+        const doc = [];
+        p(doc, exercise?.how ? сТочкой(exercise.how) : "Описание готовится.");
+        if(exercise?.watch) tip(doc, exercise.watch);
+        if(hasVid(exercise)) vid(doc, exercise.v);
+        return {name:station.name, amount:station.amount, doc, video:hasVid(exercise)};
+      })]);
+      phase(d, c.cooldown || plan.cooldown);
+      if(scale){
+        h3(d, "Если тяжело или, наоборот, легко");
+        ul(d, [["Тяжело", scale.hard], ["Совсем тяжело", scale.veryHard], ["Легко", scale.easy]]
+              .filter(([,value]) => value).map(([label,value]) => label + ": " + value));
+      }
       tip(d, c.watch);
       const id = "d4_w" + c.n;
-      put(id, { title: c.title, lede: c.tag, doc: d }, "d4_cx");
+      put(id, {title:c.title, lede:c.tag, doc:d}, "d4_cx");
       w.push([String(c.n), c.title, c.tag, id]);
     });
 
@@ -3869,20 +3968,27 @@ function workoutText(value){
 
 function toggleWorkoutExercise(btn){
   const panel = document.getElementById(btn.getAttribute("aria-controls"));
+  if(!panel) return;
   const exercise = T[btn.dataset.exercise];
-  if(!panel || !exercise) return;
+  const template = panel.nextElementSibling;
+  if(!exercise && !(template instanceof HTMLTemplateElement)) return;
+  const container = panel.closest(".circuit-detail") || panel;
   const open = btn.getAttribute("aria-expanded") !== "true";
   btn.setAttribute("aria-expanded", String(open));
   if(open){
-    panel.innerHTML = `<div class="workout-ex-head"><h3>${esc(exercise.title)}</h3>
-      <button type="button" class="workout-ex-close" onclick="closeWorkoutExercise(this)">Свернуть</button></div>`
-      + exerciseDocHTML(exercise) + exerciseVideoHTML(exercise);
-    panel.hidden = false;
+    if(exercise){
+      panel.innerHTML = `<div class="workout-ex-head"><h3>${esc(exercise.title)}</h3>
+        <button type="button" class="workout-ex-close" onclick="closeWorkoutExercise(this)">Свернуть</button></div>`
+        + exerciseDocHTML(exercise) + exerciseVideoHTML(exercise);
+    } else {
+      panel.replaceChildren(template.content.cloneNode(true));
+    }
+    container.hidden = false;
     setupFrames();
   } else {
-    // Удаляем плеер: закрытое упражнение не продолжает играть в фоне.
-    panel.hidden = true;
-    panel.innerHTML = "";
+    // Удаляем плеер, чтобы он не продолжал играть после сворачивания.
+    container.hidden = true;
+    panel.replaceChildren();
   }
 }
 
@@ -3890,6 +3996,40 @@ function closeWorkoutExercise(btn){
   const panel = btn.closest(".workout-ex-panel");
   const trigger = panel && document.getElementById(panel.getAttribute("aria-labelledby"));
   if(trigger){ toggleWorkoutExercise(trigger); trigger.focus({preventScroll:true}); }
+}
+
+function workoutTableHTML({rows: exercises, label = "Станции", columns = ["Объём"]}){
+  const roundTable = columns.length > 1;
+  const rows = exercises.map((station, index) => {
+    const key = "workout-ex-" + (++workoutExerciseSeq);
+    return `<tr>
+      <td class="station-number">${index + 1}</td>
+      <td><button type="button" class="workout-ex station-trigger" id="${key}"
+        aria-expanded="false" aria-controls="${key}-panel" onclick="toggleWorkoutExercise(this)">
+        <span><span class="station-name">${esc(station.name)}</span>${station.note ? `<small class="station-note">${esc(station.note)}</small>` : ""}${station.video ? '<small class="station-video">Видео</small>' : ""}</span>
+        <span class="station-chevron" aria-hidden="true">⌄</span>
+      </button></td>
+      ${columns.map((_,i) => `<td class="station-amount">${esc(station.values ? station.values[i] ?? "—" : station.amount || "")}</td>`).join("")}
+    </tr>
+    <tr class="circuit-detail" hidden>
+      <td colspan="${2 + columns.length}">
+        <section class="workout-ex-panel" id="${key}-panel" aria-labelledby="${key}"></section>
+        <template>
+          <div class="workout-ex-head"><h3>Как выполнять</h3>
+            <button type="button" class="workout-ex-close" onclick="closeWorkoutExercise(this)">Свернуть</button>
+          </div>
+          ${exerciseDocHTML({doc:station.doc})}
+        </template>
+      </td>
+    </tr>`;
+  }).join("");
+  return `<table class="circuit-table${roundTable ? " round-table" : ""}" aria-label="${esc(label)}">
+    <colgroup><col class="station-order"><col>${columns.map(() => '<col class="station-dose">').join("")}</colgroup>
+    <thead><tr><th class="station-number" scope="col">№</th><th scope="col">Упражнение</th>${columns.map(column =>
+      typeof column === "string" ? `<th scope="col">${esc(column)}</th>`
+        : `<th scope="col" class="round-head" aria-label="${esc(column.label)}">${esc(column.short)}</th>`).join("")}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
 function exerciseDocHTML(d){
@@ -3917,6 +4057,8 @@ function exerciseDocHTML(d){
             <div class="land-panel" data-v="${esc(val.v||"")}" data-cap="Показ упражнения"></div>`;
         }
         else if(type==="kv") h += `<div class="kv"><b>${esc(val[0])}.</b> ${esc(val[1])}</div>`;
+        else if(type==="circuit") h += workoutTableHTML({rows:val});
+        else if(type==="workout-table") h += workoutTableHTML(val);
         else if(type==="tbl") h += `<div class="tbl-wrap"><table class="tbl">` +
           val.map((row,i)=>`<tr>${row.map(c=>i===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("") +
           `</table></div>`;
@@ -3997,13 +4139,8 @@ const byDay = (arr, period, salt) =>
 /* Выбор уровня. Показывается на главной, пока уровень неизвестен, и
    всегда — на своём экране в «Ещё». Одна и та же разметка, чтобы
    выбор выглядел одинаково и в первый раз, и при смене. */
-function levelPickHTML(head){
+function levelPickHTML(){
   let h = "";
-  if(head){
-    h += `<div class="feed-day">Один вопрос перед началом</div>`;
-    h += `<div class="feed-h">Какой у вас уровень?</div>`;
-    h += `<p class="lede">Нужен ровно для одного: чтобы главный экран предлагал тренировку по силам. Весь каталог открыт целиком в любом случае, и уровень можно поменять в «Ещё» в любой момент.</p>`;
-  }
   h += `<div class="lvls">`;
   LEVELS.forEach(l=>{
     h += `<button class="lvl${LEVEL === l.id ? " on" : ""}" onclick="pickLevel('${l.id}')">
@@ -4227,89 +4364,36 @@ function кадрРаздела(id){
   return "";
 }
 
+const CLUB_ARROW = '<svg class="club-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h14.8m-6-6 6 6-6 6"/></svg>';
+
 function homeHTML(){
-  let h = "";
-  // Знак не печатаем: он уже есть в липкой шапке над экраном.
-  // «Сегодня» убрано: подарок и шесть плиток говорят сами за себя.
-
-  // Карточка дня закрыта: название тренировки на главной не показываем.
-  // Если уровень ещё не выбран, ведём на «Воду» — там стоит вопрос о нём.
-  // Если уровень ещё не выбран, вести некуда — отправляем на «Воду»,
-  // там и стоит вопрос об уровне.
-  h += `<div style="margin:20px auto 12px;max-width:520px">` +
-       dayCapHTML(dayPickTarget() || "s2") + `</div>`;
-
-  h += `<div class="hm-grid">`;
-  for (const [экран, имя, знак, кадр] of МЕНЮ) {
-    // Слой со снимком печатаем первым: значок и название лежат выше по
-    // разметке и по position:relative, иначе снимок закроет их собой.
-    const фото = кадр ? `<span class="tph" style="background-image:url('${кадр}')"></span>` : "";
-    h += `<button class="hm-tile" onclick="go('${экран}')">${фото}
-      <svg viewBox="0 0 24 24" aria-hidden="true">${знак}</svg>
+  const [title, word, vip] = T.home.title.split(" ");
+  const links = МЕНЮ.map(([экран, имя, знак, кадр]) => `
+    <button type="button" class="hm-tile" onclick="go('${экран}')">
+      <span class="tph" style="background-image:url('${кадр}')" aria-hidden="true"></span>
+      <span class="club-card-top">
+        <svg class="club-tile-symbol" viewBox="0 0 24 24" aria-hidden="true">${знак}</svg>
+        ${CLUB_ARROW}
+      </span>
       <b>${имя}</b>
-    </button>`;
-  }
-  h += `</div>`;
-  return h;
-}
-
-/* Экран тренировки дня. Возвращает идентификатор, чтобы закрытая
-   карточка на главной вела прямо в занятие, а не на список. */
-function dayPickTarget(){
-  if(!LEVEL) return null;
-  try { return byDay(feedPools().work, 1, 0) || null; } catch(e){ return null; }
-}
-
-/* Здесь остался только вопрос об уровне: без него подобрать тренировку
-   не из чего. Сама тренировка дня печатается плиткой в общей сетке —
-   см. dayTileHTML и ветку d.kids ниже. */
-function dayPickHTML(){
-  if(!LEVEL) return levelPickHTML(true);
-  return "";
-}
-
-/* Тренировка дня плиткой. Тот же <button class="card">, что у блоков
-   раздела, и тот же кадр раздела — отличать её оформлением не нужно,
-   она отличается местом: стоит первой.
-   Если уровень не выбран или занятие почему-то не нашлось, возвращаем
-   пустую строку: в сетке просто будет на одну плитку меньше, а не
-   дырка или сообщение об ошибке. */
-/* Капсула «Тренировка дня». Одна и та же на главной и на «Воде»:
-   разное там только фоновый кадр и куда вести, если уровень ещё
-   не выбран. Направленность и метраж — два числа, по которым человек
-   решает, плыть сегодня или нет; название занятия («Тренировка 14»)
-   ничего не говорит, пока занятие не открыто, и его не показываем. */
-const КАДР_ДНЯ = "gift-day.jpg";
-function dayCapHTML(запасной){
-  const кадр = КАДР_ДНЯ;
-  let w = null;
-  if(LEVEL){
-    try { w = byDay(feedPools().work, 1, 0) || null; } catch(e){ w = null; }
-  }
-  if(w && !T[w]) w = null;
-  const цель = w || запасной;
-  if(!цель) return "";
-  const p = (w && T[w].pills) || [];
-  const направление = p[0] ? `<span class="dir">${esc(p[0])}${p[2] ? " · " : ""}</span>` : "";
-  const метраж = p[2] ? esc(p[2]) : "";
-  const числа = (направление || метраж) ? `<span class="num">${направление}${метраж}</span>` : "";
-  return `<button class="daycap" onclick="go('${цель}')">
-      ${кадр?`<span class="tph" style="background-image:url('${кадр}')"></span>`:""}
-      <span class="star"><i></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.5 6.1 20.6l1.2-6.5L2.5 9.5l6.6-.9z"/></svg></span>
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ЗНАЧКИ.__day}</svg>
-      <span class="ttl">Тренировка дня</span>
-      ${числа}
-    </button>`;
-}
-
-/* Подпись под сеткой: под какой уровень подобрано и где его сменить.
-   Стоит после сетки, а не перед ней, потому что объясняет уже увиденное. */
-function lvlNoteHTML(){
-  if(!LEVEL) return "";
-  const lvl = LEVELS.find(l => l.id === LEVEL);
-  if(!lvl) return "";
-  return `<div class="lvl-note">Подобрано под уровень «${esc(lvl.n)}»
-      <a onclick="go('level')">сменить</a></div>`;
+    </button>`).join("");
+  return `<section class="club-cover" aria-labelledby="club-title">
+    <div class="club-cover-copy">
+      <div class="club-kicker">Клуб пловцов</div>
+      <h1 id="club-title" aria-label="${esc(T.home.title)}">${esc(title)}
+        <span class="club-title-line"><em>${esc(word)}</em><span class="club-vip">${esc(vip)}</span></span>
+      </h1>
+      <p class="lede">${esc(T.home.lede)}</p>
+      <div class="club-actions">
+        <a class="club-action club-action-primary" href="#sv1">${esc(T.sv1.title)} <svg class="club-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
+        <a class="club-action" href="#about">${esc(T.about.title)} ${CLUB_ARROW}</a>
+      </div>
+    </div>
+  </section>
+  <section class="club-library" aria-labelledby="club-sections-title">
+    <h2 id="club-sections-title">Разделы клуба</h2>
+    <div class="hm-grid">${links}</div>
+  </section>`;
 }
 
 /* Рекорд месяца. Тоже переехал с главной — к игре, в «Ещё». */
@@ -4346,53 +4430,13 @@ function tabOf(id){
 /* Красим страницу в цвет вкладки. Вместе с фоном перекрашиваем полосу
    телеграма и строку состояния браузера: если этого не сделать, сверху
    остаётся ступенька чужого цвета — она заметнее самого фона. */
-function paintTab(t){
-  const R = document.documentElement;
-  if(!R || !R.style) return;
-  // Акцент тоже общий: он красит активные элементы, и прыгающий
-  // цвет между разделами читался как сбой, а не как подсказка.
-
-  /* Подменяем весь набор акцента целиком. Всё, что в файле набрано
-     «золотом», ссылается на эти шесть переменных, поэтому одной сменой
-     перекрашиваются заголовки, номера, кромки карточек, крошки и
-     подписи — а не только значок вкладки. Знак и название в шапке
-     держатся за --brand и остаются золотыми на всех вкладках: это
-     единственное, что должно быть одинаковым везде. */
-  /* Золото больше не перекрашивается под вкладку. Раньше это
-     подсвечивало активную кнопку в нижней панели; панели нет, и
-     разноцветное золото просто ломало фирменный цвет на каждом
-     экране. Вкладка теперь узнаётся фотографией и подсветкой фона,
-     а золото одно на всё приложение — как в каруселях. */
-  /* Фон «Глубина»: три слоя.
-     1) оттенок вкладки сверху — по нему узнаётся, где ты;
-     2) еле заметная косая штриховка — она даёт фактуру, из-за которой
-        экран выглядит плотнее, чем один ровный градиент;
-     3) затемнение к низу — страница «сидит» в тени, а не обрывается.
-     Косой штриховки здесь больше нет: фактуру фону даёт сам снимок
-     вкладки, а лишний слой поверх фотографии на части экранов муарил. */
-  /* Снимок вкладки, если он есть, ложится между штриховкой и цветом.
-     Затемнение и растворение книзу уже впечатаны в сам файл — там их
-     можно было измерить по пикселям, а в градиенте нельзя. */
-  /* Снимок уходит в отдельную переменную и в свой слой (body::after).
-     Так его размер задаётся в стилях и может отличаться на телефоне и
-     на компьютере — в одной строке background этого не сделать. */
-  R.style.setProperty("--photo", t.ph ? `url('${t.ph}')` : "none");
-
-  /* Вуаль над снимком. Прежняя версия клала снимок почти без затемнения,
-     и заголовок ложился прямо на светлую воду или на стену зала. Теперь
-     сверху остаётся 40 процентов кадра — достаточно, чтобы понять, где ты,
-     а к середине экрана фон уходит в ровный фирменный синий. */
-  R.style.setProperty("--glow",
-    `radial-gradient(120% 58% at 50% -8%, rgba(${t.g},.34) 0%, rgba(${t.g},.14) 44%, rgba(${t.g},0) 78%),` +
-    `linear-gradient(180deg, rgba(var(--bg-rgb),.60) 0%, rgba(var(--bg-rgb),.84) 30%,` +
-    ` rgba(var(--bg-rgb),.95) 54%, var(--bg) 78%)`);
-
-  const meta = document.querySelector && document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute("content", t.hdr);
-
-  const tg = window.Telegram && window.Telegram.WebApp;
-  if(tg && tg.setHeaderColor && tg.isVersionAtLeast && tg.isVersionAtLeast("6.9")){
-    try{ tg.setHeaderColor(t.hdr); }catch(e){}
+function paintTab(){
+  const color = "#09151b";
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.content = color;
+  const tg = window.Telegram?.WebApp;
+  if(tg?.setHeaderColor && tg.isVersionAtLeast?.("6.9")){
+    try{ tg.setHeaderColor(color); }catch(e){}
   }
 }
 
@@ -4440,17 +4484,27 @@ function buyHTML(B){
 function crumbs(id){
   const chain=[];let cur=id;
   while(cur && cur!=="home"){chain.unshift(cur);cur=PARENT[cur];}
-  let h='<a onclick="go(\'home\')">Главное</a>';
+  let h='<a href="#home">Главное</a>';
   chain.forEach((c,i)=>{
     if(i===chain.length-1 && T[c].noSelfCrumb) return;   // на справочниках статики и динамики название страницы над заголовком не повторяем
     h+=' <span class="sep">/</span> ';
-    h+= i===chain.length-1 ? esc(T[c].title) : `<a onclick="go('${c}')">${esc(T[c].title)}</a>`;
+    h+= i===chain.length-1 ? esc(T[c].title) : `<a href="#${c}">${esc(T[c].title)}</a>`;
   });
   return `<div class="crumb">${h}</div>`;
 }
 
 function render(id){
   const d = T[id]; if(!d) return;
+  const mainSection = МЕНЮ.find(([key]) => key === id);
+  const reading = !d.feed && !mainSection && !d.kids;
+  document.body.dataset.route = id;
+  document.body.dataset.page = d.feed ? "home" : d.game ? "game" : reading ? "reading" : "section";
+  document.querySelector(".club-menu").open = false;
+  const activeSection = mainSection ? id : tabOf(id).to;
+  document.querySelectorAll(".club-nav a").forEach(link => {
+    if (link.hash === "#" + activeSection) link.setAttribute("aria-current", "location");
+    else link.removeAttribute("aria-current");
+  });
   workoutExerciseSeq = 0;
   let h = "";
 
@@ -4470,17 +4524,20 @@ function render(id){
       h += `</div></div>`;
     }
   } else {
+    const photo = mainSection && mainSection[3];
+    h += photo
+      ? `<section class="page-head page-head-feature" style="--page-photo:url('${photo}')">`
+      : '<section class="page-head">';
     h += crumbs(id);
     h += `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
     if(d.lede) h += `<p class="lede${d.whiteLede ? " wh" : ""}">${esc(d.lede)}</p>`;
     if(d.pills) h += `<div class="pills">${d.pills.map(p=>`<span class="pill">${esc(p)}</span>`).join("")}</div>`;
+    h += '</section>';
 
-    // Тренировка дня и рекорд месяца — на своих вкладках
-    if(d.water) h += dayPickHTML();
     if(d.more)  h += gameCardHTML();
 
     // Экран смены уровня — та же разметка, что и при первом вопросе
-    if(d.levels) h += levelPickHTML(false);
+    if(d.levels) h += levelPickHTML();
 
     // Рассказ о клубе. Раньше висел на главной; теперь у него свой
     // экран, потому что главная стала лентой на день.
@@ -4502,10 +4559,7 @@ function render(id){
       // Кадр один на весь раздел — тот же, что на плитке меню, из
       // которой в него входят.
       const кадр = кадрРаздела(id);
-      // Тренировка дня стоит над сеткой и только на «Воде»: это
-      // единственное на экране, что открывают не выбирая.
-      if(d.water) h += dayCapHTML();
-      h += `<div class="grid${d.stack ? " stack" : ""}${d.big ? " big" : ""}${d.tall ? " tall" : ""}">`;
+      h += `<div class="grid${d.stack ? " stack" : ""}${d.big ? " big" : ""}${d.tall ? " tall" : ""}${d.levelCards ? " level-grid" : ""}">`;
       d.kids.forEach(k=>{
         // Свой снимок, если он есть; иначе общий кадр раздела. Так
         // раздел можно снабжать фотографиями по одной, и ряд всё это
@@ -4520,7 +4574,7 @@ function render(id){
            честно стоит «скоро». */
         const готов = !!T[k.id];
         const счёт = готов ? k.m : (k.m ? "скоро · " + k.m : "скоро");
-        h += `<button class="card${снимокУровня ? " level-photo" : ""}${готов ? "" : " soon"}${счёт ? "" : " nometa"}"${готов ? ` onclick="go('${k.id}')"` : ""}>
+        h += `<button class="card${снимокУровня ? " level-photo" : ""}${готов ? "" : " soon"}${счёт ? "" : " nometa"}"${готов ? ` onclick="go('${k.id}')"` : " disabled"}>
           ${снимок?`<span class="tph" style="background-image:url('${снимок}')"></span>`:""}
           ${знак?`<svg viewBox="0 0 24 24" aria-hidden="true">${знак}</svg>`:""}
           <span class="ttl">${esc(k.t)}</span>
@@ -4528,7 +4582,6 @@ function render(id){
         </button>`;
       });
       h += `</div>`;
-      if(d.water) h += lvlNoteHTML();
       if(d.water) h += `<div class="svod">
         <h4>Как этим пользоваться</h4>
         <p><b>Выносливость</b> — база. Длинные ровные серии, на которых держится всё остальное.
@@ -5484,7 +5537,19 @@ function setupVideos(){
 
 function go(id){ location.hash = id; }
 window.addEventListener("hashchange", ()=> render(location.hash.slice(1) || "home"));
-loadLevel();                       // из памяти устройства — мгновенно
+const clubNav = МЕНЮ.map(([id, name]) => `<a href="#${id}">${esc(name)}</a>`).join("");
+document.querySelectorAll(".club-nav").forEach(nav => { nav.innerHTML = clubNav; });
+const clubMenu = document.querySelector(".club-menu");
+clubMenu.addEventListener("click", event => {
+  if (event.target.closest("a")) clubMenu.open = false;
+});
+clubMenu.addEventListener("keydown", event => {
+  if (event.key === "Escape" && clubMenu.open) {
+    clubMenu.open = false;
+    clubMenu.querySelector("summary").focus();
+  }
+});
+loadLevel();
 render(location.hash.slice(1) || "home");
 
 /* Над мини-приложением телеграм рисует собственную полосу и красит её
