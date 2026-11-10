@@ -2163,7 +2163,7 @@ function syncLevel(){
         if(v !== LEVEL){
           LEVEL = v;
           try{ localStorage.setItem(LVL_KEY, v); }catch(e){}
-          render(location.hash.slice(1) || "home");
+          render();
         }
       } else if(LEVEL && cs.setItem){
         cs.setItem(LVL_KEY, LEVEL, ()=>{});
@@ -2176,7 +2176,7 @@ function pickLevel(v){
   saveLevel(v);
   const tg = window.Telegram && window.Telegram.WebApp;
   try{ if(tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light"); }catch(e){}
-  render(location.hash.slice(1) || "home");
+  render();
   if(typeof window !== "undefined" && window.scrollTo) window.scrollTo({top:0,behavior:"instant"});
 }
 
@@ -4493,8 +4493,11 @@ function crumbs(id){
   return `<div class="crumb">${h}</div>`;
 }
 
-function render(id){
-  const d = T[id]; if(!d) return;
+function render(){
+  // Telegram передаёт параметры запуска в hash, рядом с адресами разделов.
+  const hash = location.hash.slice(1);
+  const id = Object.prototype.hasOwnProperty.call(T, hash) ? hash : "home";
+  const d = T[id];
   const mainSection = МЕНЮ.find(([key]) => key === id);
   const reading = !d.feed && !mainSection && !d.kids;
   document.body.dataset.route = id;
@@ -4994,7 +4997,7 @@ function writeBSec(v){ try{ localStorage.setItem(BSEC_KEY, String(v)); }catch(e)
 // Выбор длины отрезка — из разметки, поэтому функция глобальная
 function setBreathSec(v){
   writeBSec(v);
-  render(location.hash.slice(1) || "home");
+  render();
 }
 
 function stopBreath(){
@@ -5536,7 +5539,7 @@ function setupVideos(){
 }
 
 function go(id){ location.hash = id; }
-window.addEventListener("hashchange", ()=> render(location.hash.slice(1) || "home"));
+window.addEventListener("hashchange", render);
 const clubNav = МЕНЮ.map(([id, name]) => `<a href="#${id}">${esc(name)}</a>`).join("");
 document.querySelectorAll(".club-nav").forEach(nav => { nav.innerHTML = clubNav; });
 const clubMenu = document.querySelector(".club-menu");
@@ -5550,7 +5553,7 @@ clubMenu.addEventListener("keydown", event => {
   }
 });
 loadLevel();
-render(location.hash.slice(1) || "home");
+render();
 
 /* Над мини-приложением телеграм рисует собственную полосу и красит её
    в цвет своей темы — у большинства он чёрный. Поэтому поверх синей
@@ -5575,7 +5578,7 @@ render(location.hash.slice(1) || "home");
          и одного значения на всё приложение уже не хватает. Скрипт
          телеграма грузится позже первой отрисовки, поэтому красим
          повторно — иначе шапка осталась бы от цвета по умолчанию. */
-      if(ver("6.9")) paintTab(tabOf(location.hash.slice(1) || "home"));
+      if(ver("6.9")) paintTab();
       else tg.setHeaderColor("bg_color");
     }
 
