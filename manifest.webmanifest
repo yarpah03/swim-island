@@ -1,0 +1,13 @@
+{
+  "name": "Плавательный остров VIP",
+  "short_name": "Остров VIP",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#09151b",
+  "background_color": "#09151b",
+  "icons": [
+    { "src": "vip-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "vip-icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
