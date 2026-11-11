@@ -394,6 +394,15 @@ header{
 .lvl-note a{color:var(--gold);cursor:pointer;text-decoration:none;padding:4px 0}
 .lvl-note a:hover{color:var(--gold-lt)}
 
+.page-back{
+  position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;
+  min-height:44px;padding:0 14px;margin:0 0 6px;border-radius:999px;
+  background:rgba(8,24,31,.82);border:1px solid rgba(255,255,255,.24);
+  color:#fff;text-decoration:none;font-size:15px;font-weight:600;
+}
+.page-back:hover{background:#152d37}
+.page-back:focus-visible{outline:2px solid var(--gold-lt);outline-offset:3px}
+.page-back span{font-size:19px;line-height:1}
 .crumb{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:14px 0 6px;font-size:15.5px;color:var(--txt-2)}
 /* Крошки — навигация, в них целятся пальцем: даём им высоту */
 .crumb a{color:var(--gold);text-decoration:none;cursor:pointer;padding:6px 0;display:inline-block}
@@ -1274,7 +1283,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <!-- Официальный набор телеграма. Без него приложение не знает, кто его открыл,
      и не умеет по-человечески открывать внешние ссылки. -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="trenirovki.js"></script>
+<script src="trenirovki.js?v=20261111"></script>
 <script src="obuchenie.js"></script>
 <script src="susha.js?v=75ddf705"></script>
 <script src="gibkost.js"></script>
@@ -1899,9 +1908,9 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
      на свою плитку, и прокладка осталась бы экраном из одного пункта. */
   s2:{water:true,title:"Тренировки в бассейне",lede:"Четыре блока с разной направленностью. В каждом — три уровня и по пятнадцать тренировок.",kids:[
     {id:"b_vy",n:"01",t:"Выносливость",s:"Длинные ровные серии, которые строят базу и учат держать темп до конца дистанции",m:"3 уровня · 5 блоков · 75 тренировок",ph:"tile-vynoslivost.jpg"},
-    {id:"b_sk",n:"02",t:"Скорость",s:"Короткие отрезки в полную силу с длинным отдыхом: учимся плыть быстро, а не терпеть",m:"3 уровня · 45 тренировок",ph:"tile-skorost.jpg"},
-    {id:"b_mo",n:"03",t:"Мощность",s:"Работа под нагрузкой, где судья не секундомер, а длина гребка",m:"3 уровня · 45 тренировок",ph:"tile-moshchnost.jpg"},
-    {id:"b_vo",n:"04",t:"Восстановление",s:"Спокойные тренировки после тяжёлых дней: возвращают гребок и снимают усталость",m:"3 уровня · 45 тренировок",ph:"tile-vosstanovlenie.jpg"}
+    {id:"b_sk",n:"02",t:"Скорость",s:"Короткие отрезки в полную силу с длинным отдыхом: учимся плыть быстро, а не терпеть",ph:"tile-skorost.jpg"},
+    {id:"b_mo",n:"03",t:"Мощность",s:"Работа под нагрузкой, где судья не секундомер, а длина гребка",ph:"tile-moshchnost.jpg"},
+    {id:"b_vo",n:"04",t:"Восстановление",s:"Спокойные тренировки после тяжёлых дней: возвращают гребок и снимают усталость",ph:"tile-vosstanovlenie.jpg"}
   ]},
   b_vy:{title:"Выносливость",lede:"Аэробная база: длинные серии, ровный пульс, объём. Выберите уровень — внутри пять блоков по пять тренировок.",levelCards:true,kids:[
     {id:"vy_n",n:"01",t:"Новичок",s:"Отрезки короче, отдых по потребности — задача доплыть ровно, а не быстро",m:"1200–1600 м · 25 тренировок"},
@@ -2541,9 +2550,7 @@ Object.keys(AERO).forEach(lvl=>{
   if(advanced) advanced.m = AERO.vy_p.vol + " · " + AERO.vy_p.blocks.reduce((s,b) => s+b.w.length,0) + " тренировок";
 })();
 
-/* Скорость, мощность и восстановление устроены иначе: там нет блоков,
-   а есть пятнадцать самостоятельных тренировок на каждом уровне.
-   Путь: направление → уровень → список тренировок → одна тренировка. */
+/* Скорость, мощность и восстановление: направление → уровень → тренировка. */
 const LSUB = {
   "Новичок":     "Отрезки короче и отдыха больше — сначала учимся делать чисто, потом быстро",
   "Средний":     "Работа по интервалу: отдых считается по часам, а не берётся по ощущениям",
@@ -2567,6 +2574,12 @@ Object.keys(BLOCKS).forEach(dir=>{
   const D = BLOCKS[dir];
   const lvls = Object.keys(D.levels);
   const кадр = ФОТО_НАПРАВЛЕНИЯ[dir] || "";
+  const card = T.s2.kids.find(k => k.id === dir);
+  if(card){
+    const total = lvls.reduce((sum, k) => sum + D.levels[k].w.length, 0);
+    card.m = plural(lvls.length, ["уровень","уровня","уровней"]) + " · " +
+      plural(total, ["тренировка","тренировки","тренировок"]);
+  }
 
   T[dir] = {
     title: D.name,
@@ -2576,7 +2589,7 @@ Object.keys(BLOCKS).forEach(dir=>{
       const L = D.levels[k];
       return {
         id: k, n: "0" + (i+1), t: L.level, s: LSUB[L.level],
-        m: L.vol + " · " + L.w.length + " тренировок",
+        m: L.vol + " · " + plural(L.w.length, ["тренировка","тренировки","тренировок"]),
         ph: кадр
       };
     })
@@ -2584,13 +2597,9 @@ Object.keys(BLOCKS).forEach(dir=>{
 
   lvls.forEach(k=>{
     const L = D.levels[k];
-    /* Пятнадцать тренировок стоят плитками, а не списком: уровень
-       открывают из плитки, и внутри должен быть тот же вид. Номер
-       вынесен в название — «Тренировка 7» и есть всё, что отличает
-       одну от другой, а направленность написана под ней. */
     T[k] = {
       title: D.name + ". " + L.level,
-      lede: "Пятнадцать готовых тренировок. Порядок свободный — берите ту, что подходит по задаче.",
+      lede: plural(L.w.length, ["готовая тренировка","готовые тренировки","готовых тренировок"]) + ". Порядок свободный — берите ту, что подходит по задаче.",
       pills: [L.level, L.vol + " за занятие"],
       slot: false,
       /* Под названием — метраж, а не описание занятия: описание в плитку
@@ -4534,6 +4543,10 @@ function render(){
     h += photo
       ? `<section class="page-head page-head-feature" style="--page-photo:url('${photo}')">`
       : '<section class="page-head">';
+    if(!d.game){
+      const parent = PARENT[id] || "home";
+      h += `<a class="page-back" href="#${esc(parent)}"><span aria-hidden="true">&larr;</span>Назад</a>`;
+    }
     h += crumbs(id);
     h += `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
     if(d.lede) h += `<p class="lede${d.whiteLede ? " wh" : ""}">${esc(d.lede)}</p>`;
@@ -4672,7 +4685,7 @@ if(d.lesson){
       h += `<div class="gamebox">
         <canvas id="gcv"></canvas>
         <div class="g-hud"><span id="gdist">0 м</span><span id="gbest"></span></div>
-        <button class="g-back" onclick="go('game')">&lsaquo; назад</button>
+        <button class="g-back" onclick="go('game')">&larr; Назад</button>
       </div>`;
     }
 
