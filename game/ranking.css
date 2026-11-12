@@ -50,8 +50,6 @@
 .rank-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .rank-refresh:disabled { opacity: .55; cursor: progress; }
 
-body.gamefull .gamebox { max-width: calc(var(--vh, 100vh) * .85); margin-inline: auto; }
-.g-ranking { left: auto; right: 12px; text-decoration: none; }
 .g-status {
   position: absolute;
   top: calc(40px + env(safe-area-inset-top, 0px));
