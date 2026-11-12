@@ -5425,11 +5425,12 @@ function setupGame(){
   function banner(big, small){
     ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(0, H*0.13, W, H*0.26);
     ctx.textAlign = "center"; ctx.fillStyle = TXT;
-    ctx.font = "900 " + Math.round(H*0.075) + "px 'Montserrat',sans-serif";
-    ctx.fillText(big, W/2, H*0.235);
+    const textWidth = Math.max(1, W - 24);
+    ctx.font = "900 " + Math.round(Math.min(H*0.075, W*0.092)) + "px 'Montserrat',sans-serif";
+    ctx.fillText(big, W/2, H*0.235, textWidth);
     ctx.fillStyle = GOLD;
-    ctx.font = "500 " + Math.round(H*0.038) + "px 'Montserrat',sans-serif";
-    ctx.fillText(small, W/2, H*0.315);
+    ctx.font = "500 " + Math.round(Math.min(H*0.038, W*0.048)) + "px 'Montserrat',sans-serif";
+    ctx.fillText(small, W/2, H*0.315, textWidth);
   }
 
   // --- цикл ---
