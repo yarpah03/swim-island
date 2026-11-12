@@ -1246,6 +1246,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 }
 </style>
 <link rel="stylesheet" href="vip-theme.css">
+<link rel="stylesheet" href="game/ranking.css?v=1">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="markpath" viewBox="0 0 512 512"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></symbol></defs></svg>
@@ -1291,6 +1292,8 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="rezina.js?v=00cc0d91"></script>
 <script src="literatura.js"></script>
 <script src="news.js"></script>
+<script src="game/engine.js?v=1"></script>
+<script src="game/ranking.js?v=1"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -1990,43 +1993,26 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
   // Пять экранов «Сервиса» собираются ниже, из SERVICE.
   s7:{title:"Сервис",lede:"Подписка, подарки, приглашение друзей и ответы на вопросы."},
 
-  /* Карточки с рекордом месяца над плитками больше нет: четыре плитки
-     говорят сами за себя, а оба рекорда всё так же лежат в «Рейтинге». */
   game:{stack:true,title:"Игра",lede:"Заплыв на одно касание. Ведите пловца между дорожками, ставьте рекорды и боритесь за призы.",kids:[
     {id:"game_play",n:"01",t:"Играть",  s:"Заплыв на одно касание: гребок вверх, дальше пловец опускается сам",m:"",ph:"tile-game-play.jpg"},
-    {id:"game_top", n:"02",t:"Рейтинг", s:"Ваш личный рекорд и общая таблица среди участников клуба",m:"",ph:"tile-game-top.jpg"},
+    {id:"game_top", n:"02",t:"Рейтинг", s:"Общий зачёт за месяц и ваше место в таблице",m:"",ph:"tile-game-top.jpg"},
     {id:"game_win", n:"03",t:"Призы",   s:"Что разыгрываем среди лучших пловцов каждый месяц",m:"",ph:"tile-game-win.jpg"},
     {id:"game_help",n:"04",t:"Правила", s:"Как управлять, как считаются метры и что делает заплыв длиннее",m:"",ph:"tile-game-help.jpg"}
   ]},
 
   game_play:{title:"Заплыв",lede:"Касание — гребок. Просвет проходите по центру.",game:true},
 
-  game_top:{title:"Рейтинг",lede:"",best:true,
-    doc:[
-      ["h2","Общая таблица"],
-      ["p","Пока её нет, и мы не хотим делать вид, что она есть. Приложение сейчас ничего никуда не отправляет: рекорд лежит у вас в телефоне и остаётся только у вас."],
-      ["p","Чтобы сравнивать результаты между людьми, нужно место, где они хранятся, — и защита от накрутки. Счёт считается прямо в телефоне, поэтому без проверки в таблицу можно вписать любое число, не проплыв ни метра. Делать рейтинг, который выигрывает не пловец, мы не будем."],
-      ["h2","Как будет устроено"],
-      ["p","Заплыв станет воспроизводимым: приложение запомнит, в каком порядке шли дорожки и когда вы касались экрана, и отправит эту запись. Сервер прокрутит ваш заплыв у себя и подтвердит результат. Вписать чужие метры при этом не выйдет — придётся действительно их проплыть."],
-      ["tip","Пока таблицы нет, показывайте результат в канале клуба. Скриншот с метрами — самый честный рейтинг из возможных: его видят все."]
-    ]},
+  game_top:{title:"Рейтинг",lede:"Метры всех зачётных заплывов складываются в течение месяца.",best:true},
 
-  game_win:{title:"Призы",lede:"Каждый месяц отмечаем тех, кто проплыл дальше всех.",
+  game_win:{title:"Призы",lede:"Первое место за месяц приносит бесплатный месяц VIP.",
     doc:[
-      ["h2","Как это работает"],
-      ["num",[
-        "Играете в течение месяца и запоминаете свой лучший результат.",
-        "В конце месяца показываете его в канале клуба.",
-        "Лучшие результаты забирают призы."
-      ]],
-      ["h2","Что нужно знать"],
+      ["h2","Условия зачёта"],
       ["ul",[
-        "Розыгрыш идёт среди участников клуба.",
-        "Считается лучший заплыв за месяц, а не сумма всех.",
-        "Победителей и призы объявляем в канале в начале следующего месяца.",
-        "Результаты, полученные не игрой, а правкой приложения, не засчитываются."
+        "В зачёт идут метры всех завершённых заплывов, принятых в течение календарного месяца по московскому времени.",
+        "При равном метраже выше тот, кто набрал его раньше.",
+        "Клуб подтверждает участие победителя в VIP и объявляет итоги в канале в начале следующего месяца."
       ]],
-      ["tip","Конкретные призы и сроки на каждый месяц смотрите в канале клуба — там же публикуем итоги."]
+      ["tip","Текущее место и итог прошлого месяца смотрите в разделе «Рейтинг»."]
     ]},
 
   game_help:{title:"Правила",lede:"Коротко обо всём, что нужно знать до первого заплыва.",
@@ -2041,7 +2027,7 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
       ["ul",[
         "Каждый пройденный просвет — двадцать пять метров, длина бассейна.",
         "Чем дальше вы уплыли, тем чаще идут дорожки и тем уже просветы.",
-        "Заплыв кончается от касания троса, дна или поверхности."
+        "Заплыв заканчивается при касании троса, дна или поверхности, а также по истечении пяти минут."
       ]],
       ["h2","Что помогает"],
       ["ul",[
@@ -2050,7 +2036,7 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
         "Гребок делать чуть раньше, чем кажется нужным: пловец набирает высоту не мгновенно.",
         "Не колотить по экрану. Пловец идёт по дуге, и чаще выгоднее подождать, чем добавить второй гребок."
       ]],
-      ["tip","Рекорд хранится в вашем телефоне и никуда не отправляется. Если очистить данные браузера, он сбросится."]
+      ["tip","Для зачёта откройте игру в Telegram и завершите заплыв. В таблице видны метры и имя из Telegram. Личный рекорд сохраняется на этом устройстве."]
     ]}
 };
 
@@ -4685,15 +4671,40 @@ if(d.lesson){
       h += `<div class="gamebox">
         <canvas id="gcv"></canvas>
         <div class="g-hud"><span id="gdist">0 м</span><span id="gbest"></span></div>
+        <p class="g-status" id="game-status" role="status"></p>
         <button class="g-back" onclick="go('game')">&larr; Назад</button>
+        <a class="g-back g-ranking" href="#game_top">Рейтинг</a>
       </div>`;
     }
 
     if(d.best){
-      // Два числа, а не одно: призы разыгрываются помесячно, поэтому
-      // рекорд месяца важнее рекорда за всё время
-      h += `<div class="book"><div class="refbox">
-        <span class="ref-t">Рекорд этого месяца</span>
+      h += `<section class="rank-panel" id="game-ranking" aria-labelledby="rank-title">
+        <div class="rank-header">
+          <div><h2 id="rank-title">Общий зачёт</h2><p class="rank-month"></p></div>
+          <button class="ref-btn rank-refresh" type="button" hidden>Обновить</button>
+        </div>
+        <div class="rank-personal" hidden>
+          <p>Ваш метраж за месяц</p>
+          <strong class="rank-meters"></strong>
+          <p class="rank-place"></p>
+        </div>
+        <p class="rank-status" role="status"></p>
+        <table class="rank-table" aria-label="Месячный рейтинг" hidden>
+          <thead><tr><th scope="col">Место</th><th scope="col">Участник</th><th scope="col">Метры</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="rank-prize">Первое место за месяц — месяц VIP бесплатно.</p>
+        <div class="rank-previous" hidden>
+          <p class="rank-previous-month"></p>
+          <strong class="rank-previous-name"></strong>
+        </div>
+        <div class="rank-actions">
+          <button class="ref-btn" type="button" onclick="go('game_play')">Играть</button>
+          <button class="ref-btn" type="button" onclick="go('game_win')">Условия зачёта</button>
+        </div>
+      </section>
+      <div class="book"><div class="refbox">
+        <span class="ref-t">Лучший заплыв месяца на этом устройстве</span>
         <div class="bestv" id="bestm">—</div>
         <span class="ref-t" style="margin-top:18px;display:block">За всё время</span>
         <div class="bestv" id="bestv" style="font-size:30px">—</div>
@@ -4863,6 +4874,7 @@ if(d.lesson){
   setupGame();
   setupBreath();
   setupBest();
+  SwimRanking.setup();
 }
 
 /* Персональная ссылка приглашения. Идентификатор берём у телеграма:
@@ -4938,13 +4950,7 @@ function readBest(){
 }
 function writeBest(v){ try{ localStorage.setItem(BEST_KEY, String(v)); }catch(e){} }
 
-/* Рекорд текущего месяца — отдельно от рекорда за всё время.
-   Призы разыгрываются каждый месяц, а рекорд за всё время к первому
-   числу не обнуляется: человек, поставивший 900 метров в июне, иначе
-   выглядел бы лидером и в сентябре, ничего в сентябре не проплыв.
-   Храним месяц вместе со значением — по нему и понимаем, что пора
-   начинать заново. Никуда не отправляем: это по-прежнему только
-   ваш телефон. */
+/* Личный рекорд на этом устройстве хранится отдельно от общего зачёта. */
 const MONTH_KEY = "swim_island_best_month";
 const nowMonth = () => {
   const d = new Date();
@@ -5172,11 +5178,13 @@ function setupGame(){
   const ctx = cv.getContext("2d");
   const elDist = document.getElementById("gdist");
   const elBest = document.getElementById("gbest");
+  const elStatus = document.getElementById("game-status");
+  const engine = SwimGameEngine;
   const css = (typeof getComputedStyle === "function")
     ? getComputedStyle(document.documentElement) : null;
   const V = (n, f) => { try{ return css.getPropertyValue(n).trim() || f; }catch(e){ return f; } };
   const GOLD = V("--gold","#F6CC48"), GOLD_LT = V("--gold-lt","#FEE488"),
-        GOLD_DK = V("--gold-dk","#7E5C1E"), BG = V("--bg","#060B14"),
+        BG = V("--bg","#060B14"),
         SURF = V("--surf","#0C1422"), TXT = V("--txt","#EDF1F6");
   const LANE = [V("--lane-1","#EDF2F7"), V("--lane-2","#2E6FD4"), V("--lane-3","#CE4038")];
 
@@ -5186,7 +5194,7 @@ function setupGame(){
   let W = 0, H = 0, dpr = 1;
   function fit(){
     const r = cv.getBoundingClientRect();
-    if(!r.width) return false;
+    if(!r.width || !r.height) return false;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = r.width; H = r.height;
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
@@ -5196,86 +5204,83 @@ function setupGame(){
 
   // --- состояние ---
   const READY = 0, PLAY = 1, DEAD = 2;
-  let state, y, vy, ropes, dist, t, shake;
+  let state, run, t, shake;
+  let ticket, connecting = false, disposed = false, newBest = false;
+  let accumulator = 0, queuedStroke = false, taps = [];
+  const status = text => { elStatus.textContent = text; };
+  const practiceSeed = () => Math.floor(Math.random() * 0x100000000);
 
   function reset(){
     state = READY; t = 0; shake = 0;
-    y = H * 0.5; vy = 0; dist = 0;
-    ropes = [];
-    // первая дорожка не у самого носа, но и не через полминуты
-    for(let i = 0; i < 3; i++) addRope(W * 0.9 + W * 0.58 * i);
+    run = engine.create(practiceSeed());
+    ticket = null;
+    status(SwimRanking.available()
+      ? "Заплыв в зачёт · имя из Telegram видно в рейтинге"
+      : "Тренировка · зачётные заплывы доступны в Telegram");
     draw();
   }
 
-  // Просвет сужается с расстоянием, но не бесконечно: ниже 0.20 высоты
-  // проход становится делом удачи, а не умения.
-  /* К просвету добавлен ровно один поплавок: на телефоне прежней щели
-     не хватало, чтобы успеть довести пловца до середины. */
-  function gapFor(){ return H * Math.max(0.26, 0.44 - dist * 0.0012) + ROPE_W(); }
-  function speedFor(){ return W * (0.34 + Math.min(dist, 60) * 0.0030); }
-
-  function addRope(x){
-    const g = gapFor(), pad = H * 0.10;
-    const lo = pad + g/2, hi = H - pad - g/2;
-    let cy = lo + Math.random() * (hi - lo);
-    // Соседние просветы не должны прыгать через весь экран: иначе попадаются
-    // связки, которые физически не пройти, сколько ни греби.
-    const prev = ropes.length ? ropes[ropes.length-1].cy : H/2;
-    cy = Math.max(lo, Math.min(hi, Math.max(prev - H*0.26, Math.min(prev + H*0.26, cy))));
-    ropes.push({ x, g, cy, passed:false });
+  function begin(entry, message){
+    if(disposed) return;
+    ticket = entry;
+    if(entry) run = engine.create(entry.seed);
+    state = PLAY; t = 0; accumulator = 0;
+    queuedStroke = true; taps = [];
+    status(message);
   }
 
   function stroke(){
-    if(state === READY){ state = PLAY; }
-    else if(state === DEAD){ if(t > 0.6) reset(); return; }
-    vy = -H * 0.58;   // короткий гребок: подъём примерно на восьмую часть высоты,
-                      // зато высоту держать заметно проще
+    if(state === PLAY){ queuedStroke = true; return; }
+    if(state === DEAD){ if(t > 0.6) reset(); return; }
+    if(connecting) return;
+    if(!SwimRanking.available()){ begin(null, "Тренировка"); return; }
+    connecting = true;
+    status("Подключаем месячный зачёт…");
+    SwimRanking.start()
+      .then(entry => begin(entry, "Зачётный заплыв"))
+      .catch(error => begin(null, error.status === 401
+        ? "Тренировка · для зачёта откройте приложение заново в Telegram"
+        : "Тренировка · зачёт временно недоступен"))
+      .finally(() => { connecting = false; });
   }
 
   function die(){
-    if(state !== PLAY) return;
     state = DEAD; t = 0; shake = 1;
-    if(dist > best){
-      best = dist;
+    const { meters, ticks } = run;
+    newBest = meters > best;
+    if(newBest){
+      best = meters;
       writeBest(best);
     }
-    // Рекорд месяца растёт независимо: он может обновиться и тогда,
-    // когда до общего рекорда заплыв не дотянул
-    if(dist > readMonthBest()) writeMonthBest(dist);
+    if(meters > readMonthBest()) writeMonthBest(meters);
+    if(ticket && meters){
+      status("Проверяем заплыв…");
+      const finishedRun = run;
+      SwimRanking.finish(ticket.id, ticks, taps).then(result => {
+        if(disposed || run !== finishedRun) return;
+        const message = {
+          saved: "+" + result.meters + " м в зачёте",
+          pending: "Результат в очереди · откройте рейтинг, когда вернётся связь",
+          expired: "Не удалось зачесть заплыв",
+        };
+        status(message[result.state]);
+      });
+    }
     const tg = window.Telegram && window.Telegram.WebApp;
     try{ tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred("error"); }catch(e){}
   }
 
-  const R = () => H * 0.037;              // радиус пловца
-  const ROPE_W = () => H * 0.034;         // толщина троса
-
   function step(dt){
     t += dt;
     if(shake > 0) shake = Math.max(0, shake - dt * 4);
-    if(state !== PLAY) return;
-
-    vy += H * 1.28 * dt;                   // тонет
-    vy = Math.min(vy, H * 0.95);           // но не камнем
-    y += vy * dt;
-
-    const sp = speedFor(), r = R(), rw = ROPE_W();
-    for(const p of ropes) p.x -= sp * dt;
-
-    if(ropes.length && ropes[0].x < -rw*1.5){ ropes.shift(); addRope(ropes[ropes.length-1].x + W * 0.58); }
-
-    const px = W * 0.28;
-    for(const p of ropes){
-      if(!p.passed && p.x + rw/2 < px - r){ p.passed = true; dist += 25; }
-      // Столкновение считаем не по точке, а по отрезку, который трос прошёл
-      // за кадр. Иначе на скорости он за один кадр перепрыгивает пловца
-      // целиком, и удар не засчитывается.
-      const was = p.x + sp * dt;
-      const l = Math.min(p.x, was) - rw/2, rr = Math.max(p.x, was) + rw/2;
-      if(l < px + r && rr > px - r){
-        if(y - r < p.cy - p.g/2 || y + r > p.cy + p.g/2) die();
-      }
+    if(state === PLAY) accumulator += dt;
+    while(state === PLAY && accumulator >= engine.STEP){
+      if(queuedStroke && ticket) taps.push(run.ticks);
+      engine.step(run, queuedStroke);
+      queuedStroke = false;
+      accumulator -= engine.STEP;
+      if(run.ended) die();
     }
-    if(y + r > H || y - r < 0) die();       // дно и поверхность
   }
 
   /* Фон — снимок воды, и он неподвижен. Раньше он медленно уезжал влево
@@ -5288,7 +5293,7 @@ function setupGame(){
       ctx.fillStyle = grd; ctx.fillRect(0,-Math.abs(sh),W,H+Math.abs(sh)*2);
       ctx.strokeStyle = "rgba(255,255,255,.045)"; ctx.lineWidth = 1;
       for(let i=0;i<7;i++){
-        const yy = H*(0.09+i*0.13), off = (t*speedFor()*0.35 + i*90) % (W+120);
+        const yy = H*(0.09+i*0.13), off = (t*W*0.12 + i*90) % (W+120);
         ctx.beginPath();
         for(let x=-120;x<W+120;x+=14) ctx.lineTo(x, yy + Math.sin((x+off)/48)*3.5);
         ctx.stroke();
@@ -5310,20 +5315,21 @@ function setupGame(){
     drawWater(sh);
 
     // дорожки
-    const rw = ROPE_W();
-    for(const p of ropes){
-      drawRope(p.x, 0, p.cy - p.g/2, rw);
-      drawRope(p.x, p.cy + p.g/2, H, rw);
+    const rw = H * engine.ROPE_Y;
+    const scaleX = W / (H * engine.ASPECT);
+    for(const rope of run.ropes){
+      drawRope(rope.x * W, 0, (rope.center - rope.gap / 2) * H, rw, scaleX);
+      drawRope(rope.x * W, (rope.center + rope.gap / 2) * H, H, rw, scaleX);
     }
 
-    drawSwimmer(W*0.28, y, R());
+    drawSwimmer(W * engine.SWIMMER_X, run.y * H, H * engine.RADIUS_Y, scaleX);
     ctx.restore();
 
-    if(elDist) elDist.textContent = dist + " м";
+    if(elDist) elDist.textContent = run.meters + " м";
     if(elBest) elBest.textContent = best ? "рекорд " + best + " м" : "";
 
     if(state === READY) banner("Касание — гребок", "Проведите пловца между дорожками");
-    if(state === DEAD)  banner(dist + " м", dist >= best && dist > 0 ? "Новый рекорд. Касание — заново" : "Касание — заново");
+    if(state === DEAD)  banner(run.meters + " м", newBest ? "Новый рекорд. Касание — заново" : "Касание — заново");
   }
 
   /* Трос как в бассейне: цепочка поплавков, а не сплошная палка.
@@ -5333,13 +5339,13 @@ function setupGame(){
   /* Отрезок делим на целое число поплавков и подгоняем их размер под
      длину, а не режем последний по краю. Раньше отрезок обрезался
      прямоугольником, и у просвета всегда висел кусок шарика. */
-  function drawRope(x, y0, y1, w){
+  function drawRope(x, y0, y1, w, scaleX){
     const len = Math.max(0, y1 - y0);
     if(len <= 0) return;
     const n = Math.max(1, Math.round(len / w));
     const d = len / n, r = d / 2;
     for(let i = 0; i < n; i++){
-      ctx.beginPath(); ctx.arc(x, y0 + d*i + r, r*0.96, 0, 6.284);
+      ctx.beginPath(); ctx.ellipse(x, y0 + d*i + r, r*0.96*scaleX, r*0.96, 0, 0, 6.284);
       ctx.fillStyle = LANE[((i % 3) + 3) % 3]; ctx.fill();
     }
   }
@@ -5374,10 +5380,10 @@ function setupGame(){
     ctx.closePath(); ctx.fill();
   }
 
-  function drawSwimmer(x, y, r){
-    const tilt = Math.max(-0.34, Math.min(0.34, vy / (H*1.6)));
+  function drawSwimmer(x, y, r, scaleX){
+    const tilt = Math.max(-0.34, Math.min(0.34, run.vy / 1.6));
     const s = r * 4.2;                     // длина фигуры относительно радиуса удара
-    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+    ctx.save(); ctx.translate(x, y); ctx.scale(scaleX, 1); ctx.rotate(tilt);
 
     ctx.save();                            // тень под пловцом — отрывает его от воды
     ctx.translate(-s/2, -s*0.59/2 + r*0.20);
@@ -5395,7 +5401,7 @@ function setupGame(){
     for(let i = 0; i < 4; i++){
       const k = (t*2.2 + i*0.25) % 1;
       ctx.beginPath();
-      ctx.arc(x - r*1.9 - k*r*3.4, y + Math.sin(t*6 + i)*r*0.5, r*0.20*(1-k), 0, 6.284);
+      ctx.arc(x - (r*1.9 + k*r*3.4) * scaleX, y + Math.sin(t*6 + i)*r*0.5, r*0.20*(1-k), 0, 6.284);
       ctx.fill();
     }
   }
@@ -5424,32 +5430,30 @@ function setupGame(){
 
   // --- управление ---
   const onTap = e => { e.preventDefault(); stroke(); };
-  const onKey = e => { if(e.code === "Space" || e.key === " "){ e.preventDefault(); stroke(); } };
+  const onKey = e => {
+    if(e.target !== document.body || (e.code !== "Space" && e.key !== " ")) return;
+    e.preventDefault();
+    if(!e.repeat) stroke();
+  };
   /* Размер окна на телефоне меняется всё время: прячется адресная строка,
      разворачивается телеграм, поворачивается экран. Раньше на каждое такое
      событие заплыв начинался заново — прямо посреди рекорда. Теперь просто
      пересчитываем всё под новый размер и плывём дальше. */
-  const onResize = () => {
-    const oldW = W, oldH = H;
-    if(!fit()) return;
-    if(!oldW || !oldH || state === READY){ reset(); return; }
-    const kx = W / oldW, ky = H / oldH;
-    y *= ky; vy *= ky;
-    for(const p of ropes){ p.x *= kx; p.cy *= ky; p.g *= ky; }
-  };
+  const onResize = () => fit();
   gameResize = onResize;                  // телеграм сообщает о смене окна отдельно
 
   cv.addEventListener("pointerdown", onTap, {passive:false});
   window.addEventListener("keydown", onKey);
   window.addEventListener("resize", onResize);
   gameOff = () => {
+    disposed = true;
     cv.removeEventListener("pointerdown", onTap);
     window.removeEventListener("keydown", onKey);
     window.removeEventListener("resize", onResize);
     gameResize = null;
   };
 
-  if(!fit()){ requestAnimationFrame(()=>{ if(fit()){ reset(); gameRAF = requestAnimationFrame(loop); } }); return; }
+  if(!fit()){ gameRAF = requestAnimationFrame(()=>{ if(!disposed && fit()){ reset(); gameRAF = requestAnimationFrame(loop); } }); return; }
   reset();
   gameRAF = requestAnimationFrame(loop);
 }

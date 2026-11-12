@@ -1,0 +1,71 @@
+.rank-panel {
+  max-width: 760px;
+  margin-bottom: 22px;
+  padding: clamp(15px, 4vw, 24px);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--r);
+  background: var(--card-fill);
+}
+.rank-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rank-header h2 { margin: 0; }
+.rank-month { margin: 4px 0 0; text-transform: capitalize; color: var(--txt-2); }
+.rank-personal {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(var(--gold-rgb), .09);
+}
+.rank-personal p, .rank-previous p { margin: 0; }
+.rank-meters { display: block; margin: 4px 0; color: var(--gold-lt); font-size: 1.75rem; }
+.rank-place, .rank-status, .rank-prize { color: var(--txt-2); }
+.rank-status { margin: 14px 0 0; }
+.rank-status:empty { display: none; }
+.rank-prize { margin: 14px 0 0; }
+.rank-table {
+  margin-top: 12px;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.rank-table th, .rank-table td {
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--gold-line);
+  text-align: left;
+}
+.rank-table th { color: var(--txt-2); font-size: .8rem; }
+.rank-table th:first-child { width: 3.25em; }
+.rank-table th:last-child { width: 7.5em; }
+.rank-table th:last-child, .rank-table td:last-child { text-align: right; white-space: nowrap; }
+.rank-table td:nth-child(2) { overflow-wrap: anywhere; }
+.rank-you { color: var(--gold-lt); background: rgba(var(--gold-rgb), .07); }
+.rank-previous { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--gold-line); }
+.rank-previous strong { display: block; margin-top: 4px; overflow-wrap: anywhere; }
+.rank-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.rank-refresh:disabled { opacity: .55; cursor: progress; }
+
+body.gamefull .gamebox { max-width: calc(var(--vh, 100vh) * .85); margin-inline: auto; }
+.g-ranking { left: auto; right: 12px; text-decoration: none; }
+.g-status {
+  position: absolute;
+  top: calc(40px + env(safe-area-inset-top, 0px));
+  left: 12px;
+  right: 12px;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: rgba(6, 11, 20, .8);
+  color: var(--txt);
+  font: 500 .83rem/1.35 system-ui, sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+.g-status:empty { display: none; }
