@@ -221,3 +221,5 @@ export default {
     }
   },
 };
+
+export { authenticate };
