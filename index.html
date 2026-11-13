@@ -1244,6 +1244,13 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 .circuit-detail .workout-ex-head{align-items:center;flex-wrap:nowrap;margin-bottom:9px}
 .circuit-detail .workout-ex-head h3{flex:1;font-size:16px}
 .circuit-detail .workout-ex-close{min-height:36px;padding:6px 9px;font-size:12px}
+.workout-print{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 26px;max-width:760px}
+.workout-print-button{display:inline-flex;align-items:center;gap:9px;text-align:left}
+.workout-print-button .club-icon{width:17px;height:17px}
+.workout-print-help,.workout-print-status{color:var(--txt-2);font-size:13px}
+.workout-print-status{flex-basis:100%}
+.workout-print-status:empty{display:none}
+.workout-print-browser{min-height:44px;padding:0;border:0;background:none;color:var(--gold-lt);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer}
 .circuit-detail .doc p{font-size:15px;margin-bottom:9px}
 @media(max-width:420px){
   .circuit-table .station-order{width:33px}
@@ -1306,6 +1313,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="news.js"></script>
 <script src="game/engine.js?v=1"></script>
 <script src="game/ranking.js?v=1"></script>
+<script src="workout-print/card.js?v=1"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -3309,7 +3317,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
         pd.push(["exc"]);
       });
       const cnt = (part.items||[]).filter(x=>showText(strict,x)).length, id = "d1_p" + (i+1);
-      put(id, { title: part.title, lede: part.note, whiteLede: true, whiteH4: true, pills: [nDrills(cnt)], doc: pd }, "d1");
+      const visible = part.items.filter(x => showText(strict, x));
+      const print = [["num", visible.map(x => x.name + (x.how ? ". " + x.how : ""))]];
+      visible.forEach(x => { if(x.table?.length) print.push(["tbl", [["Упражнение", "Повторы"], ...x.table]]); });
+      warn(print, W.safety);
+      put(id, { title: part.title, lede: part.note, whiteLede: true, whiteH4: true, pills: [nDrills(cnt)], doc: pd, print }, "d1");
       return {id, n: "0" + (i+1), t: part.title, m: nDrills(cnt), ph: "tile-razminka.jpg"};
     });
     const n = tiles.reduce((s,t)=>s+(parseInt(t.m)||0),0);
@@ -3377,13 +3389,32 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
 
       external(d, typeof REZINA_SERIES !== "undefined" ? REZINA_SERIES : null);
       warn(d, B.safety);
+      const print = [];
+      if(warmup){
+        h2(print, warmup.title);
+        warmup.doc.filter(([type]) => type === "tbl").forEach(b => print.push(b));
+      }
+      h2(print, "Фазы гребка · отдых 30 секунд");
+      print.push(d.find(([type, table]) => type === "workout-table" && table.label === "Фазы гребка"));
+      if(typeof REZINA_SERIES !== "undefined"){
+        h2(print, "Рабочая серия");
+        const [timing, , progression] = REZINA_SERIES.doc;
+        p(print, timing?.[1]);
+        REZINA_SERIES.doc.filter(([type]) => type === "tbl").forEach(b => print.push(b));
+        p(print, progression?.[1].split(". ")[0]);
+      }
+      if(B.cooldown){
+        h2(print, B.cooldown.title + " · " + B.cooldown.duration);
+        ul(print, B.cooldown.items);
+      }
+      warn(print, B.safety);
 
       const id = "d2_" + k;
       put(id, {
         title: name + " на резине",
         lede: "На резине проще контролировать и отрабатывать все фазы гребка, поэтому эти упражнения крайне эффективны. Их можно использовать как в разминке перед водой, так и добавлять в основную часть тренировки на суше.",
         pills: [plural(phases.length,["фаза гребка","фазы гребка","фаз гребка"])],
-        doc: d
+        doc: d, print, printContext: ""
       }, "d2");
       /* Счётчик фаз с плитки убран: на ней остаётся одно слово,
          и набрано оно крупно — см. признак big у экрана. */
@@ -3454,7 +3485,11 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       d.push(["workout-table", {label:"Упражнения комплекса", columns:["Подходы"], rows}]);
       warn(d, c.safety);
       const id = "d3_c" + c.n;
-      put(id, { title: c.title, lede: c.tag, doc: d }, "d3_cx");
+      const print = [["p", (typeof SUSHA_CORE_HOWTO !== "undefined" ? SUSHA_CORE_HOWTO.points : []).find(x => x.startsWith("Между кругами"))],
+        d.find(([type]) => type === "workout-table")];
+      if(typeof SUSHA_CORE_HOWTO !== "undefined") warn(print, SUSHA_CORE_HOWTO.safety);
+      warn(print, c.safety);
+      put(id, { title: c.title, lede: c.tag, doc: d, print }, "d3_cx");
       cx.push({id, n: String(c.n).padStart(2,"0"), t: c.title, m: c.tag, ph: "tile-kor.jpg"});
     });
 
@@ -3478,7 +3513,9 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       kv(d, "Как часто", R.frequency);
       tip(d, R.watch);
       warn(d, R.safety);
-      put("d3_dr", { title: R.title, lede: R.tag, doc: d }, "d3_cx");
+      const print = [["ul", R.rules], d.find(([type]) => type === "workout-table"), ["p", R.table?.note], ["p", R.short]];
+      warn(print, R.safety);
+      put("d3_dr", { title: R.title, lede: R.tag, doc: d, print }, "d3_cx");
       cx.push({id:"d3_dr", n: String(cx.length+1).padStart(2,"0"),
                t: R.title, m: R.short || R.tag, ph: "tile-kor.jpg"});
     }
@@ -3546,7 +3583,15 @@ const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
       }
       tip(d, c.watch);
       const id = "d4_w" + c.n;
-      put(id, {title:c.title, lede:c.tag, doc:d}, "d4_cx");
+      const print = [];
+      p(print, how.intro);
+      ul(print, how.points);
+      phase(print, c.warmup || plan.warmup);
+      h2(print, "Станции");
+      print.push(d.find(([type]) => type === "circuit"));
+      phase(print, c.cooldown || plan.cooldown);
+      warn(print, c.safety);
+      put(id, {title:c.title, lede:c.tag, doc:d, print}, "d4_cx");
       w.push([String(c.n), c.title, c.tag, id]);
     });
 
@@ -3811,6 +3856,36 @@ function openExt(url){
   if(tg && /^https?:\/\/t\.me\//.test(url) && tg.openTelegramLink) return tg.openTelegramLink(url);
   if(tg && tg.openLink) return tg.openLink(url);
   window.open(url, "_blank", "noopener");
+}
+
+function workoutPrintButton(index = null){
+  const suffix = index === null ? "" : ' data-workout-index="' + index + '"';
+  return `<div class="workout-print">
+    <button type="button" class="ref-btn workout-print-button"${suffix} onclick="printWorkout(this)">
+      <svg class="club-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg>
+      Скачать тренировку (PDF)
+    </button>
+    <span class="workout-print-help">Для печати на А4</span>
+    <span class="workout-print-status" data-print-status role="status"></span>
+  </div>`;
+}
+
+function printWorkout(button){
+  const id = document.body.dataset.route;
+  const d = T[id];
+  if(!d) return;
+  const index = button.dataset.workoutIndex;
+  const workout = index === undefined ? d.one : d.workouts?.[Number(index)];
+  const card = workout
+    ? WorkoutPrint.fromPool(workout, index === undefined ? d.title : "Тренировка " + workout.n,
+        [T[PARENT[id]]?.title, index === undefined ? "" : d.title].filter(Boolean).join(" · "))
+    : d.print ? WorkoutPrint.fromLand(d) : null;
+  if(!card) return;
+  const tg = window.Telegram?.WebApp;
+  const url = new URL(location.href);
+  url.hash = id;
+  if(index !== undefined) url.searchParams.set("workout", String(Number(index) + 1));
+  WorkoutPrint.download(button, card, tg?.initData && tg.openLink ? () => tg.openLink(url.href) : null);
 }
 
 /* Сервис: пять экранов. Всё, кроме приглашения друга, — обычный текст
@@ -4772,6 +4847,7 @@ if(d.lesson){
     h += exerciseDocHTML(d);
 
     h += exerciseVideoHTML(d);
+    if(d.print) h += workoutPrintButton();
 
     if(d.one){
       const W = d.one;
@@ -4789,6 +4865,7 @@ if(d.lesson){
       h += series("Основная часть", W.main);
       h += series("Откуп", W.cool);
       if(W.safe) h += `<div class="safebox"><b>Безопасность.</b> ${esc(W.safe)}</div>`;
+      h += workoutPrintButton();
       h += `</div>`;
     }
 
@@ -4805,6 +4882,7 @@ if(d.lesson){
           </div>
           <ol class="wk-i">${w.items.map(x=>`<li>${workoutText(x)}</li>`).join("")}</ol>
           ${w.note ? `<p class="tipbox">${esc(w.note)}</p>` : ""}
+          ${workoutPrintButton(i)}
         </div>`;
       });
       h += `</div>`;
@@ -4883,6 +4961,10 @@ if(d.lesson){
 
   document.getElementById("app").innerHTML = h;
   window.scrollTo({top:0,behavior:"instant"});
+  const printIndex = new URLSearchParams(location.search).get("workout");
+  if(d.workouts && /^[1-9]\d*$/.test(printIndex || "")){
+    document.querySelectorAll(".wk")[Number(printIndex) - 1]?.scrollIntoView({block:"start"});
+  }
   setupVideos();
   setupRef();
   setupGame();
