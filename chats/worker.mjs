@@ -137,17 +137,33 @@ async function overview(env, player, now) {
     SELECT id, title, level FROM chat_groups WHERE level IS NULL OR level = ?
     ORDER BY id NOT LIKE 'level-%', title
   `).bind(profile.level).all()).results : [];
+  const rooms = [
+    ...groups.map(room => ({ ...room, kind: 'group' })),
+    ...coaching.results.map(row => ({
+      id: row.id, title: row.name, kind: 'coaching', coaching: Boolean(row.coaching), expires: row.expires_ms,
+    })),
+    ...direct.results.map(row => ({ ...row, kind: 'direct' })),
+  ];
+  if (rooms.length) {
+    const { results } = await db.prepare(`
+      SELECT m.room_id, m.sender_id, m.sent_ms, substr(m.body, 1, 160) AS preview,
+        m.video_url IS NOT NULL AS video
+      FROM json_each(?) room
+      JOIN chat_messages m ON m.id = (
+        SELECT id FROM chat_messages WHERE room_id = room.value ORDER BY id DESC LIMIT 1
+      )
+    `).bind(JSON.stringify(rooms.map(room => room.id))).all();
+    const latest = new Map(results.map(row => [row.room_id, {
+      text: row.preview, video: Boolean(row.video), sent: row.sent_ms, own: row.sender_id === player.id,
+    }]));
+    for (const room of rooms) {
+      if (latest.has(room.id)) room.latest = latest.get(room.id);
+    }
+  }
   return {
     profile, suggestedName: coachProfile?.name ?? player.name,
     coach: coachProfile,
-    vip: isVip(vip) ? 'active' : vip, manager,
-    rooms: [
-      ...groups.map(room => ({ ...room, kind: 'group' })),
-      ...coaching.results.map(row => ({
-        id: row.id, title: row.name, kind: 'coaching', coaching: Boolean(row.coaching), expires: row.expires_ms,
-      })),
-      ...direct.results.map(row => ({ ...row, kind: 'direct' })),
-    ],
+    vip: isVip(vip) ? 'active' : vip, manager, rooms,
   };
 }
 
