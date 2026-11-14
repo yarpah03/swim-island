@@ -106,16 +106,18 @@ async function profileOf(db, id) {
 
 async function overview(env, player, now) {
   const db = env.CHAT_DB;
-  const [profile, vip, direct] = await Promise.all([
+  const [profile, vip, direct, coachProfile] = await Promise.all([
     profileOf(db, player.id),
     channelStatus(env, player.id),
     db.prepare(`
-      SELECT c.id, c.expires_ms, other.name, c.coach_id = ? AS coaching
+      SELECT c.id, c.expires_ms, COALESCE(coach.name, other.name) AS name, c.coach_id = ? AS coaching
       FROM chat_coaching c
       JOIN chat_profiles other ON other.telegram_id = CASE WHEN c.coach_id = ? THEN c.student_id ELSE c.coach_id END
+      LEFT JOIN chat_coaches coach ON coach.telegram_id = other.telegram_id AND other.telegram_id = c.coach_id
       WHERE (c.student_id = ? OR c.coach_id = ?) AND c.expires_ms > ?
-      ORDER BY other.name, c.id
+      ORDER BY name, c.id
     `).bind(player.id, player.id, player.id, player.id, now).all(),
+    db.prepare('SELECT name, handle FROM chat_coaches WHERE telegram_id = ?').bind(player.id).first(),
   ]);
   const manager = ownerConfigured(env, player.id) || vip === 'owner';
   const groups = profile && isVip(vip) ? (await db.prepare(`
@@ -123,7 +125,8 @@ async function overview(env, player, now) {
     ORDER BY id NOT LIKE 'level-%', title
   `).bind(profile.level).all()).results : [];
   return {
-    profile, suggestedName: player.name,
+    profile, suggestedName: coachProfile?.name ?? player.name,
+    coach: coachProfile,
     vip: isVip(vip) ? 'active' : vip, manager,
     rooms: [
       ...groups.map(room => ({ ...room, kind: 'group' })),
@@ -166,11 +169,12 @@ async function messages(db, room, roomId, playerId, params) {
   const ascending = after !== null;
   const cursor = Number(after ?? before ?? Number.MAX_SAFE_INTEGER);
   const result = await db.prepare(`
-    SELECT m.id, m.sender_id, p.name, m.body, m.video_url, m.sent_ms
+    SELECT m.id, m.sender_id, COALESCE(coach.name, p.name) AS name, m.body, m.video_url, m.sent_ms
     FROM chat_messages m JOIN chat_profiles p ON p.telegram_id = m.sender_id
+    LEFT JOIN chat_coaches coach ON coach.telegram_id = m.sender_id AND coach.telegram_id = ?
     WHERE m.room_id = ? AND m.id ${ascending ? '>' : '<'} ?
     ORDER BY m.id ${ascending ? 'ASC' : 'DESC'} LIMIT ?
-  `).bind(roomId, cursor, PAGE_SIZE + 1).all();
+  `).bind(room.coach_id ?? 0, roomId, cursor, PAGE_SIZE + 1).all();
   const page = result.results.slice(0, PAGE_SIZE);
   if (!ascending) page.reverse();
   return {
@@ -230,14 +234,18 @@ async function manage(env, player, now, request) {
   }
   const db = env.CHAT_DB;
   if (request.method === 'GET') {
-    const { results } = await db.prepare(`
-      SELECT c.id, s.name AS student, p.name AS coach, c.expires_ms AS expires
-      FROM chat_coaching c
-      JOIN chat_profiles s ON s.telegram_id = c.student_id
-      JOIN chat_profiles p ON p.telegram_id = c.coach_id
-      WHERE c.expires_ms > ? ORDER BY c.expires_ms, c.id
-    `).bind(now).all();
-    return { assignments: results };
+    const [assignments, coaches] = await db.batch([
+      db.prepare(`
+        SELECT c.id, s.name AS student, COALESCE(coach.name, p.name) AS coach, c.expires_ms AS expires
+        FROM chat_coaching c
+        JOIN chat_profiles s ON s.telegram_id = c.student_id
+        JOIN chat_profiles p ON p.telegram_id = c.coach_id
+        LEFT JOIN chat_coaches coach ON coach.telegram_id = c.coach_id
+        WHERE c.expires_ms > ? ORDER BY c.expires_ms, c.id
+      `).bind(now),
+      db.prepare('SELECT handle, name FROM chat_coaches ORDER BY telegram_id'),
+    ]);
+    return { assignments: assignments.results, coaches: coaches.results };
   }
   const data = await input(request);
   if (data.action === 'createGroup') {
@@ -246,18 +254,35 @@ async function manage(env, player, now, request) {
     await db.prepare('INSERT INTO chat_groups (id, title, level) VALUES (?, ?, ?)')
       .bind('start-' + crypto.randomUUID(), cleanName(data.title, 60), level).run();
   } else if (data.action === 'assign') {
-    const [student, coach] = await Promise.all([accountForCode(db, data.student), accountForCode(db, data.coach)]);
+    const student = await accountForCode(db, data.student);
+    const choice = typeof data.coach === 'string' ? data.coach.trim() : '';
+    const registered = choice.startsWith('@');
+    const saved = registered
+      ? await db.prepare('SELECT telegram_id, name FROM chat_coaches WHERE handle = ?').bind(choice.slice(1)).first()
+      : null;
+    if (registered && !saved) throw new ChatError(400, 'unknown_coach');
+    const coach = saved?.telegram_id ?? await accountForCode(db, choice);
     const expires = data.expires;
     if (student === coach || !Number.isSafeInteger(expires) || expires <= now ||
         expires - now > 366 * 86400000) throw new ChatError(400, 'invalid_assignment');
-    await db.batch([
+    const changes = [];
+    if (saved) {
+      const code = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+      changes.push(db.prepare(`
+        INSERT INTO chat_profiles (telegram_id, code, name, level)
+        SELECT ?, ?, ?, level FROM chat_profiles WHERE telegram_id = ?
+        ON CONFLICT (telegram_id) DO NOTHING
+      `).bind(coach, code, saved.name, student));
+    }
+    changes.push(
       db.prepare('UPDATE chat_coaching SET expires_ms = ? WHERE student_id = ? AND coach_id <> ? AND expires_ms > ?')
         .bind(now, student, coach, now),
       db.prepare(`
         INSERT INTO chat_coaching (id, student_id, coach_id, expires_ms) VALUES (?, ?, ?, ?)
         ON CONFLICT (student_id, coach_id) DO UPDATE SET expires_ms = excluded.expires_ms
       `).bind('lesson-' + crypto.randomUUID(), student, coach, expires),
-    ]);
+    );
+    await db.batch(changes);
   } else if (data.action === 'end' && /^lesson-[a-f0-9-]{36}$/.test(data.id ?? '')) {
     await db.prepare('UPDATE chat_coaching SET expires_ms = ? WHERE id = ? AND expires_ms > ?')
       .bind(now, data.id, now).run();
@@ -293,6 +318,7 @@ export default {
           db.prepare('SELECT video_url FROM chat_messages LIMIT 0'),
           db.prepare('SELECT id FROM chat_groups LIMIT 0'),
           db.prepare('SELECT id FROM chat_coaching LIMIT 0'),
+          db.prepare('SELECT handle FROM chat_coaches LIMIT 0'),
         ]);
         return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN) });
       }

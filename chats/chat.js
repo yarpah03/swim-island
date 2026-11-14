@@ -13,7 +13,8 @@ const SwimChats = (() => {
     invalid_message: 'Введите сообщение до 2 000 символов.',
     invalid_video: 'Добавьте ссылку на видео, которая начинается с https://.',
     invalid_account: 'Проверьте коды участников.',
-    account_not_found: 'Попросите ученика и тренера открыть «Чаты» и сохранить профиль.',
+    account_not_found: 'Проверьте код из профиля участника.',
+    unknown_coach: 'Этот тренер не найден в списке клуба.',
     invalid_assignment: 'Проверьте коды участников и дату окончания ведения.',
     slow_down: 'Подождите секунду и повторите отправку.',
     manager_required: 'Управление чатами доступно владельцу клуба.',
@@ -178,7 +179,9 @@ const SwimChats = (() => {
         }
         const profile = element('div', 'chat-profile');
         const details = element('div');
-        details.append(element('strong', '', data.profile.name), element('small', '', 'Код для тренера · ' + data.profile.code));
+        details.append(element('strong', '', data.profile.name));
+        if (data.coach) details.append(element('small', 'chat-coach-label', 'Тренер клуба · @' + data.coach.handle));
+        details.append(element('small', '', 'Код для тренера · ' + data.profile.code));
         profile.append(details, button('Редактировать', () => list(true)));
         v.panel.append(profile);
         const rooms = data.rooms;
@@ -187,7 +190,9 @@ const SwimChats = (() => {
           : 'Проверка доступа к VIP-группам временно недоступна.';
         roomList(v, rooms.filter(room => room.kind === 'group'), 'Группы пловцов', groupStatus);
         roomList(v, rooms.filter(room => room.kind === 'coaching'), 'Онлайн-ведение',
-          'Чат появится после назначения тренера. Передайте ему код из профиля.');
+          data.coach
+            ? 'Ученики появятся здесь после назначения.'
+            : 'Чат появится после назначения тренера. Передайте ему код из профиля.');
         if (data.manager) v.panel.append(button('Управление чатами', manage));
       } catch (error) {
         v.errorText(error);
@@ -356,16 +361,36 @@ const SwimChats = (() => {
         const assigning = element('form', 'chat-form');
         assigning.append(element('h3', '', 'Назначить тренера'));
         const student = field(assigning, 'Код ученика', textInput('Из профиля ученика', 12));
-        const coach = field(assigning, 'Код тренера', textInput('Из профиля тренера', 12));
-        student.autocapitalize = coach.autocapitalize = 'none';
-        student.spellcheck = coach.spellcheck = false;
+        student.autocapitalize = 'none';
+        student.spellcheck = false;
+        const coaches = data.coaches || [];
+        const select = element('select');
+        select.required = true;
+        select.add(new Option('Выберите тренера', ''));
+        for (const coach of coaches) {
+          select.add(new Option(coach.name + ' · @' + coach.handle, '@' + coach.handle));
+        }
+        select.add(new Option('Другой тренер по коду', 'code'));
+        select.value = coaches.length ? '' : 'code';
+        field(assigning, 'Тренер', select);
+        const coachCode = field(assigning, 'Код тренера', textInput('Из профиля тренера', 12));
+        coachCode.autocapitalize = 'none';
+        coachCode.spellcheck = false;
+        const updateCoachCode = () => {
+          const showCode = select.value === 'code';
+          coachCode.required = showCode;
+          coachCode.parentElement.hidden = !showCode;
+        };
+        select.addEventListener('change', updateCoachCode);
+        updateCoachCode();
         const end = element('input');
         end.type = 'date';
         end.required = true;
         field(assigning, 'Последний день ведения (по Москве)', end);
         v.formSubmit(assigning, 'Назначить', async () => {
           const expires = Date.parse(end.value + 'T00:00:00+03:00') + 86400000;
-          await v.request('/manage', { action: 'assign', student: student.value.trim(), coach: coach.value.trim(), expires });
+          const coach = select.value === 'code' ? coachCode.value.trim() : select.value;
+          await v.request('/manage', { action: 'assign', student: student.value.trim(), coach, expires });
           if (!v.signal.aborted) await manage();
         });
         v.panel.append(assigning);

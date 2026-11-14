@@ -16,6 +16,12 @@ INSERT OR IGNORE INTO chat_groups (id, title, level) VALUES
   ('level-s', 'Средний уровень', 's'),
   ('level-p', 'Продвинутые', 'p');
 
+CREATE TABLE IF NOT EXISTS chat_coaches (
+  telegram_id INTEGER PRIMARY KEY,
+  handle TEXT NOT NULL COLLATE NOCASE UNIQUE,
+  name TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS chat_coaching (
   id TEXT PRIMARY KEY,
   student_id INTEGER NOT NULL REFERENCES chat_profiles(telegram_id),
