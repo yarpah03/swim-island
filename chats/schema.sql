@@ -33,6 +33,16 @@ CREATE TABLE IF NOT EXISTS chat_coaching (
 
 CREATE INDEX IF NOT EXISTS chat_coaching_coach ON chat_coaching (coach_id, expires_ms);
 
+CREATE TABLE IF NOT EXISTS chat_direct (
+  id TEXT PRIMARY KEY,
+  first_id INTEGER NOT NULL REFERENCES chat_profiles(telegram_id),
+  second_id INTEGER NOT NULL REFERENCES chat_profiles(telegram_id),
+  CHECK (first_id < second_id),
+  UNIQUE (first_id, second_id)
+);
+
+CREATE INDEX IF NOT EXISTS chat_direct_second ON chat_direct (second_id);
+
 CREATE TABLE IF NOT EXISTS chat_messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   room_id TEXT NOT NULL,

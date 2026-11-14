@@ -18,7 +18,10 @@ const SwimChats = (() => {
     invalid_assignment: 'Проверьте коды участников и дату окончания ведения.',
     slow_down: 'Подождите секунду и повторите отправку.',
     manager_required: 'Управление чатами доступно владельцу клуба.',
+    coach_required: 'Поиск по коду доступен тренерам клуба.',
+    self_contact: 'Введите код другого участника.',
   };
+  const errorMessage = error => errors[error.message] || 'Не удалось связаться с чатами. Попробуйте ещё раз.';
   const dateTime = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' });
   const date = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeZone: 'Europe/Moscow' });
   let dispose = () => {};
@@ -116,7 +119,7 @@ const SwimChats = (() => {
       root.replaceChildren(panel, status);
       const signal = screen.signal;
       const statusText = text => { if (!signal.aborted) status.textContent = text; };
-      const errorText = error => statusText(errors[error.message] || 'Не удалось связаться с чатами. Попробуйте ещё раз.');
+      const errorText = error => statusText(errorMessage(error));
       const request = (path, payload) => api(path, payload, signal);
       const formSubmit = (form, label, handler) => {
         const submit = element('button', 'chat-button chat-primary', label);
@@ -151,16 +154,70 @@ const SwimChats = (() => {
       v.panel.append(form);
     }
 
+    function findPerson(v) {
+      const form = element('form', 'chat-form');
+      form.append(element('h2', '', 'Найти по коду'));
+      const code = field(form, 'Код из профиля', textInput('12 символов'));
+      code.autocapitalize = 'none';
+      code.autocomplete = 'off';
+      code.spellcheck = false;
+      const feedback = element('p', 'chat-status');
+      feedback.setAttribute('role', 'status');
+      const result = element('div', 'chat-profile');
+      const reset = () => {
+        result.replaceChildren();
+        result.remove();
+        feedback.textContent = '';
+      };
+      const showError = error => {
+        if (v.signal.aborted) return;
+        feedback.textContent = error.message === 'invalid_account' ? 'Введите 12 символов из кода профиля.'
+          : error.message === 'account_not_found' ? 'Профиль не найден. Проверьте код.'
+          : errorMessage(error);
+      };
+      code.addEventListener('input', reset);
+      v.formSubmit(form, 'Найти', async () => {
+        reset();
+        const value = code.value.trim();
+        feedback.textContent = 'Ищем профиль…';
+        try {
+          const person = await v.request('/find', { code: value });
+          if (v.signal.aborted || code.value.trim() !== value) return;
+          feedback.textContent = '';
+          const details = element('div');
+          details.append(element('strong', '', person.name), element('small', '', levelNames[person.level]));
+          const open = button('Открыть чат', async () => {
+            open.disabled = true;
+            feedback.textContent = '';
+            try {
+              const room = await v.request('/direct', { code: value });
+              if (!v.signal.aborted && result.contains(open)) await conversation(room);
+            } catch (error) {
+              if (result.contains(open)) showError(error);
+            } finally { open.disabled = false; }
+          }, 'chat-button chat-primary');
+          result.replaceChildren(details, open);
+          form.append(result);
+        } catch (error) {
+          if (code.value.trim() === value) showError(error);
+        }
+      });
+      form.append(feedback);
+      v.panel.append(form);
+    }
+
     function roomList(v, rooms, title, empty) {
       const group = element('section', 'chat-section');
       group.append(element('h2', '', title));
       if (!rooms.length) group.append(element('p', '', empty));
       for (const room of rooms) {
         const item = button(room.title, () => conversation(room), 'chat-room');
-        const subtitle = room.kind === 'group'
-          ? room.level ? levelNames[room.level] : 'Подготовка к старту'
-          : (room.coaching ? 'Ученик' : 'Тренер') + ' · до ' + date.format(room.expires - 1);
-        item.append(element('small', '', subtitle));
+        if (room.kind === 'group') {
+          item.append(element('small', '', room.level ? levelNames[room.level] : 'Подготовка к старту'));
+        } else if (room.kind === 'coaching') {
+          const role = room.coaching ? 'Ученик' : 'Тренер';
+          item.append(element('small', '', role + ' · до ' + date.format(room.expires - 1)));
+        }
         group.append(item);
       }
       v.panel.append(group);
@@ -184,7 +241,10 @@ const SwimChats = (() => {
         details.append(element('small', '', 'Код для тренера · ' + data.profile.code));
         profile.append(details, button('Редактировать', () => list(true)));
         v.panel.append(profile);
+        if (data.coach) findPerson(v);
         const rooms = data.rooms;
+        const direct = rooms.filter(room => room.kind === 'direct');
+        if (direct.length) roomList(v, direct, 'Личные чаты');
         const groupStatus = data.vip === 'inactive'
           ? 'Группы открываются для участников закрытого VIP-канала.'
           : 'Проверка доступа к VIP-группам временно недоступна.';
@@ -242,7 +302,7 @@ const SwimChats = (() => {
       input.maxLength = 2000;
       input.placeholder = 'Напишите сообщение';
       let video;
-      if (room.kind === 'coaching') {
+      if (room.kind !== 'group') {
         video = textInput('https://…', 2000);
         video.type = 'url';
         video.required = false;

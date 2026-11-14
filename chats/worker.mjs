@@ -58,12 +58,17 @@ function cleanName(value, max = 40) {
   return name;
 }
 
-async function accountForCode(db, value) {
+async function profileForCode(db, value) {
   const code = typeof value === 'string' ? value.trim().toLowerCase() : '';
   if (!/^[a-f0-9]{12}$/.test(code)) throw new ChatError(400, 'invalid_account');
-  const profile = await db.prepare('SELECT telegram_id FROM chat_profiles WHERE code = ?').bind(code).first();
+  const profile = await db.prepare(`
+    SELECT p.telegram_id, COALESCE(c.name, p.name) AS name, p.level
+    FROM chat_profiles p
+    LEFT JOIN chat_coaches c ON c.telegram_id = p.telegram_id
+    WHERE p.code = ?
+  `).bind(code).first();
   if (!profile) throw new ChatError(400, 'account_not_found');
-  return profile.telegram_id;
+  return profile;
 }
 
 function ownerConfigured(env, id) {
@@ -106,7 +111,7 @@ async function profileOf(db, id) {
 
 async function overview(env, player, now) {
   const db = env.CHAT_DB;
-  const [profile, vip, direct, coachProfile] = await Promise.all([
+  const [profile, vip, coaching, direct, coachProfile] = await Promise.all([
     profileOf(db, player.id),
     channelStatus(env, player.id),
     db.prepare(`
@@ -117,6 +122,14 @@ async function overview(env, player, now) {
       WHERE (c.student_id = ? OR c.coach_id = ?) AND c.expires_ms > ?
       ORDER BY name, c.id
     `).bind(player.id, player.id, player.id, player.id, now).all(),
+    db.prepare(`
+      SELECT d.id, COALESCE(c.name, p.name) AS title
+      FROM chat_direct d
+      JOIN chat_profiles p ON p.telegram_id = CASE WHEN d.first_id = ? THEN d.second_id ELSE d.first_id END
+      LEFT JOIN chat_coaches c ON c.telegram_id = p.telegram_id
+      WHERE d.first_id = ? OR d.second_id = ?
+      ORDER BY title, d.id
+    `).bind(player.id, player.id, player.id).all(),
     db.prepare('SELECT name, handle FROM chat_coaches WHERE telegram_id = ?').bind(player.id).first(),
   ]);
   const manager = ownerConfigured(env, player.id) || vip === 'owner';
@@ -130,11 +143,43 @@ async function overview(env, player, now) {
     vip: isVip(vip) ? 'active' : vip, manager,
     rooms: [
       ...groups.map(room => ({ ...room, kind: 'group' })),
-      ...direct.results.map(row => ({
+      ...coaching.results.map(row => ({
         id: row.id, title: row.name, kind: 'coaching', coaching: Boolean(row.coaching), expires: row.expires_ms,
       })),
+      ...direct.results.map(row => ({ ...row, kind: 'direct' })),
     ],
   };
+}
+
+async function contact(db, player, now, request, open) {
+  const coach = await db.prepare('SELECT 1 FROM chat_coaches WHERE telegram_id = ?').bind(player.id).first();
+  if (!coach) throw new ChatError(403, 'coach_required');
+  if (!await profileOf(db, player.id)) throw new ChatError(403, 'profile_required');
+  const { code } = await input(request);
+  const profile = await profileForCode(db, code);
+  const target = profile.telegram_id;
+  if (target === player.id) throw new ChatError(400, 'self_contact');
+  if (!open) return { name: profile.name, level: profile.level };
+
+  const first = Math.min(player.id, target);
+  const second = Math.max(player.id, target);
+  const existing = await db.prepare(`
+    SELECT id, 'direct' AS kind, 1 AS priority FROM chat_direct WHERE first_id = ? AND second_id = ?
+    UNION ALL
+    SELECT id, 'coaching' AS kind, 2 AS priority FROM chat_coaching
+    WHERE student_id = ? AND coach_id = ? AND expires_ms > ?
+    ORDER BY priority LIMIT 1
+  `).bind(first, second, target, player.id, now).first();
+  if (existing) return { id: existing.id, kind: existing.kind, title: profile.name };
+
+  const [, selected] = await db.batch([
+    db.prepare(`
+      INSERT INTO chat_direct (id, first_id, second_id) VALUES (?, ?, ?)
+      ON CONFLICT (first_id, second_id) DO NOTHING
+    `).bind('direct-' + crypto.randomUUID(), first, second),
+    db.prepare('SELECT id FROM chat_direct WHERE first_id = ? AND second_id = ?').bind(first, second),
+  ]);
+  return { id: selected.results[0].id, kind: 'direct', title: profile.name };
 }
 
 async function requireRoom(env, id, player, now) {
@@ -147,6 +192,12 @@ async function requireRoom(env, id, player, now) {
       WHERE id = ? AND expires_ms > ? AND (student_id = ? OR coach_id = ?)
     `).bind(id, now, player.id, player.id).first();
     if (room) return room;
+    throw new ChatError(403, 'room_forbidden');
+  }
+  if (id.startsWith('direct-')) {
+    const room = await db.prepare('SELECT 1 FROM chat_direct WHERE id = ? AND (first_id = ? OR second_id = ?)')
+      .bind(id, player.id, player.id).first();
+    if (room) return { direct: true };
     throw new ChatError(403, 'room_forbidden');
   }
   const group = await db.prepare('SELECT level FROM chat_groups WHERE id = ?').bind(id).first();
@@ -169,19 +220,20 @@ async function messages(db, room, roomId, playerId, params) {
   const ascending = after !== null;
   const cursor = Number(after ?? before ?? Number.MAX_SAFE_INTEGER);
   const result = await db.prepare(`
-    SELECT m.id, m.sender_id, COALESCE(coach.name, p.name) AS name, m.body, m.video_url, m.sent_ms
+    SELECT m.id, m.sender_id, COALESCE(coach.name, p.name) AS name, m.body, m.video_url, m.sent_ms,
+      coach.telegram_id IS NOT NULL AS registered_coach
     FROM chat_messages m JOIN chat_profiles p ON p.telegram_id = m.sender_id
-    LEFT JOIN chat_coaches coach ON coach.telegram_id = m.sender_id AND coach.telegram_id = ?
+    LEFT JOIN chat_coaches coach ON coach.telegram_id = m.sender_id AND (coach.telegram_id = ? OR ? = 1)
     WHERE m.room_id = ? AND m.id ${ascending ? '>' : '<'} ?
     ORDER BY m.id ${ascending ? 'ASC' : 'DESC'} LIMIT ?
-  `).bind(room.coach_id ?? 0, roomId, cursor, PAGE_SIZE + 1).all();
+  `).bind(room.coach_id ?? 0, Number(Boolean(room.direct)), roomId, cursor, PAGE_SIZE + 1).all();
   const page = result.results.slice(0, PAGE_SIZE);
   if (!ascending) page.reverse();
   return {
     more: result.results.length > PAGE_SIZE,
     messages: page.map(row => ({
       id: row.id, name: row.name, text: row.body, video: row.video_url, sent: row.sent_ms,
-      own: row.sender_id === playerId, coach: row.sender_id === room.coach_id,
+      own: row.sender_id === playerId, coach: row.sender_id === room.coach_id || Boolean(row.registered_coach),
     })),
   };
 }
@@ -212,7 +264,7 @@ async function send(env, id, player, request) {
   const db = env.CHAT_DB;
   const now = Date.now();
   const room = await requireRoom(env, id, player, now);
-  if (link && !room.coach_id) throw new ChatError(400, 'invalid_video');
+  if (link && !room.coach_id && !room.direct) throw new ChatError(400, 'invalid_video');
   // One atomic insert prevents duplicate retries and concurrent bursts.
   const inserted = await db.prepare(`
     INSERT OR IGNORE INTO chat_messages (room_id, sender_id, client_id, body, video_url, sent_ms)
@@ -254,14 +306,14 @@ async function manage(env, player, now, request) {
     await db.prepare('INSERT INTO chat_groups (id, title, level) VALUES (?, ?, ?)')
       .bind('start-' + crypto.randomUUID(), cleanName(data.title, 60), level).run();
   } else if (data.action === 'assign') {
-    const student = await accountForCode(db, data.student);
+    const { telegram_id: student } = await profileForCode(db, data.student);
     const choice = typeof data.coach === 'string' ? data.coach.trim() : '';
     const registered = choice.startsWith('@');
     const saved = registered
       ? await db.prepare('SELECT telegram_id, name FROM chat_coaches WHERE handle = ?').bind(choice.slice(1)).first()
       : null;
     if (registered && !saved) throw new ChatError(400, 'unknown_coach');
-    const coach = saved?.telegram_id ?? await accountForCode(db, choice);
+    const coach = saved?.telegram_id ?? (await profileForCode(db, choice)).telegram_id;
     const expires = data.expires;
     if (student === coach || !Number.isSafeInteger(expires) || expires <= now ||
         expires - now > 366 * 86400000) throw new ChatError(400, 'invalid_assignment');
@@ -298,12 +350,14 @@ export default {
     const origin = request.headers.get('Origin');
     if (origin && origin !== APP_ORIGIN) return reply({ error: 'forbidden_origin' }, 403);
     const route = url.pathname;
-    const room = /^\/v1\/chats\/rooms\/((?:level-[nsp]|(?:start|lesson)-[a-f0-9-]{36}))$/.exec(route);
+    const room = /^\/v1\/chats\/rooms\/((?:level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36}))$/.exec(route);
     const methods = {
       '/health': ['GET'],
       '/v1/chats': ['GET'],
       '/v1/chats/profile': ['POST'],
       '/v1/chats/manage': ['GET', 'POST'],
+      '/v1/chats/find': ['POST'],
+      '/v1/chats/direct': ['POST'],
     };
     const allowed = room ? ['GET', 'POST'] : methods[route];
     if (!allowed) return reply({ error: 'not_found' }, 404);
@@ -319,6 +373,7 @@ export default {
           db.prepare('SELECT id FROM chat_groups LIMIT 0'),
           db.prepare('SELECT id FROM chat_coaching LIMIT 0'),
           db.prepare('SELECT handle FROM chat_coaches LIMIT 0'),
+          db.prepare('SELECT id FROM chat_direct LIMIT 0'),
         ]);
         return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN) });
       }
@@ -328,6 +383,9 @@ export default {
       if (!db) return reply({ error: 'unavailable' }, 503);
       if (route === '/v1/chats') return reply(await overview(env, player, now));
       if (route === '/v1/chats/manage') return reply(await manage(env, player, now, request));
+      if (route === '/v1/chats/find' || route === '/v1/chats/direct') {
+        return reply(await contact(db, player, now, request, route === '/v1/chats/direct'));
+      }
       if (route === '/v1/chats/profile') {
         const { name, level } = await input(request);
         if (!levels.has(level)) throw new ChatError(400, 'invalid_level');
