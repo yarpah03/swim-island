@@ -637,3 +637,32 @@ body:has(.chat-forward-sheet[open]) { overflow: hidden; }
 }
 .partner-body { white-space: pre-wrap; line-height: 1.55; }
 .partner-title { white-space: normal; text-align: left; }
+
+html.client-catalog body > :is(header, footer) { display: none; }
+html.client-catalog #app { padding-top: 10px; }
+.chat-inbox-filter { padding: 9px 12px; }
+.chat-filter-tabs { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 0; }
+.chat-inbox > .chat-filter-tabs { padding-inline: 10px; }
+.chat-filter-tabs .chat-button { min-height: 44px; padding-inline: 9px; }
+.chat-filter-tabs .chat-button[aria-pressed="true"] {
+  border-color: var(--aqua); background: #1d3e44; color: var(--aqua);
+}
+.chat-roster-section {
+  min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surf);
+}
+.chat-roster-section > summary, .chat-roster-access > summary {
+  cursor: pointer; padding: 10px; color: var(--aqua); font-weight: 750; line-height: 1.35;
+}
+.chat-roster-section > form { margin: 0 8px 8px; }
+.chat-roster-row, .chat-roster-access[open] { display: grid; gap: 8px; min-width: 0; }
+.chat-roster-row { padding: 9px 11px; border-top: 1px solid var(--line); }
+.chat-roster-main {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px;
+}
+.chat-roster-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#swim-chats .chat-roster-name h2 { font-size: 15px; }
+.chat-roster-name small { color: var(--txt-2); }
+.chat-roster-main .chat-button { min-height: 44px; padding: 5px 8px; }
+.chat-roster-access > summary { padding: 8px 0; font-size: 13px; }
+.chat-roster-row .chat-status:empty { display: none; }
+

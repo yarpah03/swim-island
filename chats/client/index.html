@@ -10,8 +10,8 @@
   <link rel="icon" href="/client/vip-icon.png">
   <link rel="apple-touch-icon" href="/client/vip-icon.png">
   <link rel="manifest" href="/client/manifest.webmanifest">
-  <link rel="stylesheet" href="/client/chat.css?v=2">
-  <link rel="stylesheet" href="/client/client.css?v=2">
+  <link rel="stylesheet" href="/client/chat.css?v=3">
+  <link rel="stylesheet" href="/client/client.css?v=3">
 </head>
 <body class="web-client">
   <main class="client-login">
@@ -44,6 +44,42 @@
       <p class="chat-status" id="client-status" role="status"></p>
     </section>
   </main>
+  <main id="client-menu" class="client-home" hidden>
+    <header class="client-menu-head">
+      <div class="client-brand">
+        <img src="/client/vip-icon.png" width="44" height="44" alt="">
+        <span>Плавательный остров <b>VIP</b></span>
+      </div>
+      <button class="chat-button" id="client-chats" type="button">Чаты</button>
+      <details class="client-tools">
+        <summary class="chat-button">Кабинет</summary>
+        <div class="client-tool-list">
+          <button class="chat-button" id="client-install-menu" type="button">Установить приложение</button>
+          <button class="chat-button" id="client-logout" type="button">Выйти</button>
+        </div>
+      </details>
+    </header>
+    <p id="client-menu-status" class="chat-status" role="status"></p>
+    <h1>Главное меню</h1>
+    <nav class="client-sections" aria-label="Разделы клуба">
+      <button class="client-section client-section-main" type="button" data-section="s2">Тренировки в бассейне</button>
+      <button class="client-section" type="button" data-section="s1">Обучение</button>
+      <button class="client-section" type="button" data-section="s3">Суша</button>
+      <button class="client-section" type="button" data-section="partners">Партнёры</button>
+      <button class="client-section" type="button" data-section="s4">Прямой эфир</button>
+      <button class="client-section" type="button" data-section="game">Игра</button>
+      <button class="client-section" type="button" data-section="s7">Сервис</button>
+    </nav>
+  </main>
+  <main id="client-library" class="client-library" hidden>
+    <nav class="client-library-bar" aria-label="Навигация кабинета">
+      <button class="chat-button" id="client-library-back" type="button">Главное меню</button>
+      <button class="chat-button" id="client-library-chats" type="button">Чаты</button>
+    </nav>
+    <iframe id="client-catalog" title="Тренировки Плавательного острова VIP"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+      referrerpolicy="no-referrer" allow="fullscreen" allowfullscreen></iframe>
+  </main>
   <main id="swim-chats" hidden></main>
   <main id="partner-browser" class="partner-area" hidden></main>
   <dialog id="client-install" class="chat-forward-sheet" aria-labelledby="client-install-title">
@@ -53,8 +89,8 @@
       <p><strong>На Android</strong> откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».</p>
     </div>
   </dialog>
-  <script src="/client/chat.js?v=2" defer></script>
-  <script src="/client/partners.js?v=1" defer></script>
-  <script src="/client/client.js?v=2" defer></script>
+  <script src="/client/chat.js?v=3" defer></script>
+  <script src="/client/partners.js?v=2" defer></script>
+  <script src="/client/client.js?v=3" defer></script>
 </body>
 </html>

@@ -3,6 +3,11 @@
   const prefix = '/v1/' + (isTrainer ? 'partner' : 'client') + '/';
   const portal = document.querySelector('.client-login');
   const chat = document.getElementById('swim-chats');
+  const menu = document.getElementById('client-menu');
+  const menuStatus = document.getElementById('client-menu-status');
+  const library = document.getElementById('client-library');
+  const libraryBack = document.getElementById('client-library-back');
+  const frame = document.getElementById('client-catalog');
   const partner = document.getElementById('partner-browser');
   const title = document.getElementById('client-title');
   const help = document.getElementById('client-help');
@@ -17,7 +22,8 @@
   const status = document.getElementById('client-status');
   const requestCode = document.getElementById('client-request');
   const install = document.getElementById('client-install');
-  const catalog = 'https://yarpah03.github.io/swim-island/#';
+  const catalog = new URL('https://yarpah03.github.io/swim-island/');
+  const views = [portal, menu, library, chat, partner];
   const errors = {
     web_invite_invalid: 'Ссылка устарела. Попросите актуальное приглашение.',
     web_invite_used: 'Приглашение уже использовано. Войдите со своим логином и паролем.',
@@ -87,17 +93,17 @@
   let mode;
   let generation = 0;
 
-  function resetView() {
+  function display(active) {
     SwimChats.mount(null);
     chat.replaceChildren();
     partner.replaceChildren();
-    chat.hidden = partner.hidden = true;
-    portal.hidden = false;
-    delete document.body.dataset.page;
+    if (active !== library) frame.removeAttribute('src');
+    for (const view of views) view.hidden = view !== active;
+    document.body.dataset.page = active === chat ? 'chats' : active === library ? 'client-library' : '';
   }
 
   function showLogin(state = {}, message = '') {
-    resetView();
+    display(portal);
     mode = state.invite;
     const register = mode === 'register';
     const legacy = mode === 'legacy';
@@ -126,13 +132,31 @@
     }
   }
 
-  function browserCatalog(hash) {
-    SwimChats.mount(null);
-    chat.replaceChildren();
-    chat.hidden = true;
-    portal.hidden = true;
-    partner.hidden = false;
-    delete document.body.dataset.page;
+  function showMenu() {
+    display(menu);
+    password.value = code.value = '';
+    menuStatus.textContent = '';
+    menu.querySelector('details').open = false;
+    document.getElementById('client-install-menu').hidden =
+      matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  }
+
+  function showLibrary(hash, back = showMenu) {
+    display(library);
+    const url = new URL(catalog);
+    url.searchParams.set('view', 'client');
+    url.hash = hash;
+    frame.src = url.href;
+    libraryBack.textContent = back === showMenu ? 'Главное меню' : 'К чату';
+    libraryBack.onclick = () => back();
+  }
+
+  function forwardToCoach(entry, opener) {
+    SwimChats.forward(entry, opener, showChat, materialFromText, true);
+  }
+
+  function browserCatalog(hash, returnTo = showMenu) {
+    display(partner);
     const header = document.createElement('header');
     header.className = 'partner-desk-head';
     const heading = document.createElement('h1');
@@ -140,51 +164,49 @@
     const back = document.createElement('button');
     back.type = 'button';
     back.className = 'chat-button';
-    back.textContent = 'К чату';
-    back.addEventListener('click', showChat);
+    back.textContent = returnTo === showMenu ? 'Главное меню' : 'К чату';
+    back.addEventListener('click', () => returnTo());
     header.append(heading, back);
     const root = document.createElement('div');
     root.className = 'partner-list';
-    partner.replaceChildren(header, root);
-    const navigate = next => SwimPartners.catalog(root, next, { navigate, request: path => api('partners' + path) });
+    partner.append(header, root);
+    const navigate = next => SwimPartners.catalog(root, next, {
+      navigate, request: path => api('partners' + path), share: forwardToCoach,
+    });
     navigate(hash);
   }
 
   function materialFromText(text) {
     const lines = text.split('\n');
-    if (lines.length !== 2 || !lines[1].startsWith(catalog)) return null;
-    const hash = lines[1].slice(catalog.length);
+    const prefix = catalog.href + '#';
+    if (lines.length !== 2 || !lines[1].startsWith(prefix)) return null;
+    const hash = lines[1].slice(prefix.length);
     const isPartner = Boolean(SwimPartners.routeParts(hash));
     if (!isPartner && !/^[a-z][a-z0-9_]*(?:\/(?:workout|lesson|exercise|station)-[1-9]\d*(?:-[1-9]\d*)?)?$/.test(hash)) return null;
-    return { title: lines[0], url: catalog + hash, hash, isPartner };
+    return { title: lines[0], url: prefix + hash, hash, isPartner };
   }
 
-  function showChat() {
-    portal.hidden = partner.hidden = true;
-    partner.replaceChildren();
-    chat.hidden = false;
-    document.body.dataset.page = 'chats';
-    password.value = code.value = '';
-    const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  function showChat(targetRoom) {
+    display(chat);
     SwimChats.mount(chat, undefined, '', undefined, {
       web: true,
+      webHome: showMenu,
+      targetRoom,
       materials: {
         resolve: materialFromText,
-        open: entry => {
-          if (entry.isPartner) browserCatalog(entry.hash);
-          else window.open(entry.url, '_blank', 'noopener,noreferrer');
+        open: (entry, roomId) => {
+          const back = () => showChat(roomId);
+          if (entry.isPartner) browserCatalog(entry.hash, back);
+          else showLibrary(entry.hash, back);
         },
       },
-      webInstall: standalone ? null : offerInstall,
-      webExit: logout,
       webSessionLost: () => showLogin({ invite: mode }, 'Войдите снова, чтобы открыть переписку.'),
     });
   }
 
   function openCabinet() {
-    if (!isTrainer) return showChat();
-    portal.hidden = true;
-    partner.hidden = false;
+    if (!isTrainer) return showMenu();
+    display(partner);
     password.value = '';
     SwimPartners.desk(partner, api, async () => {
       const message = await logout();
@@ -198,7 +220,7 @@
   async function start(message) {
     const current = ++generation;
     invite = inviteFromUrl();
-    resetView();
+    display(portal);
     passwordForm.hidden = codeForm.hidden = true;
     help.textContent = 'Проверяем вход…';
     try {
@@ -268,6 +290,44 @@
       submit.disabled = false;
     }
   });
+  document.getElementById('client-chats').addEventListener('click', () => showChat());
+  document.getElementById('client-library-chats').addEventListener('click', () => showChat());
+  document.getElementById('client-install-menu').addEventListener('click', offerInstall);
+  const leaveMenu = document.getElementById('client-logout');
+  leaveMenu.addEventListener('click', async () => {
+    leaveMenu.disabled = true;
+    try {
+      const message = await logout();
+      if (message) menuStatus.textContent = message;
+    } finally { leaveMenu.disabled = false; }
+  });
+  for (const button of menu.querySelectorAll('[data-section]')) button.addEventListener('click', () => {
+    const section = button.dataset.section;
+    if (section === 'partners') browserCatalog(section);
+    else showLibrary(section);
+  });
+  window.addEventListener('message', event => {
+    if (library.hidden || event.origin !== catalog.origin || event.source !== frame.contentWindow ||
+        event.data?.type !== 'swim-forward') return;
+    const { title, url, detail } = event.data.material || {};
+    if (typeof title !== 'string' || title.length > 140 || typeof url !== 'string' || url.length > 4096) return;
+    const entry = materialFromText(title + '\n' + url);
+    if (!entry || entry.isPartner) return;
+    if (typeof detail === 'string') entry.detail = detail.slice(0, 140);
+    forwardToCoach(entry, libraryBack);
+  });
+  async function checkSession() {
+    if (isTrainer || !portal.hidden || document.hidden || !chat.hidden) return;
+    const current = generation;
+    try {
+      const state = await api('session');
+      if (current === generation && !state.active) showLogin({ invite: mode }, 'Войдите снова, чтобы открыть кабинет.');
+    } catch {
+      // Chat and account requests still check access on the server.
+    }
+  }
+  window.setInterval(checkSession, 60000);
+  document.addEventListener('visibilitychange', checkSession);
   window.addEventListener('hashchange', () => start());
   start();
 })();

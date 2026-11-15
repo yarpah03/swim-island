@@ -68,3 +68,46 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .partner-desk-head h1 { font-size: clamp(23px, 6vw, 29px); }
 .partner-area h2 { font-size: 19px; }
 .partner-area h3 { font-size: 16px; }
+.client-home {
+  width: min(100%, 760px);
+  margin-inline: auto;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 14px calc(20px + env(safe-area-inset-bottom, 0px));
+}
+.client-menu-head { display: flex; gap: 6px; align-items: center; margin-bottom: 20px; }
+.client-menu-head .client-brand { gap: 7px; margin: 0 auto 0 0; min-width: 0; font-size: 13px; line-height: 1.22; }
+.client-menu-head .client-brand img { width: 40px; height: 40px; }
+.client-menu-head .chat-button { padding-inline: 8px; }
+.client-tools { position: relative; flex: none; }
+.client-tools summary { list-style: none; }
+.client-tools summary::-webkit-details-marker { display: none; }
+.client-tool-list {
+  position: absolute; z-index: 2; inset: calc(100% + 5px) 0 auto auto;
+  display: grid; gap: 6px; width: max-content;
+  padding: 7px; border: 1px solid var(--line); border-radius: 12px; background: var(--surf);
+  box-shadow: 0 12px 30px #0005;
+}
+.client-home h1 { margin-bottom: 15px; font-size: clamp(25px, 6vw, 36px); line-height: 1.18; letter-spacing: -.035em; }
+.client-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.client-section {
+  padding: 13px; min-height: 74px; text-align: start;
+  border: 1px solid var(--line); border-radius: 14px;
+  background: linear-gradient(145deg, #172b33, #12252d);
+  color: var(--txt); font: 700 16px/1.25 var(--ui); cursor: pointer;
+}
+.client-section-main {
+  grid-column: 1 / -1; min-height: 84px;
+  color: var(--brand); background: linear-gradient(112deg, #2f2b1e, #152a32);
+  border-color: #615133; font-size: 20px;
+}
+.client-section:hover { border-color: var(--aqua); }
+#client-menu-status:empty { display: none; }
+.client-library {
+  display: flex; flex-direction: column; height: 100dvh;
+  min-height: 0; background: var(--bg);
+}
+.client-library-bar {
+  flex: none; display: flex; justify-content: space-between; gap: 8px;
+  padding: calc(6px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 6px max(10px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--line); background: var(--surf);
+}
+.client-library iframe { display: block; width: 100%; min-height: 0; flex: 1; border: 0; }

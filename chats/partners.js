@@ -145,7 +145,7 @@ const SwimPartners = (() => {
     }
   }
 
-  async function desk(root, request, leave, sessionLost) {
+  async function desk(root, request, leave, sessionLost, selected = 'course') {
     const status = el('p', 'Загружаем кабинет…', 'chat-status');
     status.setAttribute('role', 'status');
     function report(error) {
@@ -160,27 +160,45 @@ const SwimPartners = (() => {
       const data = await request('desk');
       if (!status.isConnected) return;
       status.textContent = '';
-      const profile = el('form', '', 'partner-panel chat-form');
-      profile.append(el('h2', 'Страница партнёра'));
-      const name = field(profile, 'Имя тренера', ['text', data.profile.name, 40, true]);
-      name.autocomplete = 'name';
-      const bio = field(profile, 'О себе', ['textarea', data.profile.bio, 1000]);
-      const profileSave = el('button', 'Сохранить профиль', 'chat-button');
-      profileSave.type = 'submit';
-      profile.append(profileSave);
-      profile.addEventListener('submit', async event => {
-        event.preventDefault();
-        profileSave.disabled = true;
-        try {
-          await request('desk', { action: 'profile', name: name.value, bio: bio.value });
-          status.textContent = 'Профиль сохранён.';
-        } catch (error) { report(error); }
-        finally { profileSave.disabled = false; }
-      });
+      const tabs = el('nav', '', 'chat-filter-tabs');
+      tabs.setAttribute('aria-label', 'Разделы кабинета тренера');
+      const reload = (tab = selected) => desk(root, request, leave, sessionLost, tab);
+      for (const [key, title] of [['course', 'Курсы'], ['workout', 'Тренировки'], ['profile', 'Профиль']]) {
+        const tab = button(title, () => reload(key));
+        tab.setAttribute('aria-pressed', String(key === selected));
+        tabs.append(tab);
+      }
+      root.append(tabs);
+      if (selected === 'profile') {
+        root.append(profileForm(data.profile));
+        return;
+      }
+      const section = selected === 'workout' ? 'Тренировки' : 'Курсы';
+
+      function profileForm(data) {
+        const profile = el('form', '', 'partner-panel chat-form');
+        profile.append(el('h2', 'Страница партнёра'));
+        const name = field(profile, 'Имя тренера', ['text', data.name, 40, true]);
+        name.autocomplete = 'name';
+        const bio = field(profile, 'О себе', ['textarea', data.bio, 1000]);
+        const profileSave = el('button', 'Сохранить профиль', 'chat-button');
+        profileSave.type = 'submit';
+        profile.append(profileSave);
+        profile.addEventListener('submit', async event => {
+          event.preventDefault();
+          profileSave.disabled = true;
+          try {
+            await request('desk', { action: 'profile', name: name.value, bio: bio.value });
+            status.textContent = 'Профиль сохранён.';
+          } catch (error) { report(error); }
+          finally { profileSave.disabled = false; }
+        });
+        return profile;
+      }
 
       const editor = el('div', '', 'partner-list');
       const library = el('section', '', 'partner-list');
-      library.append(el('h2', 'Мои материалы'));
+      library.append(el('h2', section));
       function edit(item = {}) {
         const form = el('form', '', 'partner-panel chat-form');
         form.append(el('h2', item.id ? 'Редактировать материал' : 'Новый материал'));
@@ -188,7 +206,7 @@ const SwimPartners = (() => {
         const kind = el('select');
         kind.setAttribute('aria-label', 'Тип материала');
         kind.append(new Option('Курс', 'course'), new Option('Тренировка', 'workout'));
-        kind.value = item.kind || 'course';
+        kind.value = item.kind || selected;
         options.append(kind);
         form.append(options);
         const title = field(form, 'Название', ['text', item.title, 100, true]);
@@ -209,8 +227,9 @@ const SwimPartners = (() => {
           try {
             await request('desk', { action: 'save', id, kind: kind.value, title: title.value,
               description: about.value, body: body.value, video: video.value, published });
-            await desk(root, request, leave, sessionLost);
-            root.querySelector('.chat-status').textContent = published ? 'Материал опубликован.' : 'Черновик сохранён.';
+            await reload(kind.value);
+            const result = root.querySelector('.chat-status');
+            if (result) result.textContent = published ? 'Материал опубликован.' : 'Черновик сохранён.';
           } catch (error) { report(error); }
           finally { publish.disabled = draft.disabled = false; }
         });
@@ -219,13 +238,12 @@ const SwimPartners = (() => {
         title.focus({ preventScroll: true });
       }
 
-      const create = button('Добавить материал', () => edit(), true);
+      const create = button(selected === 'workout' ? 'Добавить тренировку' : 'Добавить курс', () => edit(), true);
       library.append(create);
-      for (const item of data.items) {
+      for (const item of data.items.filter(item => item.kind === selected)) {
         const row = el('div', '', 'partner-panel');
         const actions = el('div', '', 'chat-account-actions');
-        row.append(el('h3', item.title), el('p', (item.kind === 'course' ? 'Курс' : 'Тренировка') + ' · ' +
-          (item.published ? 'Опубликовано' : 'Черновик'), 'partner-meta'), actions);
+        row.append(el('h3', item.title), el('p', item.published ? 'Опубликовано' : 'Черновик', 'partner-meta'), actions);
         actions.append(button('Редактировать', async () => {
           try {
             const result = await request('desk/' + item.id);
@@ -235,12 +253,12 @@ const SwimPartners = (() => {
         if (item.published) actions.append(button('Снять с публикации', async () => {
           try {
             await request('desk', { action: 'hide', id: item.id });
-            await desk(root, request, leave, sessionLost);
+            await reload();
           } catch (error) { report(error); }
         }));
         library.append(row);
       }
-      root.append(profile, library, editor);
+      root.append(library, editor);
     } catch (error) {
       if (status.isConnected) report(error);
     }

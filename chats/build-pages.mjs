@@ -20,7 +20,7 @@ writeFileSync(resolve(output, '_routes.json'), JSON.stringify({
   version: 1, include: ['/health', '/v1/chats', '/v1/chats/*', '/v1/client/*', '/v1/partner/*'], exclude: [],
 }));
 writeFileSync(resolve(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
-const securityHeaders = `  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'
+const securityHeaders = `  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src https://yarpah03.github.io/swim-island/; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'
   Referrer-Policy: no-referrer
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex, nofollow
