@@ -9,8 +9,9 @@
   <title>Кабинет ученика · Плавательный остров VIP</title>
   <link rel="icon" href="/client/vip-icon.png">
   <link rel="apple-touch-icon" href="/client/vip-icon.png">
-  <link rel="stylesheet" href="/client/chat.css?v=1">
-  <link rel="stylesheet" href="/client/client.css?v=1">
+  <link rel="manifest" href="/client/manifest.webmanifest">
+  <link rel="stylesheet" href="/client/chat.css?v=2">
+  <link rel="stylesheet" href="/client/client.css?v=2">
 </head>
 <body class="web-client">
   <main class="client-login">
@@ -21,6 +22,18 @@
     <section class="client-card" aria-labelledby="client-title">
       <h1 id="client-title">Кабинет ученика</h1>
       <p id="client-help">Проверяем вход…</p>
+      <form class="chat-form" id="client-password-form" hidden>
+        <label class="chat-field" id="client-name-field">Имя в приложении
+          <input id="client-name" type="text" maxlength="40" autocomplete="name">
+        </label>
+        <label class="chat-field">Логин
+          <input id="client-login" type="text" autocapitalize="none" spellcheck="false" autocomplete="username" maxlength="32" required>
+        </label>
+        <label class="chat-field">Пароль
+          <input id="client-password" type="password" autocomplete="current-password" maxlength="128" required>
+        </label>
+        <button class="chat-button chat-primary" id="client-login-button" type="submit">Войти</button>
+      </form>
       <form class="chat-form" id="client-access" hidden>
         <label class="chat-field">Код из письма
           <input id="client-code" type="text" autocapitalize="characters" spellcheck="false" autocomplete="one-time-code" maxlength="22" required>
@@ -32,7 +45,16 @@
     </section>
   </main>
   <main id="swim-chats" hidden></main>
-  <script src="/client/chat.js?v=1" defer></script>
-  <script src="/client/client.js?v=1" defer></script>
+  <main id="partner-browser" class="partner-area" hidden></main>
+  <dialog id="client-install" class="chat-forward-sheet" aria-labelledby="client-install-title">
+    <div class="chat-forward-heading"><h2 id="client-install-title">Установить приложение</h2><button class="chat-button" type="button">Закрыть</button></div>
+    <div class="client-install-body">
+      <p><strong>На iPhone</strong> откройте в Safari меню «Поделиться», затем «На экран “Домой”».</p>
+      <p><strong>На Android</strong> откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».</p>
+    </div>
+  </dialog>
+  <script src="/client/chat.js?v=2" defer></script>
+  <script src="/client/partners.js?v=1" defer></script>
+  <script src="/client/client.js?v=2" defer></script>
 </body>
 </html>

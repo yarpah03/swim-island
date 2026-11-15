@@ -610,3 +610,30 @@ body:has(.chat-forward-sheet[open]) { overflow: hidden; }
 .chat-web-email { overflow-wrap: anywhere; }
 .chat-cabinet .chat-form > .chat-button { justify-self: start; }
 .chat-web-invite input { width: 100%; text-overflow: ellipsis; }
+
+.partner-list { display: grid; min-width: 0; gap: 12px; margin-block: 14px; }
+.partner-list > .chat-button, .partner-panel .chat-form > .chat-button { justify-self: start; }
+.partner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+.partner-tile, .partner-panel {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surf);
+  color: var(--txt);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.partner-tile:hover { border-color: var(--aqua); }
+.partner-tile strong { color: var(--gold-lt); font-size: 18px; }
+.partner-tile p, .partner-panel p, .partner-meta { color: var(--txt-2); }
+.partner-panel .chat-button { justify-self: start; }
+.partner-panel textarea {
+  width: 100%; min-height: 82px; resize: vertical; padding: 10px;
+  border: 1px solid var(--line); border-radius: var(--r2);
+  background: #0d1d24; color: var(--txt); font: 16px/1.45 var(--ui);
+}
+.partner-body { white-space: pre-wrap; line-height: 1.55; }
+.partner-title { white-space: normal; text-align: left; }

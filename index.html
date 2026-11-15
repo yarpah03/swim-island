@@ -1269,7 +1269,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 </style>
 <link rel="stylesheet" href="vip-theme.css">
 <link rel="stylesheet" href="game/ranking.css?v=2">
-<link rel="stylesheet" href="chats/chat.css?v=7">
+<link rel="stylesheet" href="chats/chat.css?v=8">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="markpath" viewBox="0 0 512 512"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></symbol></defs></svg>
@@ -1324,7 +1324,8 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="game/engine.js?v=1"></script>
 <script src="game/ranking.js?v=1"></script>
 <script src="chats/exercises.js?v=1"></script>
-<script src="chats/chat.js?v=9"></script>
+<script src="chats/chat.js?v=10"></script>
+<script src="chats/partners.js?v=1"></script>
 <script src="workout-print/card.js?v=1"></script>
 <script>
 /* ============================================================
@@ -2073,7 +2074,7 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
 };
 
 const PARENT = {
-  chats:"home",
+  chats:"home", partners:"home",
   s1:"home",s1_1:"s1",bt0:"s1_1",sp0:"s1_1",br0:"s1_1",kr0:"s1_1",s1_2:"s1",s1_3:"s1",s1_4:"s1",
   e_bt:"s1_4",e_sp:"s1_4",e_br:"s1_4",e_kr:"s1_4",
   s2:"home",b_vy:"s2",b_sk:"s2",b_mo:"s2",b_vo:"s2",
@@ -4460,12 +4461,15 @@ function nDate(d){ return nWhen(d) }
 /* Плитки меню: экран, название, значок, кадр. Лежит на уровне файла,
    а не внутри главной, потому что по нему работают двое: главная
    собирает сетку, а карточки внутри разделов узнают свой кадр. */
+T.partners = {title:"Партнёры", partners:true};
+
 const МЕНЮ = [
     ["s1", "Обучение", '<path d="M12 6.5C10.5 5 8.5 4.5 4 4.8v13c4.5-.3 6.5.2 8 1.7 1.5-1.5 3.5-2 8-1.7v-13c-4.5-.3-6.5.2-8 1.7z"/><path d="M12 6.5v13"/>', "tile-obuchenie.jpg"],
     ["s2", "Тренировки в\u00A0бассейне", '<path d="M2 9c3-3 5 3 8 0s5-3 8 0"/><path d="M2 15c3-3 5 3 8 0s5-3 8 0"/>', "tile-voda.jpg"],
     ["s3", "Суша", '<path d="M5 9v6M19 9v6M8 7v10M16 7v10M8 12h8"/>', "tile-susha.jpg"],
     ["game", "Игра", '<rect x="2" y="7" width="20" height="10" rx="4"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="12" r=".9"/>', "tile-igra.jpg"],
     ["s4", "Прямой эфир", '<circle cx="12" cy="12" r="3"/><path d="M6.5 6.5a8 8 0 000 11M17.5 6.5a8 8 0 010 11"/>', "tile-efir.jpg"],
+    ["partners", "Партнёры", '<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0112 0v2m1-15a3 3 0 010 6m1 3a5 5 0 014 4v2"/>'],
     ["s7", "Сервис", '<rect x="3" y="5.6" width="18" height="12.8" rx="2.4"/><path d="M3 10.2h18"/><path d="M6.6 14.8h4.4"/>', "tile-eshe.jpg"],
 ];
 
@@ -4540,7 +4544,7 @@ function homeHTML(){
   const [title, word, vip] = T.home.title.split(" ");
   const links = МЕНЮ.map(([экран, имя, знак, кадр]) => `
     <button type="button" class="hm-tile" onclick="go('${экран}')">
-      <span class="tph" style="background-image:url('${кадр}')" aria-hidden="true"></span>
+      ${кадр ? `<span class="tph" style="background-image:url('${кадр}')" aria-hidden="true"></span>` : ""}
       <span class="club-card-top">
         <svg class="club-tile-symbol" viewBox="0 0 24 24" aria-hidden="true">${знак}</svg>
         ${CLUB_ARROW}
@@ -4701,7 +4705,12 @@ function materialFromMessage(text){
   const lines = text.split("\n");
   const link = lines[lines.length - 1];
   const prefix = materialBase + "#";
-  return lines.length <= 2 && link.startsWith(prefix) ? catalogMaterial(link.slice(prefix.length)) : null;
+  if(lines.length > 2 || !link.startsWith(prefix)) return null;
+  const hash = link.slice(prefix.length);
+  if(lines.length === 2 && SwimPartners.routeParts(hash)){
+    return { hash, title: lines[0], detail:"Партнёры", url:link };
+  }
+  return catalogMaterial(hash);
 }
 
 function openChatMaterial(material, room){
@@ -4728,7 +4737,7 @@ function render(){
   // Telegram передаёт параметры запуска в hash, рядом с адресами разделов.
   const hash = location.hash.slice(1);
   const shared = hash.includes("/") ? catalogMaterial(hash) : null;
-  const route = shared?.route ?? hash;
+  const route = SwimPartners.routeParts(hash) ? "partners" : shared?.route ?? hash;
   const id = Object.prototype.hasOwnProperty.call(T, route) ? route : "home";
   const d = T[id];
   const fromChat = sharedFromChat?.hash === hash;
@@ -4781,8 +4790,12 @@ function render(){
     h += `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
     if(d.lede) h += `<p class="lede${d.whiteLede ? " wh" : ""}">${esc(d.lede)}</p>`;
     if(d.pills) h += `<div class="pills">${d.pills.map(p=>`<span class="pill">${esc(p)}</span>`).join("")}</div>`;
-    if(catalogMaterial(id)) h += materialShareButton(id);
+    if(!d.partners && catalogMaterial(id)) h += materialShareButton(id);
     h += '</section>';
+    if(d.partners){
+      h += '<div id="club-partners" class="partner-list"></div>';
+      h += '<a class="chat-button" href="https://swim-island-chats.pages.dev/partner/" target="_blank" rel="noopener noreferrer">Вход тренера</a>';
+    }
 
     if(d.more)  h += gameCardHTML();
 
@@ -5147,6 +5160,15 @@ if(d.lesson){
   SwimChats.mount(chats, LEVEL, chatReturn, chatExerciseLibrary, {
     account: id === "profile", targetRoom, materials: { resolve: materialFromMessage, open: openChatMaterial }
   });
+  if(d.partners){
+    SwimPartners.catalog(document.getElementById("club-partners"), hash, {
+      navigate: go,
+      share: (material, trigger) => SwimChats.forward(material, trigger, room => {
+        pendingChatRoom = room;
+        go("chats");
+      }, materialFromMessage)
+    });
+  }
 }
 
 /* Персональная ссылка приглашения. Идентификатор берём у телеграма:
@@ -5849,8 +5871,8 @@ loadLevel();
 const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param ??
   new URLSearchParams(location.search).get("tgWebAppStartParam");
 pendingChatRoom = /^chat_(level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36})$/.exec(startParam || "")?.[1];
-if(pendingChatRoom || startParam === "profile"){
-  history.replaceState(history.state, "", pendingChatRoom ? "#chats" : "#profile");
+if(pendingChatRoom || startParam === "profile" || startParam === "partners"){
+  history.replaceState(history.state, "", pendingChatRoom ? "#chats" : "#" + startParam);
 }
 render();
 

@@ -54,6 +54,7 @@ const SwimChats = (() => {
     group: '<path d="M3 19v-1a5 5 0 0 1 10 0v1m2-5a4.5 4.5 0 0 1 6 4v1"/><circle cx="8" cy="8" r="3"/><path d="M15 5a3 3 0 0 1 0 6"/>',
     waves: '<path d="M3 9c3 0 3-2 6-2s3 2 6 2 3-2 6-2M3 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/>',
     attach: '<path d="m8 13 6.8-6.8a2.5 2.5 0 0 1 3.5 3.5l-8.2 8.2a4 4 0 0 1-5.7-5.7l8.2-8.2m4 7-6.8 6.8"/>',
+    install: '<path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/>',
     close: '<path d="m6 6 12 12M18 6 6 18"/>',
     send: '<path d="M21 3 9.7 14.3M21 3l-7 18-4.3-6.7L3 10z"/>',
   };
@@ -485,6 +486,7 @@ const SwimChats = (() => {
       }
       const actions = element('div', 'chat-actions');
       if (web) {
+        if (launch.webInstall) actions.append(iconButton('install', 'Установить приложение', launch.webInstall));
         const leave = button('Выйти', async () => {
           leave.disabled = true;
           try {
@@ -785,6 +787,7 @@ const SwimChats = (() => {
         access.append(element('h2', '', 'Код для тренера'), codeRow, copied);
         page.append(hero, notificationsForm(v, data), access);
         if (data.coach) page.append(button('Клиенты без Telegram', () => webClients(() => account(fromList))));
+        if (data.manager) page.append(button('Пригласить тренера', () => webClients(() => account(fromList), null, true)));
         if (!fromList) {
           const link = element('a', 'chat-button', 'Перейти в чаты');
           link.href = '#chats';
@@ -796,14 +799,17 @@ const SwimChats = (() => {
       }
     }
 
-    async function webClients(backToAccount, created) {
-      const v = view('Клиенты без Telegram', { back: backToAccount, backLabel: 'В личный кабинет' });
+    async function webClients(backToAccount, created, trainers = false) {
+      const endpoint = trainers ? '/partner-admin' : '/clients';
+      const reload = invitation => webClients(backToAccount, invitation, trainers);
+      const title = trainers ? 'Приглашения тренеров' : 'Клиенты без Telegram';
+      const v = view(title, { back: backToAccount, backLabel: 'В личный кабинет' });
       const page = element('div', 'chat-width chat-cabinet');
       page.append(v.status);
       v.panel.append(page);
-      v.statusText('Загружаем клиентов…');
+      v.statusText('Загружаем приглашения…');
       try {
-        const { clients, mail } = await v.request('/clients');
+        const { clients, mail } = await v.request(endpoint);
         if (v.signal.aborted) return;
         v.statusText('');
         const expiresOn = input => Date.parse(input.value + 'T00:00:00+03:00') + 86400000;
@@ -833,8 +839,8 @@ const SwimChats = (() => {
               address.select();
             }
           }, 'chat-button chat-primary');
-          inviteCard.replaceChildren(element('h2', '', 'Приглашение готово'),
-            element('p', '', 'Передайте эту ссылку клиенту.'), copy);
+          inviteCard.replaceChildren(element('h2', '', 'Ссылка «' + data.label + '»'),
+            element('p', '', trainers ? 'Передайте эту ссылку тренеру.' : 'Передайте эту ссылку клиенту.'), copy);
           field(inviteCard, 'Персональная ссылка', address);
           inviteCard.hidden = false;
           inviteCard.scrollIntoView({ block: 'nearest' });
@@ -842,41 +848,45 @@ const SwimChats = (() => {
         if (created) showInvite(created);
 
         const form = element('form', 'chat-account-card chat-form');
-        form.append(element('h2', '', 'Пригласить клиента'));
-        const name = field(form, 'Имя клиента', textInput('Как обращаться к клиенту'));
-        name.autocomplete = 'off';
-        const email = field(form, 'Почта клиента', textInput('name@example.com', 254));
-        email.type = 'email';
-        email.autocomplete = 'off';
-        const expiry = field(form, 'Последний день ведения по Москве', dateInput(0));
-        v.formSubmit(form, 'Создать приглашение', async () => {
-          const result = await v.request('/clients', { action: 'create', name: name.value, email: email.value, expires: expiresOn(expiry) });
-          if (!v.signal.aborted) await webClients(backToAccount, result);
+        form.append(element('h2', '', trainers ? 'Новая ссылка для тренера' : 'Новая ссылка для клиента'));
+        const label = field(form, 'Название ссылки', textInput('Например, Алексей', 60));
+        label.autocomplete = 'off';
+        const expiry = trainers ? null : field(form, 'Последний день ведения по Москве', dateInput(0));
+        v.formSubmit(form, 'Создать ссылку', async () => {
+          const result = await v.request(endpoint, { action: 'invite', label: label.value, expires: expiry ? expiresOn(expiry) : undefined });
+          if (!v.signal.aborted) await reload(result);
         });
         page.append(form);
 
         for (const client of clients) {
           const card = element('section', 'chat-account-card chat-form');
-          card.append(element('h2', '', client.name), element('p', 'chat-web-email', client.email));
-          const active = client.expires > Date.now();
-          card.append(element('p', '', active ? (client.entered ? 'Клиент вошёл · ' : 'Ждём первого входа · ') +
-            'ведение по ' + date.format(client.expires - 1) : 'Срок ведения закончился'));
+          card.append(element('h2', '', client.label));
+          if (client.name && client.name !== client.label) card.append(element('p', '', client.name));
+          if (client.email) card.append(element('p', 'chat-web-email', client.email));
+          const active = trainers ? client.active : client.expires > Date.now();
+          const state = client.entered ? 'Регистрация завершена' : 'Ждём первого входа';
+          card.append(element('p', '', trainers
+            ? (active ? state : 'Доступ отключён')
+            : (active ? state + ' · ведение по ' + date.format(client.expires - 1) : 'Срок ведения закончился')));
           const actions = element('div', 'chat-account-actions');
           const feedback = element('p', 'chat-status');
           feedback.setAttribute('role', 'status');
-          const refresh = action => async () => {
-            const result = await v.request('/clients', { action, id: client.id });
-            if (v.signal.aborted) return;
-            if (action === 'rotate') showInvite(result);
-            else await webClients(backToAccount);
-          };
+          async function change(action, control) {
+            control.disabled = true;
+            try {
+              const result = await v.request(endpoint, { action, id: client.id });
+              if (v.signal.aborted) return;
+              if (action === 'replace') showInvite(result);
+              else await reload();
+            } catch (error) { v.errorText(error); }
+            finally { control.disabled = false; }
+          }
           if (active) {
-            actions.append(button('Открыть чат', () => list(client.id)));
-            const rotate = button('Выпустить новую ссылку', async () => {
-              if (!window.confirm('Обновить приглашение и завершить активные сеансы клиента?')) return;
-              rotate.disabled = true;
-              try { await refresh('rotate')(); } catch (error) { v.errorText(error); }
-              finally { rotate.disabled = false; }
+            if (!trainers) actions.append(button('Открыть чат', () => list(client.id)));
+            const rotate = button(client.entered ? 'Ссылка для восстановления' : 'Выпустить новую ссылку', () => {
+              if (window.confirm('Обновление ссылки завершит текущие сеансы и заменит данные для входа. Продолжить?')) {
+                return change('replace', rotate);
+              }
             });
             actions.append(rotate);
             const code = button(mail ? 'Код вручную' : 'Подготовить письмо с кодом', async () => {
@@ -893,26 +903,32 @@ const SwimChats = (() => {
                 feedback.textContent = errorMessage(error);
               } finally { code.disabled = false; }
             });
-            const end = button('Завершить доступ', async () => {
-              if (!window.confirm('Завершить доступ клиента к кабинету и чату?')) return;
-              end.disabled = true;
-              try { await refresh('end')(); } catch (error) { v.errorText(error); }
-              finally { end.disabled = false; }
+            if (client.email) actions.append(code);
+            const end = button('Завершить доступ', () => {
+              const question = trainers ? 'Завершить доступ тренера и скрыть его страницу из каталога?'
+                : 'Завершить доступ клиента к кабинету и чату?';
+              if (window.confirm(question)) return change('end', end);
             });
-            actions.append(code, end);
+            actions.append(end);
+          } else if (trainers) {
+            const enable = button('Включить доступ', () => change('activate', enable));
+            actions.append(enable);
           }
-          const renewal = element('form', 'chat-form');
-          const endDate = field(renewal, 'Новая дата окончания', dateInput(client.expires));
-          v.formSubmit(renewal, 'Сохранить срок', async () => {
-            await v.request('/clients', { action: 'renew', id: client.id, expires: expiresOn(endDate) });
-            if (!v.signal.aborted) await webClients(backToAccount);
-          });
-          card.append(actions, feedback, renewal);
+          card.append(actions, feedback);
+          if (!trainers) {
+            const renewal = element('form', 'chat-form');
+            const endDate = field(renewal, 'Новая дата окончания', dateInput(client.expires));
+            v.formSubmit(renewal, 'Сохранить срок', async () => {
+              await v.request(endpoint, { action: 'renew', id: client.id, expires: expiresOn(endDate) });
+              if (!v.signal.aborted) await reload();
+            });
+            card.append(renewal);
+          }
           page.append(card);
         }
       } catch (error) {
         v.errorText(error);
-        if (!v.signal.aborted) page.append(button('Обновить', () => webClients(backToAccount)));
+        if (!v.signal.aborted) page.append(button('Обновить', () => reload()));
       }
     }
 
