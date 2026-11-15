@@ -3,6 +3,10 @@ import { authenticate } from '../game/worker.mjs';
 const APP_ORIGIN = 'https://yarpah03.github.io';
 const PAGE_SIZE = 40;
 const MAX_MESSAGE_LENGTH = 8000;
+const BOT_NAME = 'SwimIslandVIPBot';
+const BOT_ID = '9271382179';
+const NOTIFICATION_DELAY_MS = 7000;
+const avatarEmojis = new Set(["🏊","🌊","🐬","🐟","🦈","🐢","🐙","🤿","🏅","⚡","🏝️","🔥"]);
 const levels = new Set(['n', 's', 'p']);
 const vipCache = new Map();
 
@@ -62,9 +66,10 @@ async function profileForCode(db, value) {
   const code = typeof value === 'string' ? value.trim().toLowerCase() : '';
   if (!/^[a-f0-9]{12}$/.test(code)) throw new ChatError(400, 'invalid_account');
   const profile = await db.prepare(`
-    SELECT p.telegram_id, COALESCE(c.name, p.name) AS name, p.level
+    SELECT p.telegram_id, COALESCE(pref.nickname, c.name, p.name) AS name, pref.avatar
     FROM chat_profiles p
     LEFT JOIN chat_coaches c ON c.telegram_id = p.telegram_id
+    LEFT JOIN chat_preferences pref ON pref.telegram_id = p.telegram_id
     WHERE p.code = ?
   `).bind(code).first();
   if (!profile) throw new ChatError(400, 'account_not_found');
@@ -109,28 +114,102 @@ async function profileOf(db, id) {
   return db.prepare('SELECT code, name, level FROM chat_profiles WHERE telegram_id = ?').bind(id).first();
 }
 
-async function overview(env, player, now) {
+function signedUser(request) {
+  // Read extra fields only after authenticate has verified the same initData.
+  return JSON.parse(new URLSearchParams(request.headers.get('Authorization').slice(4)).get('user'));
+}
+
+function isAvatarPhoto(avatar) {
+  const start = 'data:image/jpeg;base64,';
+  if (typeof avatar !== 'string' || avatar.length > 20500 || !avatar.startsWith(start)) return false;
+  const payload = avatar.slice(start.length);
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(payload) || (payload.length % 4) !== 0) return false;
+  const jpeg = atob(payload);
+  const byte = position => jpeg.charCodeAt(position);
+  const word = position => byte(position) * 256 + byte(position + 1);
+  if (word(0) !== 0xffd8 || word(jpeg.length - 2) !== 0xffd9) return false;
+  // Validate the resized thumbnail's dimensions from its JPEG frame header.
+  for (let offset = 2; offset + 9 < jpeg.length;) {
+    if (byte(offset) !== 0xff) return false;
+    const size = word(offset + 2);
+    if (size < 2 || offset + 2 + size > jpeg.length) return false;
+    const marker = byte(offset + 1);
+    if ([0xc0, 0xc1, 0xc2].includes(marker)) {
+      return size >= 8 && word(offset + 5) === 160 && word(offset + 7) === 160;
+    }
+    if (marker === 0xda) return false;
+    offset += 2 + size;
+  }
+  return false;
+}
+
+function canNotify(env) {
+  return typeof env.VIP_BOT_TOKEN === 'string' && env.VIP_BOT_TOKEN.startsWith(BOT_ID + ':');
+}
+
+function publicProfile(row) {
+  return { name: row.name, avatar: row.avatar || '' };
+}
+
+async function saveProfile(db, player, request) {
+  const { name, level, avatar, status } = await input(request, 24576);
+  if (!levels.has(level)) throw new ChatError(400, 'invalid_level');
+  const nickname = cleanName(name);
+  let picture = null;
+  if (avatar !== undefined) {
+    if (avatar !== '' && !avatarEmojis.has(avatar) && !isAvatarPhoto(avatar)) {
+      throw new ChatError(400, 'invalid_avatar');
+    }
+    picture = avatar;
+  }
+  let activity = null;
+  if (status !== undefined) {
+    if (typeof status !== 'string') throw new ChatError(400, 'invalid_status');
+    activity = status.normalize('NFC').replace(/[\p{Cc}\u202A-\u202E\u2066-\u2069]/gu, ' ').replace(/\s+/gu, ' ').trim();
+    if ([...activity].length > 80) throw new ChatError(400, 'invalid_status');
+  }
+  const code = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+  await db.batch([
+    db.prepare(
+      'INSERT INTO chat_profiles (telegram_id, code, name, level) VALUES (?, ?, ?, ?) ' +
+      'ON CONFLICT (telegram_id) DO UPDATE SET name = excluded.name, level = excluded.level'
+    ).bind(player.id, code, nickname, level),
+    db.prepare(
+      "INSERT INTO chat_preferences (telegram_id, nickname, avatar, status) VALUES (?, ?, COALESCE(?, ''), COALESCE(?, '')) " +
+      'ON CONFLICT (telegram_id) DO UPDATE SET ' +
+      'nickname = CASE WHEN excluded.nickname IS NOT NULL OR chat_preferences.nickname IS NOT NULL THEN ? END, ' +
+      'avatar = COALESCE(?, chat_preferences.avatar), status = COALESCE(?, chat_preferences.status)'
+    ).bind(player.id, avatar !== undefined || status !== undefined ? nickname : null, picture, activity, nickname, picture, activity),
+  ]);
+  return { ok: true };
+}
+
+async function overview(env, player, now, user) {
   const db = env.CHAT_DB;
-  const [profile, vip, coaching, direct, coachProfile] = await Promise.all([
+  const [profile, vip, coaching, direct, coachProfile, preferences] = await Promise.all([
     profileOf(db, player.id),
     channelStatus(env, player.id),
     db.prepare(`
-      SELECT c.id, c.expires_ms, COALESCE(coach.name, other.name) AS name, c.coach_id = ? AS coaching
+      SELECT c.id, c.expires_ms, COALESCE(pref.nickname, coach.name, other.name) AS name,
+        c.coach_id = ? AS coaching, pref.avatar
       FROM chat_coaching c
       JOIN chat_profiles other ON other.telegram_id = CASE WHEN c.coach_id = ? THEN c.student_id ELSE c.coach_id END
-      LEFT JOIN chat_coaches coach ON coach.telegram_id = other.telegram_id AND other.telegram_id = c.coach_id
+      LEFT JOIN chat_coaches coach ON coach.telegram_id = other.telegram_id
+      LEFT JOIN chat_preferences pref ON pref.telegram_id = other.telegram_id
       WHERE (c.student_id = ? OR c.coach_id = ?) AND c.expires_ms > ?
       ORDER BY name, c.id
     `).bind(player.id, player.id, player.id, player.id, now).all(),
     db.prepare(`
-      SELECT d.id, COALESCE(c.name, p.name) AS title
+      SELECT d.id, COALESCE(pref.nickname, c.name, p.name) AS name, pref.avatar
       FROM chat_direct d
       JOIN chat_profiles p ON p.telegram_id = CASE WHEN d.first_id = ? THEN d.second_id ELSE d.first_id END
       LEFT JOIN chat_coaches c ON c.telegram_id = p.telegram_id
+      LEFT JOIN chat_preferences pref ON pref.telegram_id = p.telegram_id
       WHERE d.first_id = ? OR d.second_id = ?
-      ORDER BY title, d.id
+      ORDER BY name, d.id
     `).bind(player.id, player.id, player.id).all(),
     db.prepare('SELECT name, handle FROM chat_coaches WHERE telegram_id = ?').bind(player.id).first(),
+    db.prepare('SELECT nickname, avatar, status, notify_personal, notify_groups FROM chat_preferences WHERE telegram_id = ?').bind(player.id).first(),
   ]);
   const manager = ownerConfigured(env, player.id) || vip === 'owner';
   const groups = profile && isVip(vip) ? (await db.prepare(`
@@ -141,8 +220,9 @@ async function overview(env, player, now) {
     ...groups.map(room => ({ ...room, kind: 'group' })),
     ...coaching.results.map(row => ({
       id: row.id, title: row.name, kind: 'coaching', coaching: Boolean(row.coaching), expires: row.expires_ms,
+      person: publicProfile(row),
     })),
-    ...direct.results.map(row => ({ ...row, kind: 'direct' })),
+    ...direct.results.map(row => ({ id: row.id, title: row.name, kind: 'direct', person: publicProfile(row) })),
   ];
   if (rooms.length) {
     const { results } = await db.prepare(`
@@ -161,7 +241,15 @@ async function overview(env, player, now) {
     }
   }
   return {
-    profile, suggestedName: coachProfile?.name ?? player.name,
+    profile: profile && {
+      ...profile, name: preferences?.nickname ?? coachProfile?.name ?? profile.name,
+      avatar: preferences?.avatar || '', status: preferences?.status || '',
+    },
+    suggestedName: coachProfile?.name ?? player.name,
+    telegramWriteAllowed: user.allows_write_to_pm === true,
+    notifications: {
+      available: canNotify(env), personal: Boolean(preferences?.notify_personal), groups: Boolean(preferences?.notify_groups),
+    },
     coach: coachProfile,
     vip: isVip(vip) ? 'active' : vip, manager, rooms,
   };
@@ -175,7 +263,7 @@ async function contact(db, player, now, request, open) {
   const profile = await profileForCode(db, code);
   const target = profile.telegram_id;
   if (target === player.id) throw new ChatError(400, 'self_contact');
-  if (!open) return { name: profile.name, level: profile.level };
+  if (!open) return publicProfile(profile);
 
   const first = Math.min(player.id, target);
   const second = Math.max(player.id, target);
@@ -186,7 +274,8 @@ async function contact(db, player, now, request, open) {
     WHERE student_id = ? AND coach_id = ? AND expires_ms > ?
     ORDER BY priority LIMIT 1
   `).bind(first, second, target, player.id, now).first();
-  if (existing) return { id: existing.id, kind: existing.kind, title: profile.name };
+  const person = publicProfile(profile);
+  if (existing) return { id: existing.id, kind: existing.kind, title: profile.name, person };
 
   const [, selected] = await db.batch([
     db.prepare(`
@@ -195,7 +284,7 @@ async function contact(db, player, now, request, open) {
     `).bind('direct-' + crypto.randomUUID(), first, second),
     db.prepare('SELECT id FROM chat_direct WHERE first_id = ? AND second_id = ?').bind(first, second),
   ]);
-  return { id: selected.results[0].id, kind: 'direct', title: profile.name };
+  return { id: selected.results[0].id, kind: 'direct', title: profile.name, person };
 }
 
 async function requireRoom(env, id, player, now) {
@@ -204,16 +293,16 @@ async function requireRoom(env, id, player, now) {
   if (!profile) throw new ChatError(403, 'profile_required');
   if (id.startsWith('lesson-')) {
     const room = await db.prepare(`
-      SELECT coach_id FROM chat_coaching
+      SELECT coach_id, student_id FROM chat_coaching
       WHERE id = ? AND expires_ms > ? AND (student_id = ? OR coach_id = ?)
     `).bind(id, now, player.id, player.id).first();
     if (room) return room;
     throw new ChatError(403, 'room_forbidden');
   }
   if (id.startsWith('direct-')) {
-    const room = await db.prepare('SELECT 1 FROM chat_direct WHERE id = ? AND (first_id = ? OR second_id = ?)')
+    const room = await db.prepare('SELECT first_id, second_id FROM chat_direct WHERE id = ? AND (first_id = ? OR second_id = ?)')
       .bind(id, player.id, player.id).first();
-    if (room) return { direct: true };
+    if (room) return { ...room, direct: true };
     throw new ChatError(403, 'room_forbidden');
   }
   const group = await db.prepare('SELECT level FROM chat_groups WHERE id = ?').bind(id).first();
@@ -221,7 +310,7 @@ async function requireRoom(env, id, player, now) {
   const vip = await channelStatus(env, player.id);
   if (vip === 'unavailable') throw new ChatError(503, 'vip_unavailable');
   if (!isVip(vip)) throw new ChatError(403, 'room_forbidden');
-  return {};
+  return { group: true, level: group.level };
 }
 
 async function messages(db, room, roomId, playerId, params) {
@@ -236,22 +325,30 @@ async function messages(db, room, roomId, playerId, params) {
   const ascending = after !== null;
   const cursor = Number(after ?? before ?? Number.MAX_SAFE_INTEGER);
   const result = await db.prepare(`
-    SELECT m.id, m.sender_id, COALESCE(coach.name, p.name) AS name, m.body, m.video_url, m.sent_ms,
-      coach.telegram_id IS NOT NULL AS registered_coach
+    SELECT m.id, m.sender_id, COALESCE(pref.nickname, coach.name, p.name) AS name, m.body, m.video_url, m.sent_ms,
+      coach.telegram_id IS NOT NULL AS registered_coach, pref.avatar
     FROM chat_messages m JOIN chat_profiles p ON p.telegram_id = m.sender_id
-    LEFT JOIN chat_coaches coach ON coach.telegram_id = m.sender_id AND (coach.telegram_id = ? OR ? = 1)
+    LEFT JOIN chat_coaches coach ON coach.telegram_id = m.sender_id
+    LEFT JOIN chat_preferences pref ON pref.telegram_id = m.sender_id
     WHERE m.room_id = ? AND m.id ${ascending ? '>' : '<'} ?
     ORDER BY m.id ${ascending ? 'ASC' : 'DESC'} LIMIT ?
-  `).bind(room.coach_id ?? 0, Number(Boolean(room.direct)), roomId, cursor, PAGE_SIZE + 1).all();
+  `).bind(roomId, cursor, PAGE_SIZE + 1).all();
   const page = result.results.slice(0, PAGE_SIZE);
   if (!ascending) page.reverse();
-  return {
-    more: result.results.length > PAGE_SIZE,
-    messages: page.map(row => ({
+  const photos = new Map();
+  const pageMessages = page.map(row => {
+    const person = publicProfile(row);
+    if (person.avatar.startsWith('data:image/jpeg;base64,')) {
+      if (!photos.has(person.avatar)) photos.set(person.avatar, photos.size);
+      person.avatar = photos.get(person.avatar);
+    }
+    return {
       id: row.id, name: row.name, text: row.body, video: row.video_url, sent: row.sent_ms,
       own: row.sender_id === playerId, coach: row.sender_id === room.coach_id || Boolean(row.registered_coach),
-    })),
-  };
+      person,
+    };
+  });
+  return { more: result.results.length > PAGE_SIZE, messages: pageMessages, photos: [...photos.keys()] };
 }
 
 function videoLink(value) {
@@ -267,7 +364,7 @@ function videoLink(value) {
   throw new ChatError(400, 'invalid_video');
 }
 
-async function send(env, id, player, request) {
+async function send(env, id, player, request, ctx) {
   const { text, video, clientId } = await input(request, 65536);
   if (typeof clientId !== 'string' || !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(clientId)) {
     throw new ChatError(400, 'invalid_input');
@@ -296,7 +393,118 @@ async function send(env, id, player, request) {
   const saved = inserted ?? await db.prepare('SELECT id FROM chat_messages WHERE room_id = ? AND sender_id = ? AND client_id = ?')
     .bind(id, player.id, clientId).first();
   if (!saved) throw new ChatError(429, 'slow_down');
+  if (inserted && canNotify(env) && ctx) {
+    ctx.waitUntil(notifyRecipients(env, room, id, player.id, saved.id)
+      .catch(error => console.error('Chat alert failed', error.name)));
+  }
   return { ok: true, id: saved.id };
+}
+
+async function sendAlert(env, recipient, text, start, label) {
+  try {
+    const response = await fetch('https://api.telegram.org/bot' + env.VIP_BOT_TOKEN + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: recipient, text,
+        reply_markup: { inline_keyboard: [[{ text: label, url: 'https://t.me/' + BOT_NAME + '?startapp=' + start }]] },
+      }),
+      signal: AbortSignal.timeout(5500),
+    });
+    const result = await response.json();
+    if (result.ok && response.ok) return 'ok';
+    if (result.error_code === 403 || result.error_code === 400 && /chat not found/i.test(result.description ?? '')) return 'blocked';
+  } catch {
+    // Bot notification failure is separate from delivery inside the app.
+  }
+  return 'unavailable';
+}
+
+async function notifyRecipients(env, room, id, sender, messageId) {
+  const db = env.CHAT_DB;
+  let targets;
+  if (room.group) {
+    const { results } = await db.prepare(`
+      SELECT p.telegram_id FROM chat_preferences n JOIN chat_profiles p USING (telegram_id)
+      WHERE n.notify_groups = 1 AND (? IS NULL OR p.level = ?) AND p.telegram_id <> ?
+    `).bind(room.level, room.level, sender).all();
+    targets = results.map(row => row.telegram_id);
+  } else {
+    const pair = room.direct ? [room.first_id, room.second_id] : [room.student_id, room.coach_id];
+    const target = pair.find(id => id !== sender);
+    const enabled = await db.prepare('SELECT notify_personal FROM chat_preferences WHERE telegram_id = ? AND notify_personal = 1').bind(target).first();
+    targets = enabled ? [target] : [];
+  }
+  if (!targets.length) return;
+  await new Promise(resolve => setTimeout(resolve, NOTIFICATION_DELAY_MS));
+  if (room.coach_id && !await db.prepare('SELECT 1 FROM chat_coaching WHERE id = ? AND expires_ms > ?').bind(id, Date.now()).first()) return;
+
+  for (let index = 0; index < targets.length; index += 6) {
+    await Promise.all(targets.slice(index, index + 6).map(async recipient => {
+      if (room.group && !isVip(await channelStatus(env, recipient))) return;
+      const now = Date.now();
+      const interval = room.group ? 60000 : 12000;
+      const claimed = await db.prepare(`
+        INSERT INTO chat_notification_state (telegram_id, room_id, notified_id, notified_ms)
+        SELECT telegram_id, ?, ?, ? FROM chat_preferences
+        WHERE telegram_id = ? AND CASE WHEN ? = 1 THEN notify_groups ELSE notify_personal END = 1
+          AND (? IS NULL OR EXISTS (SELECT 1 FROM chat_profiles WHERE telegram_id = ? AND level = ?))
+        ON CONFLICT (telegram_id, room_id) DO UPDATE SET notified_id = excluded.notified_id, notified_ms = excluded.notified_ms
+        WHERE chat_notification_state.seen_id < excluded.notified_id
+          AND chat_notification_state.notified_id < excluded.notified_id
+          AND chat_notification_state.notified_ms <= ?
+        RETURNING telegram_id
+      `).bind(id, messageId, now, recipient, Number(Boolean(room.group)), room.level ?? null,
+        recipient, room.level ?? null, now - interval).first();
+      if (!claimed) return;
+      await sendAlert(env, recipient, 'Новое сообщение в «Плавательном острове VIP».', 'chat_' + id, 'Открыть чат');
+    }));
+  }
+}
+
+async function markSeen(env, id, player, now, request) {
+  const db = env.CHAT_DB;
+  const { through } = await input(request, 128);
+  if (!Number.isSafeInteger(through) || through <= 0) throw new ChatError(400, 'invalid_cursor');
+  await requireRoom(env, id, player, now);
+  await db.prepare(`
+    INSERT INTO chat_notification_state (telegram_id, room_id, seen_id)
+    SELECT p.telegram_id, m.room_id, m.id
+    FROM chat_messages m JOIN chat_preferences p ON p.telegram_id = ?
+    WHERE m.id = ? AND m.room_id = ? AND (p.notify_personal = 1 OR p.notify_groups = 1)
+    ON CONFLICT (telegram_id, room_id) DO UPDATE SET seen_id = excluded.seen_id
+    WHERE chat_notification_state.seen_id < excluded.seen_id
+  `).bind(player.id, through, id).run();
+  return { ok: true };
+}
+
+async function saveNotifications(env, player, request) {
+  const db = env.CHAT_DB;
+  if (!await profileOf(db, player.id)) throw new ChatError(403, 'profile_required');
+  const { action, personal, groups } = await input(request, 1024);
+  if (action === 'test') {
+    if (!canNotify(env)) throw new ChatError(503, 'notifications_unavailable');
+    const now = Date.now();
+    const claimed = await db.prepare(`
+      INSERT INTO chat_notification_state (telegram_id, room_id, notified_ms)
+      SELECT telegram_id, 'test', ? FROM chat_preferences
+      WHERE telegram_id = ? AND (notify_personal = 1 OR notify_groups = 1)
+      ON CONFLICT (telegram_id, room_id) DO UPDATE SET notified_ms = excluded.notified_ms
+      WHERE chat_notification_state.notified_ms <= ?
+      RETURNING telegram_id
+    `).bind(now, player.id, now - 60000).first();
+    if (!claimed) throw new ChatError(429, 'notification_test_wait');
+    const result = await sendAlert(env, player.id, 'Проверка уведомлений «Плавательного острова VIP».', 'profile', 'Открыть приложение');
+    if (result !== 'ok') throw new ChatError(503, 'notification_' + result);
+  } else {
+    if (typeof personal !== 'boolean' || typeof groups !== 'boolean') throw new ChatError(400, 'invalid_input');
+    if ((personal || groups) && !canNotify(env)) throw new ChatError(503, 'notifications_unavailable');
+    await db.prepare(`
+      INSERT INTO chat_preferences (telegram_id, notify_personal, notify_groups) VALUES (?, ?, ?)
+      ON CONFLICT (telegram_id) DO UPDATE SET notify_personal = excluded.notify_personal, notify_groups = excluded.notify_groups
+    `).bind(player.id, Number(personal), Number(groups)).run();
+  }
+  return { ok: true };
 }
 
 async function manage(env, player, now, request) {
@@ -364,21 +572,22 @@ async function manage(env, player, now, request) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     if (origin && origin !== APP_ORIGIN) return reply({ error: 'forbidden_origin' }, 403);
     const route = url.pathname;
-    const room = /^\/v1\/chats\/rooms\/((?:level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36}))$/.exec(route);
+    const room = /^\/v1\/chats\/rooms\/((?:level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36}))(\/read)?$/.exec(route);
     const methods = {
       '/health': ['GET'],
       '/v1/chats': ['GET'],
       '/v1/chats/profile': ['POST'],
+      '/v1/chats/notifications': ['POST'],
       '/v1/chats/manage': ['GET', 'POST'],
       '/v1/chats/find': ['POST'],
       '/v1/chats/direct': ['POST'],
     };
-    const allowed = room ? ['GET', 'POST'] : methods[route];
+    const allowed = room ? room[2] ? ['POST'] : ['GET', 'POST'] : methods[route];
     if (!allowed) return reply({ error: 'not_found' }, 404);
     if (request.method === 'OPTIONS') return reply(null, 204);
     if (!allowed.includes(request.method)) return reply({ error: 'method_not_allowed' }, 405);
@@ -393,30 +602,25 @@ export default {
           db.prepare('SELECT id FROM chat_coaching LIMIT 0'),
           db.prepare('SELECT handle FROM chat_coaches LIMIT 0'),
           db.prepare('SELECT id FROM chat_direct LIMIT 0'),
+          db.prepare('SELECT avatar FROM chat_preferences LIMIT 0'),
+          db.prepare('SELECT seen_id FROM chat_notification_state LIMIT 0'),
         ]);
-        return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN) });
+        return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN), notificationsConfigured: canNotify(env) });
       }
       const now = Date.now();
       const player = await authenticate(request, now);
       if (!player) return reply({ error: 'telegram_auth_required' }, 401);
       if (!db) return reply({ error: 'unavailable' }, 503);
-      if (route === '/v1/chats') return reply(await overview(env, player, now));
+      if (route === '/v1/chats') return reply(await overview(env, player, now, signedUser(request)));
+      if (route === '/v1/chats/notifications') return reply(await saveNotifications(env, player, request));
       if (route === '/v1/chats/manage') return reply(await manage(env, player, now, request));
       if (route === '/v1/chats/find' || route === '/v1/chats/direct') {
         return reply(await contact(db, player, now, request, route === '/v1/chats/direct'));
       }
-      if (route === '/v1/chats/profile') {
-        const { name, level } = await input(request);
-        if (!levels.has(level)) throw new ChatError(400, 'invalid_level');
-        const code = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
-        await db.prepare(`
-          INSERT INTO chat_profiles (telegram_id, code, name, level) VALUES (?, ?, ?, ?)
-          ON CONFLICT (telegram_id) DO UPDATE SET name = excluded.name, level = excluded.level
-        `).bind(player.id, code, cleanName(name), level).run();
-        return reply({ ok: true });
-      }
+      if (route === '/v1/chats/profile') return reply(await saveProfile(db, player, request));
       const id = room[1];
-      if (request.method === 'POST') return reply(await send(env, id, player, request));
+      if (room[2]) return reply(await markSeen(env, id, player, now, request));
+      if (request.method === 'POST') return reply(await send(env, id, player, request, ctx));
       const access = await requireRoom(env, id, player, now);
       return reply(await messages(db, access, id, player.id, url.searchParams));
     } catch (error) {

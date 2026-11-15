@@ -339,3 +339,140 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
 .chat-exercise-body .chat-button { display: flex; width: 100%; margin-top: 8px; }
 .chat-exercise-body .doc, .chat-exercise-body .vid { margin-bottom: 0; }
 .chat-exercise-prompt { color: var(--txt-2); font-size: 14px; }
+
+.club-account-link { color: var(--aqua); }
+@media (max-width: 460px) {
+  .hd > .club-menu summary { width: 44px; justify-content: center; padding-inline: 0; }
+  .hd > .club-menu summary span { display: none; }
+  .hd > .club-menu summary svg { width: 20px; height: 20px; }
+}
+@media (max-width: 350px) {
+  .hd .wordmark { font-size: 9px; }
+  .hd .brand-link { gap: 7px; }
+}
+.chat-avatar { position: relative; overflow: hidden; }
+.chat-avatar img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.chat-contact, .chat-message-person {
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.chat-contact {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+.chat-message-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  text-align: start;
+}
+.chat-message-person strong { text-decoration: underline; text-underline-offset: 2px; }
+.chat-message-person .chat-avatar { width: 20px; height: 20px; font-size: 10px; }
+.chat-person-sheet .chat-identity { padding-block: 18px 5px; }
+
+.chat-cabinet {
+  width: min(100%, 650px);
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px calc(16px + var(--chat-right)) calc(20px + var(--chat-bottom)) calc(16px + var(--chat-left));
+}
+.chat-account-card {
+  display: grid;
+  gap: 11px;
+  min-width: 0;
+  padding: clamp(14px, 4vw, 23px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surf);
+}
+.chat-account-card p { color: var(--txt-2); font-size: 14px; }
+.chat-account-hero {
+  gap: 17px;
+  background: radial-gradient(ellipse at top left, #253f43, transparent 76%), var(--surf);
+}
+.chat-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.chat-identity .chat-avatar, .chat-avatar-preview .chat-avatar {
+  width: 67px;
+  height: 67px;
+  border: 1px solid #587476;
+  font-size: 28px;
+}
+.chat-identity h2 { font-size: 22px; }
+.chat-identity-copy { min-width: 0; overflow-wrap: anywhere; }
+.chat-identity small { display: block; color: var(--txt-3); font-size: 13px; }
+.chat-identity .chat-profile-status { margin-top: 4px; color: var(--txt); font-size: 14px; }
+.chat-account-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chat-account-code .chat-account-actions { justify-content: space-between; }
+.chat-account-code code {
+  user-select: all;
+  padding: 7px 10px;
+  background: var(--surf-2);
+  border-radius: 8px;
+  color: var(--aqua);
+  font-size: 15px;
+}
+.chat-bot-help { color: var(--aqua); font-size: 14px; }
+.chat-avatar-picker { min-width: 0; border: 0; }
+.chat-avatar-picker legend { margin-bottom: 5px; color: var(--txt-2); font-size: 13px; }
+.chat-avatar-preview { display: flex; align-items: center; gap: 10px; padding: 7px 0 10px; overflow-wrap: anywhere; }
+.chat-avatar-preview .chat-avatar { width: 50px; height: 50px; font-size: 22px; }
+.chat-avatar-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-avatar-option { position: relative; display: block; cursor: pointer; }
+.chat-avatar-option input { position: absolute; opacity: 0; }
+.chat-avatar-option span {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg);
+  font-size: 15px;
+}
+.chat-avatar-option input:checked + span { border-color: var(--aqua); background: var(--surf-2); }
+.chat-avatar-option input:focus-visible + span { outline: 2px solid var(--aqua); outline-offset: 3px; }
+@media (max-width: 370px) {
+  .chat-cabinet { padding-inline: calc(10px + var(--chat-left)) calc(10px + var(--chat-right)); }
+  .chat-account-card .chat-button { padding-inline: 9px; }
+  .chat-identity .chat-avatar { width: 54px; height: 54px; }
+}
+.chat-avatar-upload {
+  position: relative;
+  justify-self: start;
+  margin-block-start: 10px;
+}
+.chat-avatar-upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.chat-avatar-upload:focus-within {
+  outline: 2px solid var(--aqua);
+  outline-offset: 3px;
+}
+.chat-avatar-picker .chat-status { margin-top: 7px; }
+.chat-find-person { display: flex; align-items: center; gap: 9px; }

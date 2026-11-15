@@ -3,6 +3,8 @@ const SwimChats = (() => {
   const tg = () => window.Telegram?.WebApp;
   const hasTelegram = () => Boolean(tg()?.initData);
   const levelNames = { n: 'Новичок', s: 'Средний уровень', p: 'Продвинутый' };
+  const avatarChoices = [["🏊","Пловец"],["🌊","Волна"],["🐬","Дельфин"],["🐟","Рыбка"],["🦈","Акула"],["🐢","Черепаха"],["🐙","Осьминог"],["🤿","Маска"],["🏅","Медаль"],["⚡","Молния"],["🏝️","Остров"],["🔥","Огонь"]];
+  const bot = 'https://t.me/SwimIslandVIPBot';
   const errors = {
     telegram_auth_required: 'Закройте приложение и снова откройте его из VIP-канала.',
     room_forbidden: 'Доступ к этому чату закрыт.',
@@ -21,6 +23,14 @@ const SwimChats = (() => {
     manager_required: 'Управление чатами доступно владельцу клуба.',
     coach_required: 'Поиск по коду доступен тренерам клуба.',
     self_contact: 'Введите код другого участника.',
+    invalid_avatar: 'Выберите аватар заново.',
+    invalid_photo: 'Выберите фото в JPG, PNG или WebP до 15 МБ.',
+    photo_read_failed: 'Не удалось открыть фото. Попробуйте другой файл.',
+    invalid_status: 'Введите статус до 80 символов.',
+    notifications_unavailable: 'Уведомления временно недоступны.',
+    notification_unavailable: 'Telegram не подтвердил отправку. Повторите проверку позже.',
+    notification_blocked: 'Откройте бота и разрешите ему писать вам.',
+    notification_test_wait: 'Тест можно повторить через минуту.',
   };
   const errorMessage = error => errors[error.message] || 'Не удалось связаться с чатами. Попробуйте ещё раз.';
   const dateTime = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' });
@@ -76,7 +86,20 @@ const SwimChats = (() => {
     const avatar = element('span', 'chat-avatar chat-avatar-' + room.kind);
     avatar.setAttribute('aria-hidden', 'true');
     if (group) avatar.append(icon(room.level ? 'waves' : 'group'));
-    else avatar.textContent = room.title.trim().split(/\s+/u).slice(0, 2).map(word => [...word][0]).join('').toUpperCase();
+    else {
+      const picture = room.person?.avatar;
+      avatar.textContent = avatarChoices.some(([emoji]) => emoji === picture)
+        ? picture
+        : room.title.trim().split(/\s+/u).slice(0, 2).map(word => [...word][0]).join('').toUpperCase();
+      if (typeof picture === 'string' && picture.startsWith('data:image/jpeg;base64,')) {
+        const image = element('img');
+        image.alt = '';
+        image.loading = 'lazy';
+        image.addEventListener('error', () => image.remove(), { once: true });
+        image.src = picture;
+        avatar.append(image);
+      }
+    }
     return avatar;
   }
 
@@ -108,6 +131,33 @@ const SwimChats = (() => {
     input.maxLength = maxLength;
     input.required = true;
     return input;
+  }
+
+  async function profileThumbnail(file) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) {
+      throw new Error('invalid_photo');
+    }
+    const source = URL.createObjectURL(file);
+    try {
+      const photo = new Image();
+      photo.src = source;
+      await photo.decode();
+      const side = Math.min(photo.naturalWidth, photo.naturalHeight);
+      if (!side) throw new Error('photo_read_failed');
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 160;
+      const context = canvas.getContext('2d', { alpha: false });
+      context.fillStyle = '#172f36';
+      context.fillRect(0, 0, 160, 160);
+      context.drawImage(photo, (photo.naturalWidth - side) / 2, (photo.naturalHeight - side) / 2, side, side, 0, 0, 160, 160);
+      for (const quality of [0.88, 0.75, 0.60, 0.42]) {
+        const image = canvas.toDataURL('image/jpeg', quality);
+        if (image.startsWith('data:image/jpeg;base64,') && image.length <= 20500) return image;
+      }
+      throw new Error('photo_read_failed');
+    } finally {
+      URL.revokeObjectURL(source);
+    }
   }
 
   function messageId() {
@@ -145,7 +195,7 @@ const SwimChats = (() => {
     }
   }
 
-  function mount(root, preferredLevel, returnHash = '#home', exerciseLibrary) {
+  function mount(root, preferredLevel, returnHash = '#home', exerciseLibrary, launch = {}) {
     dispose();
     dispose = () => {};
     if (!root) return;
@@ -154,10 +204,13 @@ const SwimChats = (() => {
     const exit = () => { location.hash = returnHash; };
     let back = exit;
     const goBack = () => {
-      const exercise = root.querySelector('.chat-exercise-sheet[open]');
-      if (exercise) exercise.close();
+      const dialog = root.querySelector('dialog[open]');
+      if (dialog) dialog.close();
       else back();
     };
+    let alerts = {};
+    let writeGranted = false;
+    let targetRoom = launch.targetRoom;
     let screen;
     let cleanup = () => {};
     const closeScreen = () => {
@@ -195,10 +248,16 @@ const SwimChats = (() => {
       const name = element('h1', '', title);
       name.tabIndex = -1;
       heading.append(name);
-      bar.append(iconButton('back', options.back ? 'К списку чатов' : 'Назад в приложение', goBack));
+      bar.append(iconButton('back', options.backLabel || (options.back ? 'К списку чатов' : 'Назад в приложение'), goBack));
       if (options.room) {
-        bar.append(face(options.room));
-        heading.append(element('small', '', roomDetails(options.room)));
+        const room = options.room;
+        if (room.person) {
+          const contact = button('', () => showPerson(room.person), 'chat-contact');
+          contact.setAttribute('aria-label', 'Профиль · ' + room.person.name);
+          contact.append(face(room));
+          bar.append(contact);
+        } else bar.append(face(room));
+        heading.append(element('small', '', roomDetails(room)));
       }
       const actions = element('div', 'chat-actions');
       bar.append(heading, actions);
@@ -213,11 +272,11 @@ const SwimChats = (() => {
       const statusText = text => { if (!signal.aborted) status.textContent = text; };
       const errorText = error => statusText(errorMessage(error));
       const request = (path, payload) => api(path, payload, signal);
-      const formSubmit = (form, label, handler, symbol) => {
+      const formSubmit = (form, label, handler, symbol, container = form) => {
         const submit = element('button', 'chat-button chat-primary', symbol ? '' : label);
         if (symbol) iconLabel(submit, symbol, label);
         submit.type = 'submit';
-        form.append(submit);
+        container.append(submit);
         form.addEventListener('submit', async event => {
           event.preventDefault();
           if (submit.disabled) return;
@@ -233,47 +292,273 @@ const SwimChats = (() => {
     }
 
     if (!hasTelegram()) {
-      const v = view('Чаты');
+      const v = view(launch.account ? 'Личный кабинет' : 'Чаты');
       const notice = element('div', 'chat-width chat-sheet');
       const link = element('a', 'chat-button chat-primary', 'Открыть в Telegram');
-      link.href = 'https://t.me/SwimIslandVIPBot?startapp';
-      notice.append(element('p', '', 'Войдите через Telegram, чтобы открыть свои чаты.'), link);
+      link.href = bot + (launch.account ? '?startapp=profile' : '?startapp');
+      notice.append(element('p', '', 'Откройте приложение в Telegram, чтобы войти в клуб.'), link);
       v.panel.append(notice);
       return;
     }
 
-    function profileForm(v, data) {
-      const form = element('form', 'chat-form');
-      if (!data.profile) form.append(element('p', '', 'Заполните профиль, чтобы открыть чаты.'));
-      const name = field(form, 'Имя в чатах', textInput('Как к вам обращаться?'));
+    function profileForm(v, data, save, cancel) {
+      const form = element('form', 'chat-form chat-account-card');
+      form.append(element('p', 'chat-account-hint', 'Собеседники видят ваш ник и аватар.'));
+      const name = field(form, 'Ник в приложении', textInput('Как к вам обращаться?'));
       name.minLength = 2;
       name.value = data.profile?.name || data.suggestedName || '';
       name.autocomplete = 'nickname';
-      const level = field(form, 'Уровень подготовки', choices(data.profile?.level || preferredLevel));
-      v.formSubmit(form, 'Сохранить', async () => {
-        await v.request('/profile', { name: name.value, level: level.value });
-        if (!v.signal.aborted) await list();
+
+      const currentAvatar = data.profile?.avatar || '';
+      let photo = currentAvatar.startsWith('data:image/jpeg;base64,') ? currentAvatar : '';
+      let selected = photo ? 'photo' : currentAvatar;
+      const picker = element('fieldset', 'chat-avatar-picker');
+      picker.append(element('legend', '', 'Аватар'));
+      const grid = element('div', 'chat-avatar-grid');
+      const preview = element('div', 'chat-avatar-preview');
+      const renderPreview = () => {
+        const title = name.value.trim() || 'Пловец';
+        const avatar = selected === 'photo' ? photo : selected;
+        preview.replaceChildren(face({ kind: 'direct', title, person: { avatar } }), element('strong', '', title));
+      };
+      const avatarOption = (value, label, symbol) => {
+        const tile = element('label', 'chat-avatar-option');
+        const choice = element('input');
+        choice.type = 'radio';
+        choice.name = 'profile-avatar';
+        choice.value = value;
+        choice.checked = value === selected;
+        choice.addEventListener('change', () => {
+          selected = choice.value;
+          renderPreview();
+        });
+        tile.append(choice, element('span', '', symbol || label));
+        choice.setAttribute('aria-label', label);
+        grid.append(tile);
+        return tile;
+      };
+      avatarOption('', 'Инициалы');
+      const photoTile = avatarOption('photo', 'Моё фото');
+      photoTile.hidden = !photo;
+      for (const [emoji, label] of avatarChoices) avatarOption(emoji, label, emoji);
+
+      const upload = element('label', 'chat-button chat-avatar-upload', 'Загрузить фото');
+      const file = element('input');
+      file.type = 'file';
+      file.accept = 'image/jpeg,image/png,image/webp';
+      file.setAttribute('aria-label', 'Загрузить фото');
+      upload.append(file);
+      const photoFeedback = element('p', 'chat-status');
+      photoFeedback.setAttribute('role', 'status');
+      let uploadSequence = 0;
+      file.addEventListener('change', async () => {
+        const [image] = file.files;
+        file.value = '';
+        if (!image) return;
+        const sequence = ++uploadSequence;
+        submit.disabled = true;
+        photoFeedback.textContent = 'Готовим фото…';
+        try {
+          const thumbnail = await profileThumbnail(image);
+          if (v.signal.aborted || sequence !== uploadSequence) return;
+          photo = thumbnail;
+          photoTile.hidden = false;
+          photoTile.querySelector('input').checked = true;
+          selected = 'photo';
+          renderPreview();
+          photoFeedback.textContent = '';
+        } catch (error) {
+          if (!v.signal.aborted && sequence === uploadSequence) {
+            photoFeedback.textContent = errors[error.message] || errors.photo_read_failed;
+          }
+        } finally {
+          if (sequence === uploadSequence) submit.disabled = false;
+        }
       });
-      if (data.profile) form.append(button('Отмена', () => profile(data)));
+      name.addEventListener('input', renderPreview);
+      renderPreview();
+      picker.append(preview, grid, upload, photoFeedback);
+      form.append(picker);
+      const level = field(form, 'Уровень подготовки', choices(data.profile?.level || preferredLevel));
+      const status = field(form, 'Статус (по желанию)', textInput('Например, готовлюсь к первому заплыву', 80));
+      status.value = data.profile?.status || '';
+      status.required = false;
+
+      const controls = element('div', 'chat-account-actions');
+      const submit = v.formSubmit(form, 'Сохранить профиль', async () => {
+        file.disabled = true;
+        try {
+          await v.request('/profile', { name: name.value, level: level.value, avatar: selected === 'photo' ? photo : selected, status: status.value });
+        } finally {
+          file.disabled = false;
+        }
+        if (!v.signal.aborted) await save();
+      }, undefined, controls);
+      if (cancel) controls.append(button('Отмена', cancel));
+      form.append(controls);
       return form;
     }
 
-    function profile(data, edit = false) {
-      const v = view('Профиль', { back: list });
-      const sheet = element('div', 'chat-width chat-sheet');
-      v.panel.append(sheet);
-      if (edit) {
-        sheet.append(profileForm(v, data), v.status);
-        return;
+    function accountSummary(person, coach) {
+      const identity = element('div', 'chat-identity');
+      identity.append(face({ kind: 'direct', title: person.name, person }));
+      const details = element('div', 'chat-identity-copy');
+      details.append(element('h2', '', person.name));
+      if (coach) details.append(element('small', 'chat-coach-label', 'Тренер клуба · @' + coach.handle));
+      const level = levelNames[person.level];
+      if (level) details.append(element('small', '', level));
+      if (person.status) details.append(element('p', 'chat-profile-status', person.status));
+      identity.append(details);
+      return identity;
+    }
+
+    function showPerson(person) {
+      const dialog = element('dialog', 'chat-exercise-sheet chat-person-sheet');
+      if (typeof dialog.showModal !== 'function') return;
+      dialog.setAttribute('aria-label', 'Профиль · ' + person.name);
+      const heading = element('div', 'chat-exercise-heading');
+      heading.append(element('h2', '', 'Профиль'), button('Закрыть', () => dialog.close()));
+      dialog.append(heading, accountSummary(person));
+      dialog.addEventListener('click', event => {
+        if (event.target === dialog) dialog.close();
+      });
+      dialog.addEventListener('close', () => dialog.remove(), { once: true });
+      root.append(dialog);
+      dialog.showModal();
+    }
+
+    function notificationsForm(v, data) {
+      const card = element('section', 'chat-account-card chat-notification-card');
+      card.append(element('h2', '', 'Уведомления'));
+      if (!data.notifications?.available) {
+        card.append(element('p', '', 'Уведомления временно недоступны.'));
+        return card;
       }
-      const person = element('div', 'chat-profile');
-      const details = element('div');
-      details.append(element('h2', '', data.profile.name), element('small', '', levelNames[data.profile.level]));
-      if (data.coach) details.append(element('small', 'chat-coach-label', 'Тренер клуба · @' + data.coach.handle));
-      person.append(face({ title: data.profile.name, kind: 'direct' }), details);
-      const code = element('div', 'chat-profile-code');
-      code.append(element('small', '', 'Код для тренера'), element('code', '', data.profile.code));
-      sheet.append(person, code, button('Редактировать', () => profile(data, true)));
+      card.append(element('p', '', 'Бот Telegram уведомит о новых сообщениях в личных чатах, на онлайн-ведении и в группах.'));
+      const feedback = element('p', 'chat-status');
+      feedback.setAttribute('role', 'status');
+      const help = element('a', 'chat-bot-help', 'Открыть бота в Telegram');
+      help.href = bot + '?start=notify';
+      help.target = '_blank';
+      help.rel = 'noopener noreferrer';
+      help.hidden = true;
+      const text = value => { if (!v.signal.aborted) feedback.textContent = value; };
+      writeGranted ||= data.telegramWriteAllowed;
+      const permission = async () => {
+        if (writeGranted || alerts.personal || alerts.groups) return true;
+        if (!telegram?.requestWriteAccess || telegram.isVersionAtLeast?.('6.9') === false) {
+          help.hidden = false;
+          text('Запустите бота и откройте приложение снова.');
+          return false;
+        }
+        writeGranted = await new Promise(resolve => telegram.requestWriteAccess(resolve));
+        if (!writeGranted) text('Разрешите боту писать вам, чтобы включить уведомления.');
+        return writeGranted;
+      };
+      const test = button('Проверить уведомления', async () => {
+        test.disabled = true;
+        help.hidden = true;
+        text('Отправляем проверку…');
+        try {
+          await v.request('/notifications', { action: 'test' });
+          text('Тестовое уведомление отправлено в Telegram.');
+        } catch (error) {
+          if (!v.signal.aborted && error.message === 'notification_blocked') help.hidden = false;
+          text(errorMessage(error));
+        } finally {
+          test.disabled = false;
+        }
+      });
+      const actions = element('div', 'chat-account-actions');
+      const enabled = () => alerts.personal && alerts.groups;
+      const toggle = button('', async () => {
+        const on = !enabled();
+        toggle.disabled = true;
+        test.disabled = true;
+        help.hidden = true;
+        text('');
+        try {
+          if (on && !await permission()) return;
+          if (v.signal.aborted) return;
+          await v.request('/notifications', { personal: on, groups: on });
+          if (v.signal.aborted) return;
+          alerts = { personal: on, groups: on };
+          sync();
+          text(on ? 'Уведомления включены для всех чатов.' : 'Уведомления выключены.');
+        } catch (error) {
+          text(errorMessage(error));
+        } finally {
+          toggle.disabled = false;
+          test.disabled = false;
+        }
+      });
+      const sync = () => {
+        test.hidden = !enabled();
+        toggle.textContent = enabled() ? 'Выключить уведомления' : 'Включить уведомления';
+        toggle.classList.toggle('chat-primary', !enabled());
+      };
+      sync();
+      actions.append(toggle, test);
+      card.append(actions, feedback, help);
+      return card;
+    }
+
+    async function account(fromList = false, initial) {
+      const options = fromList ? { back: list } : {};
+      const v = view('Личный кабинет', options);
+      const page = element('div', 'chat-width chat-cabinet');
+      page.append(v.status);
+      v.panel.append(page);
+      v.statusText('Загружаем профиль…');
+      try {
+        const data = initial ?? await v.request('');
+        if (v.signal.aborted) return;
+        alerts = data.notifications || {};
+        v.statusText('');
+        if (!data.profile) {
+          page.prepend(profileForm(v, data, () => account(fromList)));
+          return;
+        }
+        const hero = element('section', 'chat-account-card chat-account-hero');
+        hero.append(accountSummary(data.profile, data.coach));
+        hero.append(button('Редактировать профиль', () => {
+          const edit = view('Редактировать профиль', { back: () => account(fromList, data), backLabel: 'В личный кабинет' });
+          const layout = element('div', 'chat-width chat-cabinet');
+          const done = () => account(fromList);
+          layout.append(profileForm(edit, data, done, done), edit.status);
+          edit.panel.append(layout);
+        }, 'chat-button chat-primary'));
+
+        const access = element('section', 'chat-account-card chat-account-code');
+        const code = element('code', '', data.profile.code);
+        const copied = element('p', 'chat-status');
+        copied.setAttribute('role', 'status');
+        const copy = button('Скопировать', async () => {
+          try {
+            await navigator.clipboard.writeText(data.profile.code);
+            copied.textContent = 'Код скопирован.';
+          } catch {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(code);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            copied.textContent = 'Код выделен. Скопируйте его из меню.';
+          }
+        });
+        const codeRow = element('div', 'chat-account-actions');
+        codeRow.append(code, copy);
+        access.append(element('h2', '', 'Код для тренера'), codeRow, copied);
+        page.append(hero, notificationsForm(v, data), access);
+        if (!fromList) {
+          const link = element('a', 'chat-button', 'Перейти в чаты');
+          link.href = '#chats';
+          page.append(link);
+        }
+      } catch (error) {
+        v.errorText(error);
+        if (!v.signal.aborted) page.append(button('Обновить', () => account(fromList)));
+      }
     }
 
     function findPerson() {
@@ -307,8 +592,8 @@ const SwimChats = (() => {
           const person = await v.request('/find', { code: value });
           if (v.signal.aborted || code.value.trim() !== value) return;
           feedback.textContent = '';
-          const details = element('div');
-          details.append(element('strong', '', person.name), element('small', '', levelNames[person.level]));
+          const details = element('div', 'chat-find-person');
+          details.append(face({ kind: 'direct', title: person.name, person }), element('strong', '', person.name));
           const open = button('Открыть чат', async () => {
             open.disabled = true;
             feedback.textContent = '';
@@ -362,7 +647,7 @@ const SwimChats = (() => {
         v.statusText('');
         if (!data.profile) {
           const sheet = element('div', 'chat-sheet');
-          sheet.append(profileForm(v, data), v.status);
+          sheet.append(profileForm(v, data, list), v.status);
           inbox.append(sheet);
           return;
         }
@@ -372,7 +657,17 @@ const SwimChats = (() => {
           find.append(element('span', '', 'По коду'));
           v.actions.append(find);
         }
-        v.actions.append(iconButton('person', 'Профиль', () => profile(data)));
+        alerts = data.notifications || {};
+        if (targetRoom) {
+          const room = data.rooms.find(room => room.id === targetRoom);
+          targetRoom = '';
+          if (room) {
+            await conversation(room);
+            return;
+          }
+          v.statusText('Эта беседа сейчас недоступна.');
+        }
+        v.actions.append(iconButton('person', 'Профиль', () => account(true, data)));
         if (data.manager) v.actions.append(iconButton('manage', 'Управление чатами', manage));
 
         if (data.rooms.length) {
@@ -445,7 +740,12 @@ const SwimChats = (() => {
     function message(item, openExercise) {
       const node = element('article', 'chat-message' + (item.own ? ' chat-message-own' : ''));
       const meta = element('div', 'chat-message-meta');
-      meta.append(element('strong', '', item.own ? 'Вы' : item.name));
+      if (item.person && !item.own) {
+        const sender = button('', () => showPerson(item.person), 'chat-message-person');
+        sender.setAttribute('aria-label', 'Профиль · ' + item.name);
+        sender.append(face({ kind: 'direct', title: item.name, person: item.person }), element('strong', '', item.name));
+        meta.append(sender);
+      } else meta.append(element('strong', '', item.own ? 'Вы' : item.name));
       if (item.coach) meta.append(element('span', 'chat-coach-label', 'Тренер'));
       const stamp = element('time', '', time.format(item.sent));
       stamp.dateTime = new Date(item.sent).toISOString();
@@ -539,12 +839,31 @@ const SwimChats = (() => {
       let accessLost = false;
       const appended = new Set();
       let follow = true;
+      let seen = 0;
+      let reporting = false;
+      const active = () => !document.hidden && telegram?.isActive !== false;
       const scrollToEnd = () => { thread.scrollTop = thread.scrollHeight; };
+      async function reportSeen() {
+        if (!alerts[room.kind === 'group' ? 'groups' : 'personal'] || !active() || !follow ||
+          !last || last <= seen || reporting || v.signal.aborted || accessLost) return;
+        const through = last;
+        reporting = true;
+        try {
+          await v.request(endpoint + '/read', { through });
+          seen = through;
+        } catch {
+          // The next refresh can retry without interrupting the conversation.
+        } finally {
+          reporting = false;
+        }
+      }
       thread.addEventListener('scroll', () => {
         follow = thread.scrollHeight - thread.clientHeight - thread.scrollTop < 80;
+        reportSeen();
       }, { passive: true });
 
-      function append(list, prepend = false) {
+      function append(page, prepend = false) {
+        const list = page.messages;
         if (!list.length) return;
         empty.hidden = true;
         const chunk = document.createDocumentFragment();
@@ -553,6 +872,9 @@ const SwimChats = (() => {
           appended.add(item.id);
           first = Math.min(first ?? item.id, item.id);
           last = Math.max(last ?? item.id, item.id);
+          if (typeof item.person?.avatar === 'number') {
+            item.person.avatar = page.photos?.[item.person.avatar] || '';
+          }
           chunk.append(message(item, openExercise));
         }
         if (prepend) items.prepend(chunk);
@@ -565,7 +887,7 @@ const SwimChats = (() => {
           const page = await v.request(endpoint + '?before=' + first);
           if (v.signal.aborted) return;
           const previousHeight = thread.scrollHeight;
-          append(page.messages, true);
+          append(page, true);
           earlier.hidden = !page.more;
           thread.scrollTop += thread.scrollHeight - previousHeight;
         } catch (error) { accessError(error); }
@@ -596,13 +918,14 @@ const SwimChats = (() => {
             const page = await v.request(endpoint + (previous === undefined ? '' : '?after=' + previous));
             if (v.signal.aborted || accessLost) return;
             if (previous === undefined) earlier.hidden = !page.more;
-            append(page.messages);
+            append(page);
             more = page.more && previous !== undefined && last > previous && last < sentThrough;
           }
           empty.hidden = last !== undefined;
           form.hidden = false;
           v.statusText('');
           if (forceScroll || follow) scrollToEnd();
+          reportSeen();
         } catch (error) {
           accessError(error);
         } finally {
@@ -658,7 +981,7 @@ const SwimChats = (() => {
       v.statusText('Загружаем переписку…');
       const heightChanges = new ResizeObserver(() => { if (follow) scrollToEnd(); });
       heightChanges.observe(thread);
-      timer = setInterval(() => { if (!document.hidden) refresh(); }, 5000);
+      timer = setInterval(() => { if (active()) refresh(); }, 5000);
       cleanup = () => {
         clearInterval(timer);
         heightChanges.disconnect();
@@ -747,7 +1070,8 @@ const SwimChats = (() => {
       } catch (error) { v.errorText(error); }
     }
 
-    list();
+    if (launch.account) account();
+    else list();
   }
 
   return { mount };

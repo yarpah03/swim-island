@@ -56,3 +56,21 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 CREATE INDEX IF NOT EXISTS chat_messages_room ON chat_messages (room_id, id);
 CREATE INDEX IF NOT EXISTS chat_messages_sender ON chat_messages (room_id, sender_id, sent_ms);
+
+CREATE TABLE IF NOT EXISTS chat_preferences (
+  telegram_id INTEGER PRIMARY KEY REFERENCES chat_profiles(telegram_id),
+  nickname TEXT,
+  avatar TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT '',
+  notify_personal INTEGER NOT NULL DEFAULT 0 CHECK (notify_personal IN (0, 1)),
+  notify_groups INTEGER NOT NULL DEFAULT 0 CHECK (notify_groups IN (0, 1))
+);
+
+CREATE TABLE IF NOT EXISTS chat_notification_state (
+  telegram_id INTEGER NOT NULL REFERENCES chat_profiles(telegram_id),
+  room_id TEXT NOT NULL,
+  seen_id INTEGER NOT NULL DEFAULT 0,
+  notified_id INTEGER NOT NULL DEFAULT 0,
+  notified_ms INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (telegram_id, room_id)
+);
