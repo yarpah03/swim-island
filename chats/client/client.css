@@ -1,0 +1,58 @@
+:root {
+  color-scheme: dark;
+  --bg: #09151b;
+  --surf: #10242c;
+  --surf-2: #19333b;
+  --line: #345057;
+  --txt: #f7f8f8;
+  --txt-2: #c6d7d9;
+  --txt-3: #acbec2;
+  --aqua: #86e2d5;
+  --brand: #f5d77c;
+  --gold-lt: #f7e3a2;
+  --r2: 10px;
+  --ui: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--txt);
+  font: 16px/1.5 var(--ui);
+}
+button, input { font: inherit; }
+h1, h2, p { margin: 0; }
+ul { margin: 0; padding: 0; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--aqua); outline-offset: 3px; }
+#swim-chats[hidden], .client-login[hidden], #client-access[hidden], #client-request[hidden] { display: none; }
+.client-login {
+  max-width: 480px;
+  margin-inline: auto;
+  padding: calc(clamp(20px, 12vh, 100px) + env(safe-area-inset-top, 0px)) 16px 28px;
+}
+.client-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--brand);
+  font-size: 15px;
+  font-weight: 700;
+}
+.client-brand img { display: block; border-radius: 12px; }
+.client-card {
+  display: grid;
+  gap: 14px;
+  padding: clamp(16px, 5vw, 24px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surf);
+}
+.client-card h1 { font-size: clamp(24px, 6vw, 32px); line-height: 1.15; letter-spacing: -.03em; }
+.client-card > p { color: var(--txt-2); }
+.client-card #client-access { padding: 0; }
+.client-card .chat-status { padding: 0; }
+.client-card .chat-status:empty { display: none; }
+#client-code { font-variant-numeric: tabular-nums; letter-spacing: .1em; }

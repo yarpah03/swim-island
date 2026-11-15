@@ -19,6 +19,11 @@ const SwimChats = (() => {
     invalid_account: 'Проверьте коды участников.',
     account_not_found: 'Проверьте код из профиля участника.',
     unknown_coach: 'Этот тренер не найден в списке клуба.',
+    invalid_email: 'Укажите почту клиента.',
+    web_client_exists: 'Клиент с этой почтой уже есть. Выберите его в списке.',
+    web_code_wait: 'Подождите перед выпуском нового кода.',
+    web_access_ended: 'Срок ведения закончился.',
+    web_auth_required: 'Для открытия переписки войдите ещё раз.',
     invalid_assignment: 'Проверьте коды участников и дату окончания ведения.',
     slow_down: 'Подождите секунду и повторите отправку.',
     manager_required: 'Управление чатами доступно владельцу клуба.',
@@ -207,23 +212,23 @@ const SwimChats = (() => {
     return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-');
   }
 
-  async function api(path = '', payload, signal, photo = false) {
-    const auth = tg()?.initData;
-    if (!auth) throw new Error('telegram_auth_required');
+  async function api(path = '', payload, signal, photo = false, web = false) {
+    const auth = web ? null : tg()?.initData;
+    if (!web && !auth) throw new Error('telegram_auth_required');
     const controller = new AbortController();
     const stop = () => controller.abort();
     if (signal.aborted) stop();
     else signal.addEventListener('abort', stop, { once: true });
     const timeout = setTimeout(stop, payload?.photo || photo ? 40000 : payload ? 18000 : 10000);
     try {
-      const headers = { Authorization: 'tma ' + auth };
+      const headers = auth ? { Authorization: 'tma ' + auth } : {};
       const options = { headers, signal: controller.signal, cache: 'no-store' };
       if (payload) {
         headers['Content-Type'] = 'application/json';
         options.method = 'POST';
         options.body = JSON.stringify(payload);
       }
-      const response = await fetch(API + path, options);
+      const response = await fetch((web ? '/v1/client/chats' : API) + path, options);
       if (photo && response.ok && response.headers.get('Content-Type') === 'image/jpeg') {
         return await response.blob();
       }
@@ -261,8 +266,8 @@ const SwimChats = (() => {
     return rooms.slice().sort((a, b) => (b.latest?.sent ?? 0) - (a.latest?.sent ?? 0));
   }
 
-  async function deliver(path, payload, signal) {
-    const saved = await api(path, payload, signal);
+  async function deliver(path, payload, signal, web) {
+    const saved = await api(path, payload, signal, false, web);
     if (saved.ok !== true || !Number.isSafeInteger(saved.id) || saved.id <= 0) throw new Error('no_receipt');
     return saved.id;
   }
@@ -417,7 +422,8 @@ const SwimChats = (() => {
     dispose();
     dispose = () => {};
     if (!root) return;
-    const telegram = tg();
+    const web = launch.web === true;
+    const telegram = web ? null : tg();
     const viewport = window.visualViewport;
     const exit = () => { location.hash = returnHash; };
     let back = exit;
@@ -440,7 +446,7 @@ const SwimChats = (() => {
       const height = Math.min(window.innerHeight, viewport?.height || Infinity, telegram?.viewportStableHeight || Infinity);
       root.style.setProperty('--chat-height', Math.floor(height) + 'px');
     };
-    const nativeBack = hasTelegram() ? telegram.BackButton : null;
+    const nativeBack = !web && hasTelegram() ? telegram.BackButton : null;
     nativeBack?.onClick(goBack);
     nativeBack?.show();
     window.addEventListener('resize', resize);
@@ -466,7 +472,7 @@ const SwimChats = (() => {
       const name = element('h1', '', title);
       name.tabIndex = -1;
       heading.append(name);
-      bar.append(iconButton('back', options.backLabel || (options.back ? 'К списку чатов' : 'Назад в приложение'), goBack));
+      if (!web) bar.append(iconButton('back', options.backLabel || (options.back ? 'К списку чатов' : 'Назад в приложение'), goBack));
       if (options.room) {
         const room = options.room;
         if (room.person) {
@@ -475,9 +481,19 @@ const SwimChats = (() => {
           contact.append(face(room));
           bar.append(contact);
         } else bar.append(face(room));
-        heading.append(element('small', '', roomDetails(room)));
+        heading.append(element('small', '', web ? 'Ведение по ' + date.format(room.expires - 1) : roomDetails(room)));
       }
       const actions = element('div', 'chat-actions');
+      if (web) {
+        const leave = button('Выйти', async () => {
+          leave.disabled = true;
+          try {
+            const error = await launch.webExit();
+            if (error) statusText(error);
+          } finally { leave.disabled = false; }
+        });
+        actions.append(leave);
+      }
       bar.append(heading, actions);
       top.append(bar);
 
@@ -489,7 +505,7 @@ const SwimChats = (() => {
       const signal = screen.signal;
       const statusText = text => { if (!signal.aborted) status.textContent = text; };
       const errorText = error => statusText(errorMessage(error));
-      const request = (path, payload, photo) => api(path, payload, signal, photo);
+      const request = (path, payload, photo) => api(path, payload, signal, photo, web);
       const formSubmit = (form, label, handler, symbol, container = form) => {
         const submit = element('button', 'chat-button chat-primary', symbol ? '' : label);
         if (symbol) iconLabel(submit, symbol, label);
@@ -509,7 +525,7 @@ const SwimChats = (() => {
       return { panel, actions, status, signal, request, statusText, errorText, formSubmit };
     }
 
-    if (!hasTelegram()) {
+    if (!web && !hasTelegram()) {
       const v = view(launch.account ? 'Личный кабинет' : 'Чаты');
       const notice = element('div', 'chat-width chat-sheet');
       const link = element('a', 'chat-button chat-primary', 'Открыть в Telegram');
@@ -768,6 +784,7 @@ const SwimChats = (() => {
         codeRow.append(code, copy);
         access.append(element('h2', '', 'Код для тренера'), codeRow, copied);
         page.append(hero, notificationsForm(v, data), access);
+        if (data.coach) page.append(button('Клиенты без Telegram', () => webClients(() => account(fromList))));
         if (!fromList) {
           const link = element('a', 'chat-button', 'Перейти в чаты');
           link.href = '#chats';
@@ -776,6 +793,126 @@ const SwimChats = (() => {
       } catch (error) {
         v.errorText(error);
         if (!v.signal.aborted) page.append(button('Обновить', () => account(fromList)));
+      }
+    }
+
+    async function webClients(backToAccount, created) {
+      const v = view('Клиенты без Telegram', { back: backToAccount, backLabel: 'В личный кабинет' });
+      const page = element('div', 'chat-width chat-cabinet');
+      page.append(v.status);
+      v.panel.append(page);
+      v.statusText('Загружаем клиентов…');
+      try {
+        const { clients, mail } = await v.request('/clients');
+        if (v.signal.aborted) return;
+        v.statusText('');
+        const expiresOn = input => Date.parse(input.value + 'T00:00:00+03:00') + 86400000;
+        const dateInput = expires => {
+          const input = element('input');
+          input.type = 'date';
+          input.required = true;
+          const moscow = ms => new Date(ms + 3 * 3600000).toISOString().slice(0, 10);
+          input.min = moscow(Date.now());
+          input.value = moscow(expires > Date.now() ? expires - 1 : Date.now() + 30 * 86400000);
+          return input;
+        };
+
+        const inviteCard = element('section', 'chat-account-card chat-form chat-web-invite');
+        inviteCard.hidden = true;
+        page.append(inviteCard);
+        const showInvite = data => {
+          const address = element('input');
+          address.value = data.invite;
+          address.readOnly = true;
+          const copy = button('Скопировать ссылку', async () => {
+            try {
+              await navigator.clipboard.writeText(data.invite);
+              v.statusText('Ссылка скопирована.');
+            } catch {
+              address.focus();
+              address.select();
+            }
+          }, 'chat-button chat-primary');
+          inviteCard.replaceChildren(element('h2', '', 'Приглашение готово'),
+            element('p', '', 'Передайте эту ссылку клиенту.'), copy);
+          field(inviteCard, 'Персональная ссылка', address);
+          inviteCard.hidden = false;
+          inviteCard.scrollIntoView({ block: 'nearest' });
+        };
+        if (created) showInvite(created);
+
+        const form = element('form', 'chat-account-card chat-form');
+        form.append(element('h2', '', 'Пригласить клиента'));
+        const name = field(form, 'Имя клиента', textInput('Как обращаться к клиенту'));
+        name.autocomplete = 'off';
+        const email = field(form, 'Почта клиента', textInput('name@example.com', 254));
+        email.type = 'email';
+        email.autocomplete = 'off';
+        const expiry = field(form, 'Последний день ведения по Москве', dateInput(0));
+        v.formSubmit(form, 'Создать приглашение', async () => {
+          const result = await v.request('/clients', { action: 'create', name: name.value, email: email.value, expires: expiresOn(expiry) });
+          if (!v.signal.aborted) await webClients(backToAccount, result);
+        });
+        page.append(form);
+
+        for (const client of clients) {
+          const card = element('section', 'chat-account-card chat-form');
+          card.append(element('h2', '', client.name), element('p', 'chat-web-email', client.email));
+          const active = client.expires > Date.now();
+          card.append(element('p', '', active ? (client.entered ? 'Клиент вошёл · ' : 'Ждём первого входа · ') +
+            'ведение по ' + date.format(client.expires - 1) : 'Срок ведения закончился'));
+          const actions = element('div', 'chat-account-actions');
+          const feedback = element('p', 'chat-status');
+          feedback.setAttribute('role', 'status');
+          const refresh = action => async () => {
+            const result = await v.request('/clients', { action, id: client.id });
+            if (v.signal.aborted) return;
+            if (action === 'rotate') showInvite(result);
+            else await webClients(backToAccount);
+          };
+          if (active) {
+            actions.append(button('Открыть чат', () => list(client.id)));
+            const rotate = button('Выпустить новую ссылку', async () => {
+              if (!window.confirm('Обновить приглашение и завершить активные сеансы клиента?')) return;
+              rotate.disabled = true;
+              try { await refresh('rotate')(); } catch (error) { v.errorText(error); }
+              finally { rotate.disabled = false; }
+            });
+            actions.append(rotate);
+            const code = button(mail ? 'Код вручную' : 'Подготовить письмо с кодом', async () => {
+              code.disabled = true;
+              try {
+                const result = await v.request('/clients', { action: 'code', id: client.id });
+                if (v.signal.aborted) return;
+                const letter = element('a', 'chat-button', 'Открыть письмо с кодом');
+                const body = 'Ваш код входа: ' + result.code + '\n\nКод действует 15 минут. Введите его в кабинете по ссылке от тренера.';
+                letter.href = 'mailto:' + encodeURIComponent(client.email).replace('%40', '@') +
+                  '?subject=' + encodeURIComponent('Код входа в Плавательный остров VIP') + '&body=' + encodeURIComponent(body);
+                feedback.replaceChildren(document.createTextNode('Код для письма ' + result.code + '. '), letter);
+              } catch (error) {
+                feedback.textContent = errorMessage(error);
+              } finally { code.disabled = false; }
+            });
+            const end = button('Завершить доступ', async () => {
+              if (!window.confirm('Завершить доступ клиента к кабинету и чату?')) return;
+              end.disabled = true;
+              try { await refresh('end')(); } catch (error) { v.errorText(error); }
+              finally { end.disabled = false; }
+            });
+            actions.append(code, end);
+          }
+          const renewal = element('form', 'chat-form');
+          const endDate = field(renewal, 'Новая дата окончания', dateInput(client.expires));
+          v.formSubmit(renewal, 'Сохранить срок', async () => {
+            await v.request('/clients', { action: 'renew', id: client.id, expires: expiresOn(endDate) });
+            if (!v.signal.aborted) await webClients(backToAccount);
+          });
+          card.append(actions, feedback, renewal);
+          page.append(card);
+        }
+      } catch (error) {
+        v.errorText(error);
+        if (!v.signal.aborted) page.append(button('Обновить', () => webClients(backToAccount)));
       }
     }
 
@@ -832,7 +969,8 @@ const SwimChats = (() => {
       v.panel.append(form);
     }
 
-    async function list() {
+    async function list(roomToOpen) {
+      if (typeof roomToOpen === 'string') targetRoom = roomToOpen;
       const v = view('Чаты');
       const inbox = element('div', 'chat-width chat-inbox');
       v.panel.append(inbox);
@@ -842,6 +980,10 @@ const SwimChats = (() => {
         const data = await v.request('');
         if (v.signal.aborted) return;
         v.statusText('');
+        if (web) {
+          await conversation(data.rooms[0]);
+          return;
+        }
         if (!data.profile) {
           const sheet = element('div', 'chat-sheet');
           sheet.append(profileForm(v, data, list), v.status);
@@ -886,8 +1028,12 @@ const SwimChats = (() => {
             : 'Проверка доступа к VIP-группам временно недоступна.'));
         }
       } catch (error) {
-        v.errorText(error);
-        if (!v.signal.aborted) inbox.append(button('Обновить', list));
+        if (v.signal.aborted) return;
+        if (web && ['web_auth_required', 'web_access_ended'].includes(error.message)) launch.webSessionLost();
+        else {
+          v.errorText(error);
+          inbox.append(button('Обновить', list));
+        }
       }
     }
 
@@ -1088,7 +1234,7 @@ const SwimChats = (() => {
     }
 
     async function conversation(room) {
-      const v = view(room.title, { back: list, room });
+      const v = view(room.title, web ? { room } : { back: list, room });
       const openExercise = exerciseSheet(v.panel);
       const thread = element('div', 'chat-thread');
       const endpoint = '/rooms/' + room.id;
@@ -1224,6 +1370,10 @@ const SwimChats = (() => {
       earlier.hidden = true;
 
       function accessError(error) {
+        if (!v.signal.aborted && web && ['web_auth_required', 'web_access_ended', 'room_forbidden'].includes(error.message)) {
+          launch.webSessionLost();
+          return;
+        }
         v.errorText(error);
         if (v.signal.aborted || !['room_forbidden', 'profile_required', 'telegram_auth_required'].includes(error.message)) return;
         accessLost = true;
@@ -1282,9 +1432,9 @@ const SwimChats = (() => {
         }
         setDelivery(photo ? 'Отправляем фото…' : 'Отправляем…');
         try {
-          sentThrough = await deliver(endpoint, pending, v.signal);
+          sentThrough = await deliver(endpoint, pending, v.signal, web);
         } catch (error) {
-          if (['room_forbidden', 'profile_required', 'telegram_auth_required'].includes(error.message)) {
+          if (['room_forbidden', 'profile_required', 'telegram_auth_required', 'web_auth_required', 'web_access_ended'].includes(error.message)) {
             accessError(error);
           } else {
             setDelivery(errors[error.message] || 'Не получили подтверждение. Нажмите «Отправить» ещё раз.');

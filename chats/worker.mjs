@@ -76,7 +76,7 @@ async function profileForCode(db, value) {
     FROM chat_profiles p
     LEFT JOIN chat_coaches c ON c.telegram_id = p.telegram_id
     LEFT JOIN chat_preferences pref ON pref.telegram_id = p.telegram_id
-    WHERE p.code = ?
+    WHERE p.code = ? AND p.telegram_id > 0
   `).bind(code).first();
   if (!profile) throw new ChatError(400, 'account_not_found');
   return profile;
@@ -600,17 +600,323 @@ async function manage(env, player, now, request) {
     );
     await db.batch(changes);
   } else if (data.action === 'end' && /^lesson-[a-f0-9-]{36}$/.test(data.id ?? '')) {
-    await db.prepare('UPDATE chat_coaching SET expires_ms = ? WHERE id = ? AND expires_ms > ?')
-      .bind(now, data.id, now).run();
+    await endCoaching(db, data.id, now);
   } else {
     throw new ChatError(400, 'invalid_input');
   }
   return { ok: true };
 }
 
+async function endCoaching(db, room, now) {
+  await db.batch([
+    db.prepare('UPDATE chat_coaching SET expires_ms = min(expires_ms, ?) WHERE id = ?').bind(now, room),
+    db.prepare('UPDATE chat_web_clients SET code_hash = NULL WHERE room_id = ?').bind(room),
+    db.prepare('DELETE FROM chat_web_sessions WHERE student_id = (SELECT student_id FROM chat_web_clients WHERE room_id = ?)').bind(room),
+  ]);
+}
+
+const WEB_ORIGIN = 'https://swim-island-chats.pages.dev';
+const WEB_COOKIE = '__Host-swim-client';
+const WEB_TOKEN = /^[a-f0-9]{64}$/;
+const WEB_ROOM = /^lesson-[a-f0-9-]{36}$/;
+const WEB_CODE_TTL = 15 * 60_000;
+const WEB_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const WEB_CODE_WINDOW = 60 * 60_000;
+
+function webMailReady(env) {
+  return typeof env.WEB_MAIL_KEY === 'string' && WEB_TOKEN.test(env.WEB_MAIL_KEY) &&
+    typeof env.WEB_MAIL_URL === 'string' &&
+    /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(env.WEB_MAIL_URL);
+}
+
+function webHex(bytes) {
+  return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function webToken() {
+  return webHex(crypto.getRandomValues(new Uint8Array(32)));
+}
+
+async function webTokenHash(token) {
+  return webHex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))));
+}
+
+async function webSignature(env, value) {
+  const text = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', text.encode(env.WEB_MAIL_KEY), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return webHex(new Uint8Array(await crypto.subtle.sign('HMAC', key, text.encode(value))));
+}
+
+function webEmail(value) {
+  const email = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (email.length > 254 || !/^[A-Z0-9.!#$%&'*+\/=?^_`{|}~-]{1,64}@[A-Z0-9-]+(?:\.[A-Z0-9-]+)+$/i.test(email)) {
+    throw new ChatError(400, 'invalid_email');
+  }
+  return email;
+}
+
+function webCookieToken(request) {
+  const value = request.headers.get('Cookie')?.split(';').find(item => item.trim().startsWith(WEB_COOKIE + '='));
+  const token = value?.trim().slice(WEB_COOKIE.length + 1);
+  return token && WEB_TOKEN.test(token) ? token : null;
+}
+
+function webCookie(token, maxAge) {
+  return WEB_COOKIE + '=' + token + '; Path=/; Max-Age=' + maxAge + '; Secure; HttpOnly; SameSite=Strict';
+}
+
+async function webGuestForToken(db, token) {
+  if (typeof token !== 'string' || !WEB_TOKEN.test(token)) throw new ChatError(403, 'web_invite_invalid');
+  const client = await db.prepare(`
+    SELECT w.student_id, w.email, w.invite_hash, c.expires_ms FROM chat_web_clients w
+    JOIN chat_coaching c ON c.id = w.room_id
+    WHERE w.invite_hash = ?
+  `).bind(await webTokenHash(token)).first();
+  if (!client) throw new ChatError(403, 'web_invite_invalid');
+  return client;
+}
+
+async function webSession(db, request, now) {
+  const token = webCookieToken(request);
+  if (!token) return null;
+  return db.prepare(`
+    SELECT w.student_id AS id, w.room_id AS room, w.invite_hash, c.expires_ms AS expires
+    FROM chat_web_sessions s JOIN chat_web_clients w USING (student_id)
+    JOIN chat_coaching c ON c.id = w.room_id
+    WHERE s.token_hash = ? AND s.expires_ms > ? AND c.expires_ms > ?
+  `).bind(await webTokenHash(token), now, now).first();
+}
+
+async function issueWebCode(env, id, now, inviteHash = null) {
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(12)), byte => WEB_ALPHABET[byte & 31]).join('');
+  const hash = await webTokenHash('code:' + id + ':' + code);
+  const validUntil = now + WEB_CODE_TTL;
+  const row = await env.CHAT_DB.prepare(`
+    UPDATE chat_web_clients
+    SET code_hash = ?, code_expires_ms = ?, code_attempts = 0, last_code_ms = ?,
+      code_count = CASE WHEN code_window_ms > ? THEN code_count + 1 ELSE 1 END,
+      code_window_ms = CASE WHEN code_window_ms > ? THEN code_window_ms ELSE ? END
+    WHERE student_id = ? AND (? IS NULL OR invite_hash = ?) AND last_code_ms <= ?
+      AND (code_window_ms <= ? OR code_count < 5)
+      AND EXISTS (SELECT 1 FROM chat_coaching WHERE id = room_id AND expires_ms > ?)
+    RETURNING email
+  `).bind(hash, validUntil, now, now - WEB_CODE_WINDOW, now - WEB_CODE_WINDOW, now,
+    id, inviteHash, inviteHash, now - 60_000, now - WEB_CODE_WINDOW, now).first();
+  if (!row) throw new ChatError(429, 'web_code_wait');
+  return { code, email: row.email, validUntil };
+}
+
+async function mailWebCode(env, client, now) {
+  if (!webMailReady(env)) throw new ChatError(503, 'web_mail_unavailable');
+  const { code, email } = await issueWebCode(env, client.student_id, now, client.invite_hash);
+  const payload = JSON.stringify({ email, code, issuedAt: now, id: crypto.randomUUID() });
+  try {
+    const response = await fetch(env.WEB_MAIL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payload, signature: await webSignature(env, 'mail:' + payload) }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (response.ok && (await response.json()).ok === true) return { ok: true };
+  } catch {
+    // The current code remains valid if the mail provider accepted the request.
+  }
+  throw new ChatError(503, 'web_mail_unavailable');
+}
+
+async function verifyWebCode(db, client, value, now) {
+  const code = typeof value === 'string' ? value.replace(/[\s-]/g, '').toUpperCase() : '';
+  if (!/^[A-HJ-NP-Z2-9]{12}$/.test(code)) throw new ChatError(400, 'web_code_invalid');
+  const hash = await webTokenHash('code:' + client.student_id + ':' + code);
+  const inviteHash = client.invite_hash;
+  const claim = await db.prepare(`
+    UPDATE chat_web_clients SET code_attempts = code_attempts + 1
+    WHERE student_id = ? AND invite_hash = ? AND code_hash IS NOT NULL AND code_expires_ms > ?
+      AND code_attempts < 5
+      AND EXISTS (SELECT 1 FROM chat_coaching WHERE id = room_id AND expires_ms > ?)
+    RETURNING code_hash = ? AS matches
+  `).bind(client.student_id, inviteHash, now, now, hash).first();
+  if (!claim?.matches) throw new ChatError(400, 'web_code_invalid');
+
+  const token = webToken();
+  const expires = Math.min(client.expires_ms, now + 30 * 86400_000);
+  const [session] = await db.batch([
+    db.prepare(`
+      INSERT INTO chat_web_sessions (token_hash, student_id, expires_ms)
+      SELECT ?, w.student_id, min(?, c.expires_ms) FROM chat_web_clients w
+      JOIN chat_coaching c ON c.id = w.room_id
+      WHERE w.student_id = ? AND w.code_hash = ? AND w.invite_hash = ? AND w.code_expires_ms > ? AND c.expires_ms > ?
+    `).bind(await webTokenHash(token), expires, client.student_id, hash, inviteHash, now, now),
+    db.prepare(`
+      UPDATE chat_web_clients SET code_hash = NULL, verified_ms = coalesce(verified_ms, ?)
+      WHERE student_id = ? AND code_hash = ? AND invite_hash = ?
+    `).bind(now, client.student_id, hash, inviteHash),
+    db.prepare('DELETE FROM chat_web_sessions WHERE student_id = ? AND expires_ms <= ?').bind(client.student_id, now),
+  ]);
+  if (!session.meta.changes) throw new ChatError(400, 'web_code_invalid');
+  return webReply({ ok: true }, 200, webCookie(token, Math.ceil((expires - now) / 1000)));
+}
+
+function webDate(expires, now) {
+  if (!Number.isSafeInteger(expires) || expires <= now || expires - now > 366 * 86400_000) {
+    throw new ChatError(400, 'invalid_assignment');
+  }
+  return expires;
+}
+
+function webInvite(token) {
+  return WEB_ORIGIN + '/client/#invite=' + token;
+}
+
+async function manageWebClients(env, player, now, request) {
+  const db = env.CHAT_DB;
+  if (!await db.prepare('SELECT 1 FROM chat_coaches WHERE telegram_id = ?').bind(player.id).first()) {
+    throw new ChatError(403, 'coach_required');
+  }
+  if (request.method === 'GET') {
+    const { results } = await db.prepare(`
+      SELECT w.room_id AS id, w.email, p.name, w.verified_ms IS NOT NULL AS entered, c.expires_ms AS expires
+      FROM chat_web_clients w JOIN chat_profiles p ON p.telegram_id = w.student_id
+      JOIN chat_coaching c ON c.id = w.room_id
+      WHERE w.coach_id = ? ORDER BY c.expires_ms <= ?, p.name
+    `).bind(player.id, now).all();
+    return { clients: results, mail: webMailReady(env) };
+  }
+  const data = await input(request);
+  if (data.action === 'create') {
+    const name = cleanName(data.name);
+    const email = webEmail(data.email);
+    const expires = webDate(data.expires, now);
+    if (!await profileOf(db, player.id)) throw new ChatError(403, 'profile_required');
+    const number = crypto.getRandomValues(new Uint32Array(2));
+    const id = -((number[0] & 0xfffff) * 4294967296 + number[1] + 1);
+    const room = 'lesson-' + crypto.randomUUID();
+    const invite = webToken();
+    try {
+      await db.batch([
+        db.prepare("INSERT INTO chat_profiles (telegram_id, code, name, level) VALUES (?, ?, ?, 'n')")
+          .bind(id, webToken().slice(0, 12), name),
+        db.prepare('INSERT INTO chat_coaching (id, student_id, coach_id, expires_ms) VALUES (?, ?, ?, ?)')
+          .bind(room, id, player.id, expires),
+        db.prepare('INSERT INTO chat_web_clients (student_id, coach_id, room_id, email, invite_hash) VALUES (?, ?, ?, ?, ?)')
+          .bind(id, player.id, room, email, await webTokenHash(invite)),
+      ]);
+    } catch (error) {
+      if (await db.prepare('SELECT 1 FROM chat_web_clients WHERE coach_id = ? AND email = ?').bind(player.id, email).first()) {
+        throw new ChatError(409, 'web_client_exists');
+      }
+      throw error;
+    }
+    return { id: room, name, invite: webInvite(invite) };
+  }
+  if (typeof data.id !== 'string' || !WEB_ROOM.test(data.id)) throw new ChatError(400, 'invalid_input');
+  const client = await db.prepare(`
+    SELECT w.student_id, c.expires_ms FROM chat_web_clients w JOIN chat_coaching c ON c.id = w.room_id
+    WHERE w.coach_id = ? AND w.room_id = ?
+  `).bind(player.id, data.id).first();
+  if (!client) throw new ChatError(403, 'room_forbidden');
+  if (data.action === 'renew') {
+    await db.prepare('UPDATE chat_coaching SET expires_ms = ? WHERE id = ? AND coach_id = ?')
+      .bind(webDate(data.expires, now), data.id, player.id).run();
+    return { ok: true };
+  }
+  if (data.action === 'code') {
+    if (client.expires_ms <= now) throw new ChatError(403, 'web_access_ended');
+    return issueWebCode(env, client.student_id, now);
+  }
+  const clearSessions = db.prepare('DELETE FROM chat_web_sessions WHERE student_id = ?').bind(client.student_id);
+  if (data.action === 'rotate') {
+    if (client.expires_ms <= now) throw new ChatError(403, 'web_access_ended');
+    const invite = webToken();
+    await db.batch([
+      db.prepare('UPDATE chat_web_clients SET invite_hash = ?, code_hash = NULL WHERE student_id = ?')
+        .bind(await webTokenHash(invite), client.student_id),
+      clearSessions,
+    ]);
+    return { id: data.id, invite: webInvite(invite) };
+  }
+  if (data.action === 'end') {
+    await endCoaching(db, data.id, now);
+    return { ok: true };
+  }
+  throw new ChatError(400, 'invalid_input');
+}
+
+function webReply(data, status = 200, cookie) {
+  const headers = {
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+  };
+  if (cookie) headers['Set-Cookie'] = cookie;
+  return Response.json(data, { status, headers });
+}
+
+async function webOverview(db, player, now) {
+  const room = await db.prepare(`
+    SELECT c.id, c.expires_ms, COALESCE(pref.nickname, coach.name, p.name) AS name, pref.avatar
+    FROM chat_coaching c JOIN chat_profiles p ON p.telegram_id = c.coach_id
+    LEFT JOIN chat_coaches coach ON coach.telegram_id = p.telegram_id
+    LEFT JOIN chat_preferences pref ON pref.telegram_id = p.telegram_id
+    WHERE c.id = ? AND c.student_id = ? AND c.expires_ms > ?
+  `).bind(player.room, player.id, now).first();
+  if (!room) throw new ChatError(403, 'web_access_ended');
+  return { rooms: [{ id: room.id, title: room.name, person: publicProfile(room), kind: 'coaching', expires: room.expires_ms }] };
+}
+
+async function webApi(request, env, ctx, url) {
+  const path = url.pathname;
+  const origin = request.headers.get('Origin');
+  if (url.origin !== WEB_ORIGIN || (origin && origin !== WEB_ORIGIN) ||
+      (request.method === 'POST' && origin !== WEB_ORIGIN)) {
+    return webReply({ error: 'forbidden_origin' }, 403);
+  }
+  const db = env.CHAT_DB;
+  if (!db) return webReply({ error: 'unavailable' }, 503);
+  try {
+    const now = Date.now();
+    if (path === '/v1/client/session' && ['GET', 'POST'].includes(request.method)) {
+      const data = request.method === 'POST' ? await input(request, 1024) : {};
+      const player = await webSession(db, request, now);
+      const active = Boolean(player && (data.invite === undefined ||
+        (typeof data.invite === 'string' && WEB_TOKEN.test(data.invite) && await webTokenHash(data.invite) === player.invite_hash)));
+      return webReply({ active, mail: webMailReady(env) });
+    }
+    if (path === '/v1/client/logout' && request.method === 'POST') {
+      const token = webCookieToken(request);
+      if (token) await db.prepare('DELETE FROM chat_web_sessions WHERE token_hash = ?').bind(await webTokenHash(token)).run();
+      return webReply({ ok: true }, 200, webCookie('', 0));
+    }
+    if ((path === '/v1/client/code' || path === '/v1/client/login') && request.method === 'POST') {
+      const { invite, code } = await input(request, 1024);
+      const client = await webGuestForToken(db, invite);
+      if (client.expires_ms <= now) throw new ChatError(403, 'web_access_ended');
+      if (path.endsWith('/code')) return webReply(await mailWebCode(env, client, now));
+      return await verifyWebCode(db, client, code, now);
+    }
+    const player = await webSession(db, request, now);
+    if (!player) throw new ChatError(401, 'web_auth_required');
+    if (path === '/v1/client/chats' && request.method === 'GET') return webReply(await webOverview(db, player, now));
+    const room = /^\/v1\/client\/chats\/rooms\/(lesson-[a-f0-9-]{36})(?:\/photos\/(\d+))?$/.exec(path);
+    if (!room) throw new ChatError(404, 'not_found');
+    if (room[1] !== player.room) throw new ChatError(403, 'room_forbidden');
+    if (room[2] && request.method !== 'GET') throw new ChatError(405, 'method_not_allowed');
+    if (request.method === 'POST') return webReply(await send(env, player.room, player, request, ctx));
+    if (request.method !== 'GET') throw new ChatError(405, 'method_not_allowed');
+    const access = await requireRoom(env, player.room, player, now);
+    if (room[2]) return await getPhoto(db, player.room, room[2]);
+    return webReply(await messages(db, access, player.room, player.id, url.searchParams));
+  } catch (error) {
+    if (error instanceof ChatError) return webReply({ error: error.message }, error.status);
+    console.error('Web chat request failed', error.name);
+    return webReply({ error: 'unavailable' }, 503);
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/v1/client/')) return webApi(request, env, ctx, url);
     const origin = request.headers.get('Origin');
     if (origin && origin !== APP_ORIGIN) return reply({ error: 'forbidden_origin' }, 403);
     const route = url.pathname;
@@ -621,6 +927,7 @@ export default {
       '/v1/chats/profile': ['POST'],
       '/v1/chats/notifications': ['POST'],
       '/v1/chats/manage': ['GET', 'POST'],
+      '/v1/chats/clients': ['GET', 'POST'],
       '/v1/chats/find': ['POST'],
       '/v1/chats/direct': ['POST'],
     };
@@ -646,8 +953,10 @@ export default {
           db.prepare('SELECT id FROM chat_direct LIMIT 0'),
           db.prepare('SELECT avatar FROM chat_preferences LIMIT 0'),
           db.prepare('SELECT seen_id FROM chat_notification_state LIMIT 0'),
+          db.prepare('SELECT invite_hash FROM chat_web_clients LIMIT 0'),
+          db.prepare('SELECT token_hash FROM chat_web_sessions LIMIT 0'),
         ]);
-        return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN), notificationsConfigured: canNotify(env) });
+        return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN), notificationsConfigured: canNotify(env), webConfigured: true, emailConfigured: webMailReady(env) });
       }
       const now = Date.now();
       const player = await authenticate(request, now);
@@ -655,6 +964,7 @@ export default {
       if (!db) return reply({ error: 'unavailable' }, 503);
       if (route === '/v1/chats') return reply(await overview(env, player, now, signedUser(request)));
       if (route === '/v1/chats/notifications') return reply(await saveNotifications(env, player, request));
+      if (route === '/v1/chats/clients') return reply(await manageWebClients(env, player, now, request));
       if (route === '/v1/chats/manage') return reply(await manage(env, player, now, request));
       if (route === '/v1/chats/find' || route === '/v1/chats/direct') {
         return reply(await contact(db, player, now, request, route === '/v1/chats/direct'));

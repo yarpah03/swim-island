@@ -605,3 +605,8 @@ body:has(.chat-forward-sheet[open]) { overflow: hidden; }
   padding-bottom: calc(10px + max(env(safe-area-inset-bottom, 0px), var(--tg-content-safe-area-inset-bottom, 0px)));
 }
 .chat-forward-actions [hidden] { display: none; }
+
+.chat-web-invite[hidden], .chat-history > [hidden] { display: none; }
+.chat-web-email { overflow-wrap: anywhere; }
+.chat-cabinet .chat-form > .chat-button { justify-self: start; }
+.chat-web-invite input { width: 100%; text-overflow: ellipsis; }
