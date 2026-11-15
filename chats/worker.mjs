@@ -2,6 +2,7 @@ import { authenticate } from '../game/worker.mjs';
 
 const APP_ORIGIN = 'https://yarpah03.github.io';
 const PAGE_SIZE = 40;
+const MAX_MESSAGE_LENGTH = 8000;
 const levels = new Set(['n', 's', 'p']);
 const vipCache = new Map();
 
@@ -24,8 +25,7 @@ function reply(data, status = 200) {
   return data === null ? new Response(null, { status, headers }) : Response.json(data, { status, headers });
 }
 
-async function input(request) {
-  const maxBytes = 12288;
+async function input(request, maxBytes = 12288) {
   if (!request.body || Number(request.headers.get('Content-Length')) > maxBytes) {
     throw new ChatError(413, 'message_too_long');
   }
@@ -268,13 +268,17 @@ function videoLink(value) {
 }
 
 async function send(env, id, player, request) {
-  const { text, video, clientId } = await input(request);
+  const { text, video, clientId } = await input(request, 65536);
   if (typeof clientId !== 'string' || !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(clientId)) {
     throw new ChatError(400, 'invalid_input');
   }
-  const body = typeof text === 'string' ? text.replace(/\r\n?/g, '\n').trim() : '';
+  const body = typeof text === 'string'
+    ? text.replace(/\r\n?|\u2028|\u2029/gu, '\n')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/gu, '')
+      .trim()
+    : '';
   const link = videoLink(video);
-  if ((!body && !link) || [...body].length > 2000 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u.test(body)) {
+  if ((!body && !link) || [...body].length > MAX_MESSAGE_LENGTH) {
     throw new ChatError(400, 'invalid_message');
   }
   const db = env.CHAT_DB;
@@ -287,13 +291,12 @@ async function send(env, id, player, request) {
     SELECT ?, ?, ?, ?, ?, ?
     WHERE NOT EXISTS (SELECT 1 FROM chat_messages WHERE room_id = ? AND sender_id = ? AND sent_ms > ?)
       AND (? = 0 OR EXISTS (SELECT 1 FROM chat_coaching WHERE id = ? AND expires_ms > ?))
-  `).bind(id, player.id, clientId, body, link, now, id, player.id, now - 1000, room.coach_id ?? 0, id, now).run();
-  if (!inserted.meta.changes) {
-    const existing = await db.prepare('SELECT id FROM chat_messages WHERE room_id = ? AND sender_id = ? AND client_id = ?')
-      .bind(id, player.id, clientId).first();
-    if (!existing) throw new ChatError(429, 'slow_down');
-  }
-  return { ok: true };
+    RETURNING id
+  `).bind(id, player.id, clientId, body, link, now, id, player.id, now - 1000, room.coach_id ?? 0, id, now).first();
+  const saved = inserted ?? await db.prepare('SELECT id FROM chat_messages WHERE room_id = ? AND sender_id = ? AND client_id = ?')
+    .bind(id, player.id, clientId).first();
+  if (!saved) throw new ChatError(429, 'slow_down');
+  return { ok: true, id: saved.id };
 }
 
 async function manage(env, player, now, request) {

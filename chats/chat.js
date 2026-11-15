@@ -10,7 +10,8 @@ const SwimChats = (() => {
     vip_unavailable: 'Проверка VIP-доступа временно недоступна.',
     invalid_name: 'Введите имя от 2 до 40 символов. Для названия группы допустимо до 60 символов.',
     invalid_level: 'Выберите уровень подготовки.',
-    invalid_message: 'Введите сообщение до 2 000 символов.',
+    invalid_message: 'Введите сообщение до 8 000 символов.',
+    message_too_long: 'Сообщение слишком длинное. Предел — 8 000 символов.',
     invalid_video: 'Добавьте ссылку на видео, которая начинается с https://.',
     invalid_account: 'Проверьте коды участников.',
     account_not_found: 'Проверьте код из профиля участника.',
@@ -109,6 +110,15 @@ const SwimChats = (() => {
     return input;
   }
 
+  function messageId() {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-');
+  }
+
   async function api(path = '', payload, signal) {
     const auth = tg()?.initData;
     if (!auth) throw new Error('telegram_auth_required');
@@ -116,7 +126,7 @@ const SwimChats = (() => {
     const stop = () => controller.abort();
     if (signal.aborted) stop();
     else signal.addEventListener('abort', stop, { once: true });
-    const timeout = setTimeout(stop, 10000);
+    const timeout = setTimeout(stop, payload ? 18000 : 10000);
     try {
       const headers = { Authorization: 'tma ' + auth };
       const options = { headers, signal: controller.signal, cache: 'no-store' };
@@ -135,7 +145,7 @@ const SwimChats = (() => {
     }
   }
 
-  function mount(root, preferredLevel, returnHash = '#home') {
+  function mount(root, preferredLevel, returnHash = '#home', exerciseLibrary) {
     dispose();
     dispose = () => {};
     if (!root) return;
@@ -143,7 +153,11 @@ const SwimChats = (() => {
     const viewport = window.visualViewport;
     const exit = () => { location.hash = returnHash; };
     let back = exit;
-    const goBack = () => back();
+    const goBack = () => {
+      const exercise = root.querySelector('.chat-exercise-sheet[open]');
+      if (exercise) exercise.close();
+      else back();
+    };
     let screen;
     let cleanup = () => {};
     const closeScreen = () => {
@@ -213,6 +227,7 @@ const SwimChats = (() => {
           catch (error) { errorText(error); }
           finally { submit.disabled = false; }
         });
+        return submit;
       };
       return { panel, actions, status, signal, request, statusText, errorText, formSubmit };
     }
@@ -383,7 +398,51 @@ const SwimChats = (() => {
       }
     }
 
-    function message(item) {
+    function exerciseSheet(panel) {
+      if (!exerciseLibrary) return null;
+      const sheet = element('dialog', 'chat-exercise-sheet');
+      if (typeof sheet.showModal !== 'function') return null;
+      const title = element('h2', '', '');
+      title.id = 'chat-exercise-title';
+      sheet.setAttribute('aria-labelledby', title.id);
+      const heading = element('div', 'chat-exercise-heading');
+      const close = button('Закрыть', () => sheet.close());
+      heading.append(title, close);
+      const content = element('div', 'chat-exercise-body');
+      sheet.append(heading, content);
+      panel.append(sheet);
+      let opener;
+      sheet.addEventListener('close', () => {
+        content.replaceChildren();
+        opener?.focus({ preventScroll: true });
+      });
+      sheet.addEventListener('click', event => {
+        if (event.target === sheet) sheet.close();
+      });
+      const show = entry => {
+        title.textContent = entry.title;
+        content.replaceChildren();
+        sheet.scrollTop = 0;
+        exerciseLibrary.render(content, entry);
+      };
+      return (trigger, entries) => {
+        opener = trigger;
+        title.textContent = entries[0].title;
+        sheet.showModal();
+        close.focus({ preventScroll: true });
+        if (entries.length === 1) show(entries[0]);
+        else {
+          content.replaceChildren(element('p', 'chat-exercise-prompt', 'Выберите вариант упражнения.'));
+          for (const entry of entries) content.append(button(entry.category, () => {
+            show(entry);
+            close.focus({ preventScroll: true });
+          }));
+          sheet.scrollTop = 0;
+        }
+      };
+    }
+
+    function message(item, openExercise) {
       const node = element('article', 'chat-message' + (item.own ? ' chat-message-own' : ''));
       const meta = element('div', 'chat-message-meta');
       meta.append(element('strong', '', item.own ? 'Вы' : item.name));
@@ -393,7 +452,19 @@ const SwimChats = (() => {
       stamp.title = dateTime.format(item.sent);
       meta.append(stamp);
       node.append(meta);
-      if (item.text) node.append(element('p', '', item.text));
+      if (item.text) {
+        const copy = element('p');
+        let from = 0;
+        for (const match of openExercise ? exerciseLibrary.match(item.text) : []) {
+          copy.append(item.text.slice(from, match.start));
+          const link = button(item.text.slice(match.start, match.end), () => openExercise(link, match.entries), 'workout-ex');
+          link.setAttribute('aria-haspopup', 'dialog');
+          copy.append(link);
+          from = match.end;
+        }
+        copy.append(item.text.slice(from));
+        node.append(copy);
+      }
       if (item.video) {
         try {
           const url = new URL(item.video);
@@ -413,6 +484,7 @@ const SwimChats = (() => {
 
     async function conversation(room) {
       const v = view(room.title, { back: list, room });
+      const openExercise = exerciseSheet(v.panel);
       const thread = element('div', 'chat-thread');
       thread.setAttribute('aria-label', 'Переписка');
       thread.setAttribute('role', 'region');
@@ -424,10 +496,13 @@ const SwimChats = (() => {
 
       const dock = element('div', 'chat-dock');
       const composer = element('div', 'chat-width chat-composer');
+      const delivery = element('p', 'chat-status chat-delivery');
+      delivery.setAttribute('role', 'status');
+      const setDelivery = text => { if (!v.signal.aborted) delivery.textContent = text; };
       const form = element('form', 'chat-compose');
+      form.addEventListener('input', () => setDelivery(''));
       const input = element('textarea');
       input.rows = 1;
-      input.maxLength = 2000;
       input.placeholder = 'Сообщение';
       input.setAttribute('aria-label', 'Сообщение');
       let video;
@@ -460,6 +535,8 @@ const SwimChats = (() => {
       let reading = false;
       let timer;
       let refreshAfterSend = false;
+      let sentThrough = 0;
+      let accessLost = false;
       const appended = new Set();
       let follow = true;
       const scrollToEnd = () => { thread.scrollTop = thread.scrollHeight; };
@@ -476,7 +553,7 @@ const SwimChats = (() => {
           appended.add(item.id);
           first = Math.min(first ?? item.id, item.id);
           last = Math.max(last ?? item.id, item.id);
-          chunk.append(message(item));
+          chunk.append(message(item, openExercise));
         }
         if (prepend) items.prepend(chunk);
         else items.append(chunk);
@@ -499,22 +576,29 @@ const SwimChats = (() => {
       function accessError(error) {
         v.errorText(error);
         if (v.signal.aborted || !['room_forbidden', 'profile_required', 'telegram_auth_required'].includes(error.message)) return;
+        accessLost = true;
         clearInterval(timer);
         items.replaceChildren();
         empty.hidden = true;
         earlier.hidden = true;
-        form.hidden = true;
+        setDelivery('');
+        form.hidden = !input.value && !video?.value;
+        sendButton.hidden = true;
       }
 
       async function refresh(forceScroll = false) {
-        if (reading || v.signal.aborted) return;
+        if (reading || accessLost || v.signal.aborted) return;
         reading = true;
         try {
-          const initial = last === undefined;
-          const page = await v.request(endpoint + (initial ? '' : '?after=' + last));
-          if (v.signal.aborted) return;
-          if (initial) earlier.hidden = !page.more;
-          append(page.messages);
+          let more = true;
+          while (more) {
+            const previous = last;
+            const page = await v.request(endpoint + (previous === undefined ? '' : '?after=' + previous));
+            if (v.signal.aborted || accessLost) return;
+            if (previous === undefined) earlier.hidden = !page.more;
+            append(page.messages);
+            more = page.more && previous !== undefined && last > previous && last < sentThrough;
+          }
           empty.hidden = last !== undefined;
           form.hidden = false;
           v.statusText('');
@@ -530,20 +614,32 @@ const SwimChats = (() => {
         }
       }
 
-      v.formSubmit(form, 'Отправить', async () => {
+      const sendButton = v.formSubmit(form, 'Отправить', async () => {
+        if (accessLost) return;
         const text = input.value;
         const link = video?.value.trim() || '';
-        if (!text.trim() && !link) throw new Error('invalid_message');
-        if (!pending || pending.text !== text || pending.video !== link) {
-          pending = { text, video: link, clientId: crypto.randomUUID() };
+        if (!text.trim() && !link) {
+          setDelivery(errors.invalid_message);
+          return;
         }
+        if (!pending || pending.text !== text || pending.video !== link) {
+          pending = { text, video: link, clientId: messageId() };
+        }
+        setDelivery('Отправляем…');
         try {
-          await v.request(endpoint, pending);
+          const saved = await v.request(endpoint, pending);
+          if (saved.ok !== true || !Number.isSafeInteger(saved.id) || saved.id <= 0) throw new Error('no_receipt');
+          sentThrough = saved.id;
         } catch (error) {
-          accessError(error);
-          throw error;
+          if (['room_forbidden', 'profile_required', 'telegram_auth_required'].includes(error.message)) {
+            accessError(error);
+          } else {
+            setDelivery(errors[error.message] || 'Не получили подтверждение. Нажмите «Отправить» ещё раз.');
+          }
+          return;
         }
         if (v.signal.aborted) return;
+        setDelivery('Отправлено.');
         if (input.value === text) input.value = '';
         if (video && video.value.trim() === link) {
           video.value = '';
@@ -556,7 +652,7 @@ const SwimChats = (() => {
       form.hidden = true;
       history.append(earlier, empty, items);
       thread.append(history);
-      composer.append(v.status, form);
+      composer.append(v.status, delivery, form);
       dock.append(composer);
       v.panel.append(thread, dock);
       v.statusText('Загружаем переписку…');

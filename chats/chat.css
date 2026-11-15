@@ -296,3 +296,46 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
   .chat-actions { gap: 0; }
   .chat-find-button { padding-inline: 5px; }
 }
+
+.chat-message .workout-ex { color: var(--aqua); }
+.chat-message .workout-ex:hover { color: var(--gold-lt); }
+.chat-message .workout-ex:focus-visible { outline-offset: 2px; }
+.chat-delivery { color: var(--aqua); }
+.chat-exercise-sheet {
+  position: fixed;
+  inset: auto 0 0;
+  bottom: max(0px, calc(100dvh - var(--chat-height, 100dvh)));
+  width: min(100%, 720px);
+  max-width: 100%;
+  max-height: calc(var(--chat-height, 100vh) - 58px);
+  max-height: min(82dvh, calc(var(--chat-height, 100dvh) - 58px));
+  margin: 0 auto;
+  padding: 0 calc(16px + var(--chat-right)) calc(16px + var(--chat-bottom)) calc(16px + var(--chat-left));
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  color: var(--txt);
+  background: var(--surf);
+}
+.chat-exercise-sheet[open] { animation: chat-exercise-in 180ms ease-out; }
+@keyframes chat-exercise-in { from { transform: translateY(20px); opacity: .65; } }
+.chat-exercise-sheet::backdrop { background: #040c12bb; }
+.chat-exercise-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding-block: 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surf);
+}
+.chat-exercise-heading h2 { overflow-wrap: anywhere; }
+.chat-exercise-body { padding-top: 12px; }
+.chat-exercise-body .chat-button { display: flex; width: 100%; margin-top: 8px; }
+.chat-exercise-body .doc, .chat-exercise-body .vid { margin-bottom: 0; }
+.chat-exercise-prompt { color: var(--txt-2); font-size: 14px; }

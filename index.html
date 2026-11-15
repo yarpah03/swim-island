@@ -1269,7 +1269,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 </style>
 <link rel="stylesheet" href="vip-theme.css">
 <link rel="stylesheet" href="game/ranking.css?v=2">
-<link rel="stylesheet" href="chats/chat.css?v=2">
+<link rel="stylesheet" href="chats/chat.css?v=3">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="markpath" viewBox="0 0 512 512"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></symbol></defs></svg>
@@ -1320,7 +1320,8 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="news.js"></script>
 <script src="game/engine.js?v=1"></script>
 <script src="game/ranking.js?v=1"></script>
-<script src="chats/chat.js?v=4"></script>
+<script src="chats/exercises.js?v=1"></script>
+<script src="chats/chat.js?v=5"></script>
 <script src="workout-print/card.js?v=1"></script>
 <script>
 /* ============================================================
@@ -4035,10 +4036,10 @@ const lenCls = (t, mid, big) => {
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // Кнопка раскрывает описание под заданием, сохраняя страницу тренировки.
+const WATER_EXERCISE_ALIASES = [["скайлинг", "dr_kr_7"], ["руки кроль / ноги дельфин", "dr_kr_5"], ["кроль на кулаках", "dr_kr_10"], ["один гребок руками, два толчка ногами", "dr_br_5"], ["два гребка руками, один толчок ногами", "dr_br_6"], ["на спине двумя руками одновременно", "dr_sp_7"], ["работа двумя руками одновременно", "dr_sp_7"], ["одна рука работает, вторая у бедра", "dr_sp_5"], ["гребок только одной рукой, вторая вдоль туловища", "dr_kr_2"], ["только первая фаза гребка", "dr_kr_8"], ["переходы", "dr_kr_4"], ["ноги дельфин на боку", "dr_bt_7"], ["на руках на спине двумя руками одновременно", "dr_sp_7"]];
 let workoutExerciseSeq = 0;
 function workoutText(value){
-  const aliases = [["скайлинг", "dr_kr_7"], ["руки кроль / ноги дельфин", "dr_kr_5"], ["кроль на кулаках", "dr_kr_10"], ["один гребок руками, два толчка ногами", "dr_br_5"], ["два гребка руками, один толчок ногами", "dr_br_6"], ["на спине двумя руками одновременно", "dr_sp_7"], ["работа двумя руками одновременно", "dr_sp_7"], ["одна рука работает, вторая у бедра", "dr_sp_5"], ["гребок только одной рукой, вторая вдоль туловища", "dr_kr_2"], ["только первая фаза гребка", "dr_kr_8"], ["переходы", "dr_kr_4"], ["ноги дельфин на боку", "dr_bt_7"], ["на руках на спине двумя руками одновременно", "dr_sp_7"]];
-  const candidates = aliases.concat(UCH.drills.flatMap(g => g.items.map(x => [x.title, g.key + "_" + x.n])))
+  const candidates = WATER_EXERCISE_ALIASES.concat(UCH.drills.flatMap(g => g.items.map(x => [x.title, g.key + "_" + x.n])))
     .filter(([label,id]) => label && T[id]).sort((a,b) => b[0].length-a[0].length);
   const text = String(value), lower = text.toLowerCase();
   let html = "", pos = 0, panels = "";
@@ -4214,6 +4215,67 @@ function exerciseVideoHTML(d){
    что сервера у приложения нет.
    ============================================================ */
 T.home.feed = true;
+
+let chatExerciseLibrary;
+
+function makeChatExerciseLibrary(){
+  const entries = [], tables = [];
+  const add = (title, category, doc, key) => {
+    const techniques = doc.filter(([type, value]) =>
+      ["num", "p", "kv", "why"].includes(type) && value && value !== "Описание готовится.");
+    const video = doc.find(([type, value]) => type === "vid" && KINESCOPE[value]?.trim());
+    if(!title || (!techniques.length && !video)) return;
+    entries.push({ key, title, category, doc, video:video && KINESCOPE[video[1]],
+      technique:JSON.stringify(techniques.find(([type]) => type === "num" || type === "p") || techniques[0]) });
+  };
+  for(const [id, screen] of Object.entries(T)){
+    const parent = PARENT[id];
+    if(screen.doc && (/^dr_[a-z]+_\d+$/.test(id) || ["st_d0","tn_d0"].includes(parent))){
+      const doc = screen.doc.concat(screen.v ? [["vid", screen.v]] : []);
+      if(screen.vland && KINESCOPE[screen.vland]?.trim()) doc.push(["h3", "Отработка на суше"], ["vid", screen.vland]);
+      add(screen.title, T[parent].title, doc, id);
+    }
+    if(parent === "s1_1" && screen.lesson){
+      for(const exercise of screen.lesson.ex){
+        const doc = [["why", exercise.goal]];
+        if(exercise.how) doc.push(["h2", "Как выполнять"], [Array.isArray(exercise.how) ? "num" : "p", exercise.how]);
+        if(exercise.watch) doc.push(["h2", "Частые ошибки"], [Array.isArray(exercise.watch) ? "ul" : "p", exercise.watch]);
+        if(exercise.hint) doc.push(["tip", exercise.hint]);
+        if(exercise.v) doc.push(["vid", exercise.v]);
+        if(exercise.vland && KINESCOPE[exercise.vland]?.trim()) doc.push(["h3", "Отработка на суше"], ["vid", exercise.vland]);
+        add(exercise.t, screen.title, doc);
+      }
+    }
+    if(!screen.doc || !/^d(?:1_p\d+|2_[a-z]+|3_(?:st|dy|c\d+|dr)|4_(?:ex|w\d+)|5)$/.test(id)) continue;
+    const category = id === "d4_ex" || /^d4_w\d+$/.test(id) ? T.d4.title
+      : /^d3_c\d+$/.test(id) ? T.d3.title : screen.title;
+    let exercise;
+    for(const [type, value] of screen.doc){
+      if(type === "exo") exercise = {title:"", doc:[]};
+      else if(type === "exc" && exercise){
+        add(exercise.title, category, exercise.doc);
+        exercise = null;
+      } else if(exercise){
+        if(type === "h4" || type === "acc"){
+          const label = type === "acc" ? value.t : value;
+          exercise.title = label.replace(/^(?:\d+|[А-ЯЁ]+-\d+)\.\s*/u, "");
+          if(type === "acc" && value.v) exercise.doc.push(["vid", value.v]);
+        } else exercise.doc.push([type, value]);
+      } else if(type === "workout-table" || type === "circuit"){
+        for(const row of type === "circuit" ? value : value.rows) tables.push([row, category]);
+      }
+    }
+  }
+  for(const [row, category] of tables) add(row.name, category, row.doc);
+  return {
+    match: SwimChatExercises.index(entries, WATER_EXERCISE_ALIASES),
+    render: (element, entry) => {
+      // Здесь только данные каталога. Текст сообщения остаётся текстовым узлом.
+      element.innerHTML = exerciseDocHTML(entry);
+      setupFrames();
+    }
+  };
+}
 
 const МЕСЯЦЫ = ["января","февраля","марта","апреля","мая","июня",
                 "июля","августа","сентября","октября","ноября","декабря"];
@@ -4985,7 +5047,11 @@ if(d.lesson){
   setupBreath();
   setupBest();
   SwimRanking.setup();
-  SwimChats.mount(document.getElementById("swim-chats"), LEVEL, chatReturn);
+  const chats = document.getElementById("swim-chats");
+  if(chats && !chatExerciseLibrary && typeof SwimChatExercises !== "undefined"){
+    chatExerciseLibrary = makeChatExerciseLibrary();
+  }
+  SwimChats.mount(chats, LEVEL, chatReturn, chatExerciseLibrary);
 }
 
 /* Персональная ссылка приглашения. Идентификатор берём у телеграма:
