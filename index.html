@@ -1269,7 +1269,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 </style>
 <link rel="stylesheet" href="vip-theme.css">
 <link rel="stylesheet" href="game/ranking.css?v=2">
-<link rel="stylesheet" href="chats/chat.css?v=5">
+<link rel="stylesheet" href="chats/chat.css?v=6">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="markpath" viewBox="0 0 512 512"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></symbol></defs></svg>
@@ -1324,7 +1324,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="game/engine.js?v=1"></script>
 <script src="game/ranking.js?v=1"></script>
 <script src="chats/exercises.js?v=1"></script>
-<script src="chats/chat.js?v=7"></script>
+<script src="chats/chat.js?v=8"></script>
 <script src="workout-print/card.js?v=1"></script>
 <script>
 /* ============================================================
@@ -4075,7 +4075,7 @@ function toggleWorkoutExercise(btn){
     if(exercise){
       panel.innerHTML = `<div class="workout-ex-head"><h3>${esc(exercise.title)}</h3>
         <button type="button" class="workout-ex-close" onclick="closeWorkoutExercise(this)">Свернуть</button></div>`
-        + exerciseDocHTML(exercise) + exerciseVideoHTML(exercise);
+        + exerciseDocHTML(exercise) + exerciseVideoHTML(exercise) + materialShareButton(btn.dataset.exercise);
     } else {
       panel.replaceChildren(template.content.cloneNode(true));
     }
@@ -4094,11 +4094,12 @@ function closeWorkoutExercise(btn){
   if(trigger){ toggleWorkoutExercise(trigger); trigger.focus({preventScroll:true}); }
 }
 
-function workoutTableHTML({rows: exercises, label = "Станции", columns = ["Объём"]}){
+function workoutTableHTML({rows: exercises, label = "Станции", columns = ["Объём"]}, page, block){
   const roundTable = columns.length > 1;
   const rows = exercises.map((station, index) => {
     const key = "workout-ex-" + (++workoutExerciseSeq);
-    return `<tr>
+    const anchor = page ? "station-" + block + "-" + (index + 1) : "";
+    return `<tr${anchor ? ` id="${anchor}"` : ""}>
       <td class="station-number">${index + 1}</td>
       <td><button type="button" class="workout-ex station-trigger" id="${key}"
         aria-expanded="false" aria-controls="${key}-panel" onclick="toggleWorkoutExercise(this)">
@@ -4115,6 +4116,7 @@ function workoutTableHTML({rows: exercises, label = "Станции", columns = 
             <button type="button" class="workout-ex-close" onclick="closeWorkoutExercise(this)">Свернуть</button>
           </div>
           ${exerciseDocHTML({doc:station.doc})}
+          ${page ? materialShareButton(page, anchor) : ""}
         </template>
       </td>
     </tr>`;
@@ -4128,7 +4130,7 @@ function workoutTableHTML({rows: exercises, label = "Станции", columns = 
   </table>`;
 }
 
-function exerciseDocHTML(d){
+function exerciseDocHTML(d, page){
   let h = "";
     if(d.doc){
       /* Дозировку больше не показываем: объём каждый подбирает себе сам.
@@ -4139,22 +4141,26 @@ function exerciseDocHTML(d){
         const b = d.doc[i];
         if(b[0] === "kv" && b[1] && b[1][0] === "Дозировка") continue;
         if((b[0] === "h2" || b[0] === "h3") && b[1] === "Дозировка"){ i++; continue; }
-        блоки.push(b);
+        блоки.push([b, i + 1]);
       }
       h += `<div class="doc${d.whiteH4 ? " wh" : ""}">`;
       if(d.lead) h += `<div class="lead-box">${esc(d.lead)}</div>`;
-      блоки.forEach(([type,val])=>{
+      let insideExercise = false;
+      блоки.forEach(([[type,val], block])=>{
+        const anchor = page && insideExercise && (type === "h4" || type === "acc")
+          ? "exercise-" + block : "";
+        const target = anchor ? ` id="${anchor}"` : "";
         if(type==="h2") h += `<h2>${esc(val)}</h2>`;
         else if(type==="h3") h += `<h3>${esc(val)}</h3>`;
-        else if(type==="h4") h += `<h4>${esc(val)}</h4>`;
+        else if(type==="h4") h += `<h4${target}>${esc(val)}</h4>`;
         else if(type==="acc"){
-          if(val.plain) h += `<div class="ex-acc plain"><span class="ex-acc-t">${esc(val.t)}</span></div>`;
-          else h += `<div class="land-toggle ex-acc" onclick="toggleLand(this)"><span class="ex-acc-t">${esc(val.t)}</span><span class="land-arrow">&#8964;</span></div>
+          if(val.plain) h += `<div class="ex-acc plain"${target}><span class="ex-acc-t">${esc(val.t)}</span></div>`;
+          else h += `<div class="land-toggle ex-acc"${target} onclick="toggleLand(this)"><span class="ex-acc-t">${esc(val.t)}</span><span class="land-arrow">&#8964;</span></div>
             <div class="land-panel" data-v="${esc(val.v||"")}" data-cap="Показ упражнения"></div>`;
         }
         else if(type==="kv") h += `<div class="kv"><b>${esc(val[0])}.</b> ${esc(val[1])}</div>`;
-        else if(type==="circuit") h += workoutTableHTML({rows:val});
-        else if(type==="workout-table") h += workoutTableHTML(val);
+        else if(type==="circuit") h += workoutTableHTML({rows:val}, page, block);
+        else if(type==="workout-table") h += workoutTableHTML(val, page, block);
         else if(type==="tbl") h += `<div class="tbl-wrap"><table class="tbl">` +
           val.map((row,i)=>`<tr>${row.map(c=>i===0?`<th>${esc(c)}</th>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("") +
           `</table></div>`;
@@ -4171,10 +4177,17 @@ function exerciseDocHTML(d){
             <div class="vid-cap">Показ упражнения</div></div>`;
         }
         else if(type==="why") h += `<div class="whybox"><b>Зачем это нужно</b>${esc(val)}</div>`;
-        else if(type==="exo") h += `<div class="excard">`;
-        else if(type==="exc") h += `</div>`;
+        else if(type==="exo"){
+          h += `<div class="excard">`;
+          insideExercise = true;
+        }
+        else if(type==="exc"){
+          h += `</div>`;
+          insideExercise = false;
+        }
         else if(type==="tip") h += `<div class="tipbox"><b>Совет.</b> ${esc(val)}</div>`;
         else if(type==="warn") h += `<div class="safebox"><b>Безопасность.</b> ${esc(val)}</div>`;
+        if(anchor) h += materialShareButton(page, anchor);
       });
       h += `</div>`;
     }
@@ -4652,12 +4665,77 @@ function crumbs(id){
 
 let chatReturn = "#home";
 let pendingChatRoom;
+let sharedFromChat;
+const materialBase = new URL("./", location.href).href;
+
+function catalogMaterial(hash){
+  const match = /^([a-z][a-z0-9_]*)(?:\/((workout|lesson|exercise|station)-([1-9]\d*)(?:-([1-9]\d*))?))?$/.exec(hash);
+  if(!match || !Object.prototype.hasOwnProperty.call(T, match[1])) return null;
+  const [, route, anchor, kind, number, station] = match;
+  const d = T[route];
+  if(d.chats || d.feed || d.more || d.levels || d.ref || d.game || d.best) return null;
+  let title = d.title;
+  let detail = PARENT[route] !== "home" ? T[PARENT[route]]?.title : "";
+  if(anchor){
+    const i = Number(number) - 1;
+    if(kind === "station"){
+      const [type, data] = d.doc?.[i] || [];
+      const rows = type === "circuit" ? data : type === "workout-table" ? data.rows : [];
+      title = rows[Number(station) - 1]?.name;
+    } else {
+      if(station) return null;
+      if(kind === "workout") title = d.workouts?.[i] ? "Тренировка " + d.workouts[i].n + " · " + d.workouts[i].vol + " м" : "";
+      if(kind === "lesson") title = d.lesson?.ex[i]?.t;
+      if(kind === "exercise"){
+        const [type, value] = d.doc?.[i] || [];
+        const label = type === "h4" ? value : type === "acc" ? value.t : "";
+        title = label.replace(/^(?:\d+|[А-ЯЁ]+-\d+)\.\s*/u, "");
+      }
+    }
+    detail = d.title;
+  }
+  return title ? { route, anchor, hash, title, detail, url: materialBase + "#" + hash } : null;
+}
+
+function materialFromMessage(text){
+  const lines = text.split("\n");
+  const link = lines[lines.length - 1];
+  const prefix = materialBase + "#";
+  return lines.length <= 2 && link.startsWith(prefix) ? catalogMaterial(link.slice(prefix.length)) : null;
+}
+
+function openChatMaterial(material, room){
+  sharedFromChat = { hash: material.hash, room };
+  go(material.hash);
+}
+
+function materialShareButton(route, anchor = ""){
+  const hash = anchor ? route + "/" + anchor : route;
+  return `<button type="button" class="chat-button material-share" data-material="${esc(hash)}"
+    aria-haspopup="dialog" onclick="forwardMaterial(this)">Переслать</button>`;
+}
+
+function forwardMaterial(button){
+  const material = catalogMaterial(button.dataset.material);
+  if(!material) return;
+  SwimChats.forward(material, button, room => {
+    pendingChatRoom = room;
+    go("chats");
+  }, materialFromMessage);
+}
 
 function render(){
   // Telegram передаёт параметры запуска в hash, рядом с адресами разделов.
   const hash = location.hash.slice(1);
-  const id = Object.prototype.hasOwnProperty.call(T, hash) ? hash : "home";
+  const shared = hash.includes("/") ? catalogMaterial(hash) : null;
+  const route = shared?.route ?? hash;
+  const id = Object.prototype.hasOwnProperty.call(T, route) ? route : "home";
   const d = T[id];
+  const fromChat = sharedFromChat?.hash === hash;
+  if(!fromChat){
+    if(id === "chats" && sharedFromChat) pendingChatRoom ||= sharedFromChat.room;
+    sharedFromChat = null;
+  }
   const mainSection = МЕНЮ.find(([key]) => key === id);
   const reading = !d.feed && !mainSection && !d.kids;
   const previous = document.body.dataset.route;
@@ -4697,12 +4775,13 @@ function render(){
       : '<section class="page-head">';
     if(!d.game){
       const parent = PARENT[id] || "home";
-      h += `<a class="page-back" href="#${esc(parent)}"><span aria-hidden="true">&larr;</span>Назад</a>`;
+      h += `<a class="page-back" href="#${esc(fromChat ? "chats" : parent)}"><span aria-hidden="true">&larr;</span>${fromChat ? "К чату" : "Назад"}</a>`;
     }
     h += crumbs(id);
     h += `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
     if(d.lede) h += `<p class="lede${d.whiteLede ? " wh" : ""}">${esc(d.lede)}</p>`;
     if(d.pills) h += `<div class="pills">${d.pills.map(p=>`<span class="pill">${esc(p)}</span>`).join("")}</div>`;
+    if(catalogMaterial(id)) h += materialShareButton(id);
     h += '</section>';
 
     if(d.more)  h += gameCardHTML();
@@ -4769,7 +4848,8 @@ function render(){
 if(d.lesson){
       const L=d.lesson;
       h += `<div class="lesson">${L.intro ? `<div class="intro">${esc(L.intro)}</div>` : ""}`;
-      L.ex.forEach(e=>{
+      L.ex.forEach((e, index)=>{
+        const anchor = "lesson-" + (index + 1);
         const kid = (KINESCOPE[e.v] || "").trim();
         const player = kid
           ? `<div class="frame"><iframe
@@ -4780,7 +4860,7 @@ if(d.lesson){
              <div class="snd">&#9834; нажмите, чтобы включить звук</div>`;
         /* В разборе ошибок название уже стоит золотым заголовком страницы,
            поэтому номер и повтор названия под ним не печатаем. */
-        h += `<div class="ex">
+        h += `<div class="ex" id="${anchor}">
           ${L.goalCap ? "" : `<div class="ex-h"><span class="ex-n">${e.n}</span><span class="ex-t">${esc(e.t)}</span></div>`}
           <div class="goal"><i>&#9673;</i><span><b>${esc(L.goalCap || "Цель")}.</b> ${esc(e.goal)}</span></div>
           ${/* Порядок действий. Массив — шаги, каждый с новой строки;
@@ -4810,6 +4890,7 @@ if(d.lesson){
           </div>
           <div class="land-panel" data-v="${esc(e.vland||"")}"></div>`;
         }
+        if(!L.goalCap) h += materialShareButton(id, anchor);
         h += `</div>`;
       });
       if(L.plan && L.plan.length){
@@ -4923,7 +5004,7 @@ if(d.lesson){
       </div>`;
     }
 
-    h += exerciseDocHTML(d);
+    h += exerciseDocHTML(d, id);
 
     h += exerciseVideoHTML(d);
     if(d.print) h += workoutPrintButton();
@@ -4954,13 +5035,15 @@ if(d.lesson){
         // Между тренировками — золотая линия с логотипом посередине.
         // Перед первой её нет, иначе разделитель висел бы в воздухе.
         if(i) h += `<div class="wk-sep"><svg viewBox="0 0 512 512" aria-hidden="true"><use href="#markpath"/></svg></div>`;
-        h += `<div class="wk">
+        const anchor = "workout-" + (i + 1);
+        h += `<div class="wk" id="${anchor}">
           <div class="wk-h">
             <span class="wk-n">Тренировка ${w.n}</span>
             <span class="wk-v">${w.vol} м</span>
           </div>
           <ol class="wk-i">${w.items.map(x=>`<li>${workoutText(x)}</li>`).join("")}</ol>
           ${w.note ? `<p class="tipbox">${esc(w.note)}</p>` : ""}
+          ${materialShareButton(id, anchor)}
           ${workoutPrintButton(i)}
         </div>`;
       });
@@ -5041,7 +5124,12 @@ if(d.lesson){
   document.getElementById("app").innerHTML = h;
   window.scrollTo({top:0,behavior:"instant"});
   const printIndex = new URLSearchParams(location.search).get("workout");
-  if(d.workouts && /^[1-9]\d*$/.test(printIndex || "")){
+  if(shared?.anchor){
+    const target = document.getElementById(shared.anchor);
+    const station = target?.querySelector(".station-trigger");
+    if(station) toggleWorkoutExercise(station);
+    target?.scrollIntoView({block:"start"});
+  } else if(d.workouts && /^[1-9]\d*$/.test(printIndex || "")){
     document.querySelectorAll(".wk")[Number(printIndex) - 1]?.scrollIntoView({block:"start"});
   }
   setupVideos();
@@ -5056,7 +5144,9 @@ if(d.lesson){
   }
   const targetRoom = id === "chats" && pendingChatRoom;
   pendingChatRoom = "";
-  SwimChats.mount(chats, LEVEL, chatReturn, chatExerciseLibrary, { account: id === "profile", targetRoom });
+  SwimChats.mount(chats, LEVEL, chatReturn, chatExerciseLibrary, {
+    account: id === "profile", targetRoom, materials: { resolve: materialFromMessage, open: openChatMaterial }
+  });
 }
 
 /* Персональная ссылка приглашения. Идентификатор берём у телеграма:

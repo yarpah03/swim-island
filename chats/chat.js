@@ -16,7 +16,6 @@ const SwimChats = (() => {
     invalid_level: 'Выберите уровень подготовки.',
     invalid_message: 'Введите сообщение до 8 000 символов.',
     message_too_long: 'Сообщение слишком длинное. Предел — 8 000 символов.',
-    invalid_video: 'Добавьте ссылку на видео, которая начинается с https://.',
     invalid_account: 'Проверьте коды участников.',
     account_not_found: 'Проверьте код из профиля участника.',
     unknown_coach: 'Этот тренер не найден в списке клуба.',
@@ -49,12 +48,12 @@ const SwimChats = (() => {
     manage: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/>',
     group: '<path d="M3 19v-1a5 5 0 0 1 10 0v1m2-5a4.5 4.5 0 0 1 6 4v1"/><circle cx="8" cy="8" r="3"/><path d="M15 5a3 3 0 0 1 0 6"/>',
     waves: '<path d="M3 9c3 0 3-2 6-2s3 2 6 2 3-2 6-2M3 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/>',
-    link: '<path d="M10 13a4 4 0 0 0 6 .4l3-3a4 4 0 0 0-5.7-5.7l-1.7 1.7m2.4 4.6a4 4 0 0 0-6-.4l-3 3a4 4 0 0 0 5.7 5.7l1.7-1.7"/>',
     attach: '<path d="m8 13 6.8-6.8a2.5 2.5 0 0 1 3.5 3.5l-8.2 8.2a4 4 0 0 1-5.7-5.7l8.2-8.2m4 7-6.8 6.8"/>',
     close: '<path d="m6 6 12 12M18 6 6 18"/>',
     send: '<path d="M21 3 9.7 14.3M21 3l-7 18-4.3-6.7L3 10z"/>',
   };
   let dispose = () => {};
+  let closeForward = () => {};
 
   function element(tag, className, label) {
     const item = document.createElement(tag);
@@ -237,7 +236,184 @@ const SwimChats = (() => {
     }
   }
 
+  function roomRow(room, action, material) {
+    const row = button('', action, 'chat-room');
+    row.append(face(room));
+    const summary = element('span', 'chat-room-summary');
+    const title = element('strong', 'chat-room-name', room.title);
+    const latest = room.latest;
+    const preview = latest
+      ? (latest.own ? 'Вы: ' : '') + (material?.title || latest.text.trim().replace(/\s+/gu, ' ') || (latest.photo ? 'Фото' : 'Видео'))
+      : roomDetails(room);
+    summary.append(title, element('span', 'chat-preview', preview));
+    row.append(summary);
+    if (latest) {
+      const when = new Date(latest.sent);
+      const stamp = element('time', 'chat-room-time', when.toDateString() === new Date().toDateString() ? time.format(when) : day.format(when));
+      stamp.dateTime = when.toISOString();
+      stamp.title = dateTime.format(when);
+      row.append(stamp);
+    }
+    return row;
+  }
+
+  function sortedRooms(rooms) {
+    return rooms.slice().sort((a, b) => (b.latest?.sent ?? 0) - (a.latest?.sent ?? 0));
+  }
+
+  async function deliver(path, payload, signal) {
+    const saved = await api(path, payload, signal);
+    if (saved.ok !== true || !Number.isSafeInteger(saved.id) || saved.id <= 0) throw new Error('no_receipt');
+    return saved.id;
+  }
+
+  async function forward(material, opener, openChat, resolveMaterial) {
+    closeForward();
+    const dialog = element('dialog', 'chat-forward-sheet');
+    const title = element('h2', '', 'Переслать в чат');
+    title.id = 'chat-forward-title';
+    dialog.setAttribute('aria-labelledby', title.id);
+    const header = element('div', 'chat-forward-heading');
+    const close = button('Закрыть', dismiss);
+    header.append(title, close);
+
+    const content = element('div', 'chat-forward-content');
+    const preview = element('div', 'chat-material');
+    preview.append(element('strong', '', material.title));
+    if (material.detail) preview.append(element('small', '', material.detail));
+    const rooms = element('ul', 'chat-room-list');
+    rooms.setAttribute('aria-label', 'Выбор чата');
+    const status = element('p', 'chat-status');
+    status.setAttribute('role', 'status');
+    content.append(preview, status, rooms);
+
+    const actions = element('div', 'chat-forward-actions');
+    const send = button('Отправить', sendForward, 'chat-button chat-primary');
+    const jump = button('Открыть чат', () => openChat(selected?.id));
+    jump.hidden = true;
+    send.hidden = true;
+    send.disabled = true;
+    actions.append(send, jump);
+    dialog.append(header, content, actions);
+
+    const controller = new AbortController();
+    const { signal } = controller;
+    const drafts = new Map();
+    let selected;
+    let selectedRow;
+    let sending = false;
+    let sent = false;
+
+    const nativeBack = tg()?.BackButton;
+    const backWasVisible = nativeBack?.isVisible;
+    function dismiss() {
+      if (sending) return;
+      dialog.close();
+      closeForward();
+    }
+    nativeBack?.onClick(dismiss);
+    nativeBack?.show();
+    closeForward = () => {
+      controller.abort();
+      nativeBack?.offClick(dismiss);
+      if (!backWasVisible) nativeBack?.hide();
+      dialog.remove();
+      if (opener.isConnected) opener.focus({ preventScroll: true });
+      closeForward = () => {};
+    };
+    dialog.addEventListener('close', () => { if (!signal.aborted) closeForward(); });
+    dialog.addEventListener('cancel', event => {
+      event.preventDefault();
+      dismiss();
+    });
+    document.body.append(dialog);
+    dialog.showModal();
+    close.focus({ preventScroll: true });
+
+    if (!hasTelegram()) {
+      status.textContent = 'Чтобы переслать материал, откройте приложение в Telegram.';
+      const link = element('a', 'chat-button chat-primary', 'Открыть в Telegram');
+      link.href = bot + '?startapp';
+      actions.append(link);
+      return;
+    }
+    await loadRooms();
+
+    async function loadRooms() {
+      status.textContent = 'Загружаем чаты…';
+      try {
+        const data = await api('', undefined, signal);
+        if (signal.aborted) return;
+        if (!data.profile) {
+          status.textContent = 'Заполните профиль, чтобы отправлять материалы.';
+          actions.append(button('Перейти в чаты', () => openChat()));
+          return;
+        }
+        if (!data.rooms.length) {
+          status.textContent = 'У вас пока нет доступных чатов.';
+          return;
+        }
+        status.textContent = '';
+        send.hidden = false;
+        for (const room of sortedRooms(data.rooms)) {
+          const latestMaterial = room.latest && resolveMaterial(room.latest.text);
+          const row = roomRow(room, () => {
+            if (sending || sent) return;
+            selectedRow?.setAttribute('aria-pressed', 'false');
+            selected = room;
+            selectedRow = row;
+            row.setAttribute('aria-pressed', 'true');
+            send.disabled = false;
+            status.textContent = '';
+          }, latestMaterial);
+          row.setAttribute('aria-pressed', 'false');
+          const item = element('li');
+          item.append(row);
+          rooms.append(item);
+        }
+      } catch (error) {
+        if (signal.aborted) return;
+        status.textContent = errorMessage(error);
+        const retry = button('Обновить', () => {
+          retry.remove();
+          loadRooms();
+        });
+        actions.append(retry);
+      }
+    }
+
+    async function sendForward() {
+      if (!selected || sending || sent) return;
+      sending = true;
+      send.disabled = true;
+      close.disabled = true;
+      const id = selected.id;
+      if (!drafts.has(id)) drafts.set(id, messageId());
+      status.textContent = 'Пересылаем…';
+      try {
+        await deliver('/rooms/' + id, {
+          text: material.title + '\n' + material.url,
+          clientId: drafts.get(id),
+        }, signal);
+        if (signal.aborted) return;
+        sent = true;
+        status.textContent = 'Отправлено в чат «' + selected.title + '».';
+        send.hidden = true;
+        jump.hidden = false;
+        jump.focus({ preventScroll: true });
+      } catch (error) {
+        if (signal.aborted) return;
+        status.textContent = errors[error.message] || 'Не получили подтверждение. Нажмите «Отправить» ещё раз.';
+      } finally {
+        sending = false;
+        close.disabled = false;
+        send.disabled = sent;
+      }
+    }
+  }
+
   function mount(root, preferredLevel, returnHash = '#home', exerciseLibrary, launch = {}) {
+    closeForward();
     dispose();
     dispose = () => {};
     if (!root) return;
@@ -656,27 +832,6 @@ const SwimChats = (() => {
       v.panel.append(form);
     }
 
-    function roomRow(room) {
-      const row = button('', () => conversation(room), 'chat-room');
-      row.append(face(room));
-      const summary = element('span', 'chat-room-summary');
-      const title = element('strong', 'chat-room-name', room.title);
-      const latest = room.latest;
-      const preview = latest
-        ? (latest.own ? 'Вы: ' : '') + (latest.text.trim().replace(/\s+/gu, ' ') || (latest.photo ? 'Фото' : 'Видео'))
-        : roomDetails(room);
-      summary.append(title, element('span', 'chat-preview', preview));
-      row.append(summary);
-      if (latest) {
-        const when = new Date(latest.sent);
-        const stamp = element('time', 'chat-room-time', when.toDateString() === new Date().toDateString() ? time.format(when) : day.format(when));
-        stamp.dateTime = when.toISOString();
-        stamp.title = dateTime.format(when);
-        row.append(stamp);
-      }
-      return row;
-    }
-
     async function list() {
       const v = view('Чаты');
       const inbox = element('div', 'chat-width chat-inbox');
@@ -713,11 +868,12 @@ const SwimChats = (() => {
         if (data.manager) v.actions.append(iconButton('manage', 'Управление чатами', manage));
 
         if (data.rooms.length) {
-          const rooms = data.rooms.slice().sort((a, b) => (b.latest?.sent ?? 0) - (a.latest?.sent ?? 0));
+          const rooms = sortedRooms(data.rooms);
           const list = element('ul', 'chat-room-list');
           for (const room of rooms) {
             const item = element('li');
-            item.append(roomRow(room));
+            const material = room.latest && launch.materials?.resolve(room.latest.text);
+            item.append(roomRow(room, () => conversation(room), material));
             list.append(item);
           }
           inbox.append(list);
@@ -878,7 +1034,7 @@ const SwimChats = (() => {
       return { tile, clear };
     }
 
-    function message(item, openExercise, photos) {
+    function message(item, openExercise, photos, room) {
       const node = element('article', 'chat-message' + (item.own ? ' chat-message-own' : ''));
       const meta = element('div', 'chat-message-meta');
       if (item.person && !item.own) {
@@ -894,7 +1050,14 @@ const SwimChats = (() => {
       meta.append(stamp);
       node.append(meta);
       if (item.photo) node.append(photos.tile(item));
-      if (item.text) {
+      const material = item.text && launch.materials?.resolve(item.text);
+      if (material) {
+        const card = button('', () => launch.materials.open(material, room.id), 'chat-material');
+        card.append(element('strong', '', material.title));
+        if (material.detail) card.append(element('small', '', material.detail));
+        card.append(element('span', 'chat-material-open', 'Открыть'));
+        node.append(card);
+      } else if (item.text) {
         const copy = element('p');
         let from = 0;
         for (const match of openExercise ? exerciseLibrary.match(item.text) : []) {
@@ -994,26 +1157,6 @@ const SwimChats = (() => {
         }
       });
       form.append(picker, preview, attach);
-      let video;
-      let hideVideo;
-      if (room.kind !== 'group') {
-        video = textInput('https://…', 2000);
-        video.type = 'url';
-        video.required = false;
-        field(form, 'Ссылка на видео (по желанию)', video);
-        const fieldset = video.parentElement;
-        const toggle = iconButton('link', 'Добавить ссылку на видео', () => {
-          showVideo(fieldset.hidden);
-          if (!fieldset.hidden) video.focus();
-        });
-        const showVideo = visible => {
-          fieldset.hidden = !visible;
-          toggle.setAttribute('aria-expanded', String(visible));
-        };
-        showVideo(false);
-        hideVideo = () => showVideo(false);
-        form.append(toggle);
-      }
       form.append(input);
       let first;
       let last;
@@ -1060,7 +1203,7 @@ const SwimChats = (() => {
           if (typeof item.person?.avatar === 'number') {
             item.person.avatar = page.photos?.[item.person.avatar] || '';
           }
-          chunk.append(message(item, openExercise, photos));
+          chunk.append(message(item, openExercise, photos, room));
         }
         if (prepend) items.prepend(chunk);
         else items.append(chunk);
@@ -1093,7 +1236,7 @@ const SwimChats = (() => {
         empty.hidden = true;
         earlier.hidden = true;
         setDelivery('');
-        form.hidden = !input.value && !video?.value;
+        form.hidden = !input.value;
         sendButton.hidden = true;
       }
 
@@ -1129,20 +1272,17 @@ const SwimChats = (() => {
       const sendButton = v.formSubmit(form, 'Отправить', async () => {
         if (accessLost || preparingPhoto) return;
         const text = input.value;
-        const link = video?.value.trim() || '';
         const photo = draftPhoto;
-        if (!text.trim() && !link && !photo) {
+        if (!text.trim() && !photo) {
           setDelivery(errors.invalid_message);
           return;
         }
-        if (!pending || pending.text !== text || pending.video !== link || pending.photo !== photo?.jpeg) {
-          pending = { text, video: link, photo: photo?.jpeg, clientId: messageId() };
+        if (!pending || pending.text !== text || pending.photo !== photo?.jpeg) {
+          pending = { text, photo: photo?.jpeg, clientId: messageId() };
         }
         setDelivery(photo ? 'Отправляем фото…' : 'Отправляем…');
         try {
-          const saved = await v.request(endpoint, pending);
-          if (saved.ok !== true || !Number.isSafeInteger(saved.id) || saved.id <= 0) throw new Error('no_receipt');
-          sentThrough = saved.id;
+          sentThrough = await deliver(endpoint, pending, v.signal);
         } catch (error) {
           if (['room_forbidden', 'profile_required', 'telegram_auth_required'].includes(error.message)) {
             accessError(error);
@@ -1156,10 +1296,6 @@ const SwimChats = (() => {
         if (draftPhoto === photo) {
           showDraft(null);
           if (input.value === text) input.value = '';
-        }
-        if (video && video.value.trim() === link) {
-          video.value = '';
-          hideVideo();
         }
         pending = null;
         if (reading) refreshAfterSend = true;
@@ -1268,5 +1404,5 @@ const SwimChats = (() => {
     else list();
   }
 
-  return { mount };
+  return { mount, forward };
 })();
