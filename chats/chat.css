@@ -276,6 +276,7 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
 .chat-composer .chat-status { padding: 0 3px 6px; }
 .chat-compose { display: flex; flex-wrap: wrap; align-items: end; gap: 6px; }
 .chat-compose .chat-field { width: 100%; }
+.chat-compose[hidden], .chat-compose [hidden], .chat-photo-tile [hidden] { display: none; }
 .chat-compose textarea {
   flex: 1;
   max-height: min(118px, 26dvh);
@@ -284,6 +285,59 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
   border-radius: 16px;
   font-family: var(--ui);
 }
+.chat-compose > .chat-icon-button { border-radius: 50%; }
+.chat-compose > .chat-icon-button:disabled { opacity: .55; cursor: progress; }
+.chat-photo-draft:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #0d1d24;
+  color: var(--txt-2);
+  font-size: 13px;
+}
+.chat-photo-draft img { width: 48px; height: 48px; border-radius: 7px; object-fit: cover; }
+.chat-photo-draft .chat-icon-button { margin-inline-start: auto; }
+.chat-photo-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  max-width: 100%;
+  padding: 5px;
+  margin-block: 3px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 9px;
+  color: var(--txt);
+  background: #0d1d24;
+  cursor: pointer;
+  font: 500 12px/1.3 var(--ui);
+}
+.chat-photo-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.chat-photo-viewer {
+  position: fixed;
+  inset: 0 auto auto 0;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: var(--chat-height, 100vh);
+  margin: 0;
+  padding: calc(6px + var(--chat-top)) calc(10px + var(--chat-right)) calc(8px + var(--chat-bottom)) calc(10px + var(--chat-left));
+  border: 0;
+  background: #071318;
+  color: var(--txt);
+}
+.chat-photo-viewer[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+}
+.chat-photo-viewer::backdrop { background: #071318; }
+.chat-photo-viewer button { justify-self: end; }
+.chat-photo-viewer img { width: 100%; height: 100%; object-fit: contain; min-height: 0; }
 .chat-compose > .chat-button {
   width: 44px;
   height: 44px;

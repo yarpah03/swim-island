@@ -5,6 +5,8 @@ const SwimChats = (() => {
   const levelNames = { n: 'Новичок', s: 'Средний уровень', p: 'Продвинутый' };
   const avatarChoices = [["🏊","Пловец"],["🌊","Волна"],["🐬","Дельфин"],["🐟","Рыбка"],["🦈","Акула"],["🐢","Черепаха"],["🐙","Осьминог"],["🤿","Маска"],["🏅","Медаль"],["⚡","Молния"],["🏝️","Остров"],["🔥","Огонь"]];
   const bot = 'https://t.me/SwimIslandVIPBot';
+  const photoTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/avif'];
+  const maxPhotoLength = 'data:image/jpeg;base64,'.length + 4 * Math.floor(512 * 1024 / 3);
   const errors = {
     telegram_auth_required: 'Закройте приложение и снова откройте его из VIP-канала.',
     room_forbidden: 'Доступ к этому чату закрыт.',
@@ -26,6 +28,9 @@ const SwimChats = (() => {
     invalid_avatar: 'Выберите аватар заново.',
     invalid_photo: 'Выберите фото в JPG, PNG или WebP до 15 МБ.',
     photo_read_failed: 'Не удалось открыть фото. Попробуйте другой файл.',
+    attachment_too_large: 'Выберите фото размером до 25 МБ.',
+    invalid_attachment: 'Не удалось прикрепить фото. Выберите другой снимок.',
+    attachment_read_failed: 'Не удалось подготовить фото. Попробуйте файл JPG или PNG.',
     invalid_status: 'Введите статус до 80 символов.',
     notifications_unavailable: 'Уведомления временно недоступны.',
     notification_unavailable: 'Telegram не подтвердил отправку. Повторите проверку позже.',
@@ -45,6 +50,8 @@ const SwimChats = (() => {
     group: '<path d="M3 19v-1a5 5 0 0 1 10 0v1m2-5a4.5 4.5 0 0 1 6 4v1"/><circle cx="8" cy="8" r="3"/><path d="M15 5a3 3 0 0 1 0 6"/>',
     waves: '<path d="M3 9c3 0 3-2 6-2s3 2 6 2 3-2 6-2M3 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/>',
     link: '<path d="M10 13a4 4 0 0 0 6 .4l3-3a4 4 0 0 0-5.7-5.7l-1.7 1.7m2.4 4.6a4 4 0 0 0-6-.4l-3 3a4 4 0 0 0 5.7 5.7l1.7-1.7"/>',
+    attach: '<path d="m8 13 6.8-6.8a2.5 2.5 0 0 1 3.5 3.5l-8.2 8.2a4 4 0 0 1-5.7-5.7l8.2-8.2m4 7-6.8 6.8"/>',
+    close: '<path d="m6 6 12 12M18 6 6 18"/>',
     send: '<path d="M21 3 9.7 14.3M21 3l-7 18-4.3-6.7L3 10z"/>',
   };
   let dispose = () => {};
@@ -133,17 +140,25 @@ const SwimChats = (() => {
     return input;
   }
 
-  async function profileThumbnail(file) {
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) {
-      throw new Error('invalid_photo');
-    }
+  async function withPhoto(file, render) {
     const source = URL.createObjectURL(file);
     try {
       const photo = new Image();
       photo.src = source;
       await photo.decode();
+      if (!photo.naturalWidth || !photo.naturalHeight) throw new Error('photo_read_failed');
+      return render(photo);
+    } finally {
+      URL.revokeObjectURL(source);
+    }
+  }
+
+  async function profileThumbnail(file) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) {
+      throw new Error('invalid_photo');
+    }
+    return withPhoto(file, photo => {
       const side = Math.min(photo.naturalWidth, photo.naturalHeight);
-      if (!side) throw new Error('photo_read_failed');
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = 160;
       const context = canvas.getContext('2d', { alpha: false });
@@ -155,9 +170,33 @@ const SwimChats = (() => {
         if (image.startsWith('data:image/jpeg;base64,') && image.length <= 20500) return image;
       }
       throw new Error('photo_read_failed');
-    } finally {
-      URL.revokeObjectURL(source);
+    });
+  }
+
+  async function preparePhoto(file) {
+    if (file.size > 25 * 1024 * 1024) throw new Error('attachment_too_large');
+    if (!photoTypes.includes(file.type) && !/\.(jpe?g|png|webp|heic|heif|avif)$/i.test(file.name)) {
+      throw new Error('attachment_read_failed');
     }
+    return withPhoto(file, photo => {
+      const canvas = document.createElement('canvas');
+      const longest = Math.max(photo.naturalWidth, photo.naturalHeight);
+      for (const side of [1600, 1200, 800]) {
+        const scale = Math.min(1, side / longest);
+        canvas.width = Math.max(1, Math.round(photo.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(photo.naturalHeight * scale));
+        const context = canvas.getContext('2d', { alpha: false });
+        context.fillStyle = '#fff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(photo, 0, 0, canvas.width, canvas.height);
+        for (const quality of [0.88, 0.75, 0.58]) {
+          const jpeg = canvas.toDataURL('image/jpeg', quality);
+          if (jpeg.startsWith('data:image/jpeg;base64,') && jpeg.length <= maxPhotoLength) return jpeg;
+        }
+        if (scale === 1 && longest <= 800) break;
+      }
+      throw new Error('attachment_read_failed');
+    });
   }
 
   function messageId() {
@@ -169,14 +208,14 @@ const SwimChats = (() => {
     return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-');
   }
 
-  async function api(path = '', payload, signal) {
+  async function api(path = '', payload, signal, photo = false) {
     const auth = tg()?.initData;
     if (!auth) throw new Error('telegram_auth_required');
     const controller = new AbortController();
     const stop = () => controller.abort();
     if (signal.aborted) stop();
     else signal.addEventListener('abort', stop, { once: true });
-    const timeout = setTimeout(stop, payload ? 18000 : 10000);
+    const timeout = setTimeout(stop, payload?.photo || photo ? 40000 : payload ? 18000 : 10000);
     try {
       const headers = { Authorization: 'tma ' + auth };
       const options = { headers, signal: controller.signal, cache: 'no-store' };
@@ -186,6 +225,9 @@ const SwimChats = (() => {
         options.body = JSON.stringify(payload);
       }
       const response = await fetch(API + path, options);
+      if (photo && response.ok && response.headers.get('Content-Type') === 'image/jpeg') {
+        return await response.blob();
+      }
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || 'unavailable');
       return body;
@@ -271,7 +313,7 @@ const SwimChats = (() => {
       const signal = screen.signal;
       const statusText = text => { if (!signal.aborted) status.textContent = text; };
       const errorText = error => statusText(errorMessage(error));
-      const request = (path, payload) => api(path, payload, signal);
+      const request = (path, payload, photo) => api(path, payload, signal, photo);
       const formSubmit = (form, label, handler, symbol, container = form) => {
         const submit = element('button', 'chat-button chat-primary', symbol ? '' : label);
         if (symbol) iconLabel(submit, symbol, label);
@@ -621,7 +663,7 @@ const SwimChats = (() => {
       const title = element('strong', 'chat-room-name', room.title);
       const latest = room.latest;
       const preview = latest
-        ? (latest.own ? 'Вы: ' : '') + (latest.text.trim().replace(/\s+/gu, ' ') || 'Видео')
+        ? (latest.own ? 'Вы: ' : '') + (latest.text.trim().replace(/\s+/gu, ' ') || (latest.photo ? 'Фото' : 'Видео'))
         : roomDetails(room);
       summary.append(title, element('span', 'chat-preview', preview));
       row.append(summary);
@@ -737,7 +779,106 @@ const SwimChats = (() => {
       };
     }
 
-    function message(item, openExercise) {
+    function photoGallery(v, thread, endpoint) {
+      const dialog = element('dialog', 'chat-photo-viewer');
+      dialog.setAttribute('aria-label', 'Просмотр фото');
+      const close = button('Закрыть', () => dialog.close());
+      const full = element('img');
+      full.alt = 'Фото из чата';
+      dialog.append(close, full);
+      dialog.addEventListener('close', () => {
+        if (!dialog.open) full.removeAttribute('src');
+      });
+      v.panel.append(dialog);
+
+      let closed = false;
+      let requested;
+      const urls = new Set();
+      const loaders = new WeakMap();
+      const observer = typeof IntersectionObserver === 'function' ? new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) loaders.get(entry.target)?.();
+        }
+      }, { root: thread, rootMargin: '100px 0px' }) : null;
+
+      function tile(item) {
+        const open = () => {
+          full.src = thumbnail.src;
+          if (!dialog.open) dialog.showModal();
+          requested = null;
+        };
+        const trigger = button('', () => {
+          requested = trigger;
+          if (loaded) open();
+          else load();
+        }, 'chat-photo-tile');
+        trigger.setAttribute('aria-haspopup', 'dialog');
+        const ratio = item.photo.width / item.photo.height;
+        trigger.style.width = Math.round(Math.max(118, Math.min(320, 320 * ratio))) + 'px';
+        trigger.style.aspectRatio = String(Math.min(3, Math.max(0.45, ratio)));
+        const thumbnail = element('img');
+        thumbnail.alt = 'Открыть фото';
+        thumbnail.hidden = true;
+        const placeholder = element('span', '', 'Загружаем фото…');
+        trigger.append(placeholder, thumbnail);
+        let loading = false;
+        let loaded = false;
+
+        async function load() {
+          if (closed || loading || loaded) return;
+          loading = true;
+          observer?.unobserve(trigger);
+          placeholder.textContent = 'Загружаем фото…';
+          trigger.setAttribute('aria-busy', 'true');
+          let url;
+          try {
+            const blob = await v.request(endpoint + '/photos/' + item.id, undefined, true);
+            if (closed) return;
+            url = URL.createObjectURL(blob);
+            urls.add(url);
+            thumbnail.src = url;
+            await thumbnail.decode();
+            if (closed) return;
+            thumbnail.hidden = false;
+            placeholder.hidden = true;
+            loaded = true;
+            if (requested === trigger) open();
+          } catch {
+            if (url) {
+              URL.revokeObjectURL(url);
+              urls.delete(url);
+            }
+            if (!closed) {
+              loaded = false;
+              thumbnail.hidden = true;
+              placeholder.hidden = false;
+              placeholder.textContent = 'Повторить загрузку фото';
+              if (requested === trigger) requested = null;
+            }
+          } finally {
+            loading = false;
+            trigger.removeAttribute('aria-busy');
+          }
+        }
+
+        loaders.set(trigger, load);
+        if (observer) observer.observe(trigger);
+        else load();
+        return trigger;
+      }
+
+      function clear() {
+        closed = true;
+        requested = null;
+        observer?.disconnect();
+        if (dialog.open) dialog.close();
+        for (const url of urls) URL.revokeObjectURL(url);
+        urls.clear();
+      }
+      return { tile, clear };
+    }
+
+    function message(item, openExercise, photos) {
       const node = element('article', 'chat-message' + (item.own ? ' chat-message-own' : ''));
       const meta = element('div', 'chat-message-meta');
       if (item.person && !item.own) {
@@ -752,6 +893,7 @@ const SwimChats = (() => {
       stamp.title = dateTime.format(item.sent);
       meta.append(stamp);
       node.append(meta);
+      if (item.photo) node.append(photos.tile(item));
       if (item.text) {
         const copy = element('p');
         let from = 0;
@@ -786,6 +928,8 @@ const SwimChats = (() => {
       const v = view(room.title, { back: list, room });
       const openExercise = exerciseSheet(v.panel);
       const thread = element('div', 'chat-thread');
+      const endpoint = '/rooms/' + room.id;
+      const photos = photoGallery(v, thread, endpoint);
       thread.setAttribute('aria-label', 'Переписка');
       thread.setAttribute('role', 'region');
       thread.tabIndex = 0;
@@ -796,6 +940,7 @@ const SwimChats = (() => {
 
       const dock = element('div', 'chat-dock');
       const composer = element('div', 'chat-width chat-composer');
+      let accessLost = false;
       const delivery = element('p', 'chat-status chat-delivery');
       delivery.setAttribute('role', 'status');
       const setDelivery = text => { if (!v.signal.aborted) delivery.textContent = text; };
@@ -805,6 +950,50 @@ const SwimChats = (() => {
       input.rows = 1;
       input.placeholder = 'Сообщение';
       input.setAttribute('aria-label', 'Сообщение');
+      const picker = element('input');
+      picker.type = 'file';
+      picker.accept = [...photoTypes, '.heic', '.heif'].join(',');
+      picker.hidden = true;
+      const attach = iconButton('attach', 'Прикрепить фото', () => picker.click());
+      const preview = element('div', 'chat-photo-draft');
+      const previewImage = element('img');
+      previewImage.alt = 'Фото к сообщению';
+      let draftPhoto = null;
+      let preparingPhoto = false;
+      function showDraft(photo) {
+        draftPhoto = photo;
+        preview.hidden = !photo;
+        input.placeholder = photo ? 'Подпись к фото' : 'Сообщение';
+        if (photo) previewImage.src = photo.jpeg;
+        else previewImage.removeAttribute('src');
+      }
+      preview.append(previewImage, element('span', '', 'Фото к сообщению'),
+        iconButton('close', 'Убрать фото', () => {
+          showDraft(null);
+          setDelivery('');
+        }));
+      preview.hidden = true;
+      picker.addEventListener('change', async () => {
+        const file = picker.files?.[0];
+        picker.value = '';
+        if (!file || preparingPhoto || accessLost) return;
+        preparingPhoto = true;
+        attach.disabled = true;
+        setDelivery('Готовим фото…');
+        try {
+          const photo = await preparePhoto(file);
+          if (!v.signal.aborted && !accessLost) {
+            showDraft({ jpeg: photo });
+            setDelivery('');
+          }
+        } catch (error) {
+          setDelivery(errors[error.message] || errors.attachment_read_failed);
+        } finally {
+          preparingPhoto = false;
+          attach.disabled = accessLost;
+        }
+      });
+      form.append(picker, preview, attach);
       let video;
       let hideVideo;
       if (room.kind !== 'group') {
@@ -824,11 +1013,8 @@ const SwimChats = (() => {
         showVideo(false);
         hideVideo = () => showVideo(false);
         form.append(toggle);
-      } else {
-        input.required = true;
       }
       form.append(input);
-      const endpoint = '/rooms/' + room.id;
       let first;
       let last;
       let pending;
@@ -836,7 +1022,6 @@ const SwimChats = (() => {
       let timer;
       let refreshAfterSend = false;
       let sentThrough = 0;
-      let accessLost = false;
       const appended = new Set();
       let follow = true;
       let seen = 0;
@@ -875,7 +1060,7 @@ const SwimChats = (() => {
           if (typeof item.person?.avatar === 'number') {
             item.person.avatar = page.photos?.[item.person.avatar] || '';
           }
-          chunk.append(message(item, openExercise));
+          chunk.append(message(item, openExercise, photos));
         }
         if (prepend) items.prepend(chunk);
         else items.append(chunk);
@@ -900,6 +1085,10 @@ const SwimChats = (() => {
         if (v.signal.aborted || !['room_forbidden', 'profile_required', 'telegram_auth_required'].includes(error.message)) return;
         accessLost = true;
         clearInterval(timer);
+        photos.clear();
+        showDraft(null);
+        pending = null;
+        attach.disabled = true;
         items.replaceChildren();
         empty.hidden = true;
         earlier.hidden = true;
@@ -938,17 +1127,18 @@ const SwimChats = (() => {
       }
 
       const sendButton = v.formSubmit(form, 'Отправить', async () => {
-        if (accessLost) return;
+        if (accessLost || preparingPhoto) return;
         const text = input.value;
         const link = video?.value.trim() || '';
-        if (!text.trim() && !link) {
+        const photo = draftPhoto;
+        if (!text.trim() && !link && !photo) {
           setDelivery(errors.invalid_message);
           return;
         }
-        if (!pending || pending.text !== text || pending.video !== link) {
-          pending = { text, video: link, clientId: messageId() };
+        if (!pending || pending.text !== text || pending.video !== link || pending.photo !== photo?.jpeg) {
+          pending = { text, video: link, photo: photo?.jpeg, clientId: messageId() };
         }
-        setDelivery('Отправляем…');
+        setDelivery(photo ? 'Отправляем фото…' : 'Отправляем…');
         try {
           const saved = await v.request(endpoint, pending);
           if (saved.ok !== true || !Number.isSafeInteger(saved.id) || saved.id <= 0) throw new Error('no_receipt');
@@ -963,7 +1153,10 @@ const SwimChats = (() => {
         }
         if (v.signal.aborted) return;
         setDelivery('Отправлено.');
-        if (input.value === text) input.value = '';
+        if (draftPhoto === photo) {
+          showDraft(null);
+          if (input.value === text) input.value = '';
+        }
         if (video && video.value.trim() === link) {
           video.value = '';
           hideVideo();
@@ -985,6 +1178,7 @@ const SwimChats = (() => {
       cleanup = () => {
         clearInterval(timer);
         heightChanges.disconnect();
+        photos.clear();
       };
       await refresh(true);
     }

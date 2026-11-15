@@ -3,6 +3,10 @@ import { authenticate } from '../game/worker.mjs';
 const APP_ORIGIN = 'https://yarpah03.github.io';
 const PAGE_SIZE = 40;
 const MAX_MESSAGE_LENGTH = 8000;
+const MAX_PHOTO_BYTES = 512 * 1024;
+const MAX_PHOTO_SIDE = 1600;
+const JPEG_PREFIX = 'data:image/jpeg;base64,';
+const MAX_PHOTO_LENGTH = JPEG_PREFIX.length + 4 * Math.ceil(MAX_PHOTO_BYTES / 3);
 const BOT_NAME = 'SwimIslandVIPBot';
 const BOT_ID = '9271382179';
 const NOTIFICATION_DELAY_MS = 7000;
@@ -17,16 +21,18 @@ class ChatError extends Error {
   }
 }
 
+const responseHeaders = {
+  'Access-Control-Allow-Origin': APP_ORIGIN,
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  'Access-Control-Max-Age': '600',
+  'Cache-Control': 'no-store',
+  'X-Content-Type-Options': 'nosniff',
+};
+
 function reply(data, status = 200) {
-  const headers = {
-    'Access-Control-Allow-Origin': APP_ORIGIN,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-    'Access-Control-Max-Age': '600',
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff',
-  };
-  return data === null ? new Response(null, { status, headers }) : Response.json(data, { status, headers });
+  const options = { status, headers: responseHeaders };
+  return data === null ? new Response(null, options) : Response.json(data, options);
 }
 
 async function input(request, maxBytes = 12288) {
@@ -119,28 +125,53 @@ function signedUser(request) {
   return JSON.parse(new URLSearchParams(request.headers.get('Authorization').slice(4)).get('user'));
 }
 
-function isAvatarPhoto(avatar) {
-  const start = 'data:image/jpeg;base64,';
-  if (typeof avatar !== 'string' || avatar.length > 20500 || !avatar.startsWith(start)) return false;
-  const payload = avatar.slice(start.length);
-  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(payload) || (payload.length % 4) !== 0) return false;
+function decodeJpeg(value, maxLength) {
+  if (typeof value !== 'string' || value.length > maxLength || !value.startsWith(JPEG_PREFIX)) return null;
+  const payload = value.slice(JPEG_PREFIX.length);
+  if (payload.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(payload)) return null;
   const jpeg = atob(payload);
   const byte = position => jpeg.charCodeAt(position);
   const word = position => byte(position) * 256 + byte(position + 1);
-  if (word(0) !== 0xffd8 || word(jpeg.length - 2) !== 0xffd9) return false;
-  // Validate the resized thumbnail's dimensions from its JPEG frame header.
+  if (word(0) !== 0xffd8 || word(jpeg.length - 2) !== 0xffd9) return null;
   for (let offset = 2; offset + 9 < jpeg.length;) {
-    if (byte(offset) !== 0xff) return false;
+    if (byte(offset) !== 0xff) return null;
     const size = word(offset + 2);
-    if (size < 2 || offset + 2 + size > jpeg.length) return false;
+    if (size < 2 || offset + 2 + size > jpeg.length) return null;
     const marker = byte(offset + 1);
     if ([0xc0, 0xc1, 0xc2].includes(marker)) {
-      return size >= 8 && word(offset + 5) === 160 && word(offset + 7) === 160;
+      return size >= 8 ? { jpeg, height: word(offset + 5), width: word(offset + 7) } : null;
     }
-    if (marker === 0xda) return false;
+    if (marker === 0xda) return null;
     offset += 2 + size;
   }
-  return false;
+  return null;
+}
+
+function isAvatarPhoto(avatar) {
+  const photo = decodeJpeg(avatar, 20500);
+  return photo?.width === 160 && photo.height === 160;
+}
+
+function messagePhoto(value) {
+  if (value === undefined || value === null) return null;
+  const photo = decodeJpeg(value, MAX_PHOTO_LENGTH);
+  if (!photo || photo.jpeg.length > MAX_PHOTO_BYTES || photo.width < 1 || photo.height < 1 ||
+      Math.max(photo.width, photo.height) > MAX_PHOTO_SIDE) {
+    throw new ChatError(400, 'invalid_attachment');
+  }
+  const bytes = new Uint8Array(photo.jpeg.length);
+  for (let index = 0; index < bytes.length; index++) bytes[index] = photo.jpeg.charCodeAt(index);
+  return { bytes, width: photo.width, height: photo.height };
+}
+
+async function getPhoto(db, roomId, messageId) {
+  const id = Number(messageId);
+  if (!Number.isSafeInteger(id) || id <= 0) throw new ChatError(400, 'invalid_input');
+  const row = await db.prepare('SELECT photo FROM chat_messages WHERE room_id = ? AND id = ? AND photo IS NOT NULL')
+    .bind(roomId, id).first();
+  if (!row) throw new ChatError(404, 'not_found');
+  // D1 sends BLOBs back as arrays of bytes.
+  return new Response(new Uint8Array(row.photo), { headers: { ...responseHeaders, 'Content-Type': 'image/jpeg' } });
 }
 
 function canNotify(env) {
@@ -227,14 +258,15 @@ async function overview(env, player, now, user) {
   if (rooms.length) {
     const { results } = await db.prepare(`
       SELECT m.room_id, m.sender_id, m.sent_ms, substr(m.body, 1, 160) AS preview,
-        m.video_url IS NOT NULL AS video
+        m.video_url IS NOT NULL AS video, m.photo_width IS NOT NULL AS photo
       FROM json_each(?) room
       JOIN chat_messages m ON m.id = (
         SELECT id FROM chat_messages WHERE room_id = room.value ORDER BY id DESC LIMIT 1
       )
     `).bind(JSON.stringify(rooms.map(room => room.id))).all();
     const latest = new Map(results.map(row => [row.room_id, {
-      text: row.preview, video: Boolean(row.video), sent: row.sent_ms, own: row.sender_id === player.id,
+      text: row.preview, video: Boolean(row.video), photo: Boolean(row.photo),
+      sent: row.sent_ms, own: row.sender_id === player.id,
     }]));
     for (const room of rooms) {
       if (latest.has(room.id)) room.latest = latest.get(room.id);
@@ -326,7 +358,7 @@ async function messages(db, room, roomId, playerId, params) {
   const cursor = Number(after ?? before ?? Number.MAX_SAFE_INTEGER);
   const result = await db.prepare(`
     SELECT m.id, m.sender_id, COALESCE(pref.nickname, coach.name, p.name) AS name, m.body, m.video_url, m.sent_ms,
-      coach.telegram_id IS NOT NULL AS registered_coach, pref.avatar
+      m.photo_width, m.photo_height, coach.telegram_id IS NOT NULL AS registered_coach, pref.avatar
     FROM chat_messages m JOIN chat_profiles p ON p.telegram_id = m.sender_id
     LEFT JOIN chat_coaches coach ON coach.telegram_id = m.sender_id
     LEFT JOIN chat_preferences pref ON pref.telegram_id = m.sender_id
@@ -344,6 +376,7 @@ async function messages(db, room, roomId, playerId, params) {
     }
     return {
       id: row.id, name: row.name, text: row.body, video: row.video_url, sent: row.sent_ms,
+      photo: row.photo_width ? { width: row.photo_width, height: row.photo_height } : null,
       own: row.sender_id === playerId, coach: row.sender_id === room.coach_id || Boolean(row.registered_coach),
       person,
     };
@@ -365,7 +398,7 @@ function videoLink(value) {
 }
 
 async function send(env, id, player, request, ctx) {
-  const { text, video, clientId } = await input(request, 65536);
+  const { text, video, photo, clientId } = await input(request, 65536 + MAX_PHOTO_LENGTH);
   if (typeof clientId !== 'string' || !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(clientId)) {
     throw new ChatError(400, 'invalid_input');
   }
@@ -375,7 +408,8 @@ async function send(env, id, player, request, ctx) {
       .trim()
     : '';
   const link = videoLink(video);
-  if ((!body && !link) || [...body].length > MAX_MESSAGE_LENGTH) {
+  const picture = messagePhoto(photo);
+  if ((!body && !link && !picture) || [...body].length > MAX_MESSAGE_LENGTH) {
     throw new ChatError(400, 'invalid_message');
   }
   const db = env.CHAT_DB;
@@ -384,12 +418,15 @@ async function send(env, id, player, request, ctx) {
   if (link && !room.coach_id && !room.direct) throw new ChatError(400, 'invalid_video');
   // One atomic insert prevents duplicate retries and concurrent bursts.
   const inserted = await db.prepare(`
-    INSERT OR IGNORE INTO chat_messages (room_id, sender_id, client_id, body, video_url, sent_ms)
-    SELECT ?, ?, ?, ?, ?, ?
+    INSERT OR IGNORE INTO chat_messages (room_id, sender_id, client_id, body, video_url, sent_ms, photo, photo_width, photo_height)
+    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
     WHERE NOT EXISTS (SELECT 1 FROM chat_messages WHERE room_id = ? AND sender_id = ? AND sent_ms > ?)
       AND (? = 0 OR EXISTS (SELECT 1 FROM chat_coaching WHERE id = ? AND expires_ms > ?))
     RETURNING id
-  `).bind(id, player.id, clientId, body, link, now, id, player.id, now - 1000, room.coach_id ?? 0, id, now).first();
+  `).bind(
+    id, player.id, clientId, body, link, now, picture?.bytes ?? null, picture?.width ?? null, picture?.height ?? null,
+    id, player.id, now - 1000, room.coach_id ?? 0, id, now
+  ).first();
   const saved = inserted ?? await db.prepare('SELECT id FROM chat_messages WHERE room_id = ? AND sender_id = ? AND client_id = ?')
     .bind(id, player.id, clientId).first();
   if (!saved) throw new ChatError(429, 'slow_down');
@@ -577,7 +614,7 @@ export default {
     const origin = request.headers.get('Origin');
     if (origin && origin !== APP_ORIGIN) return reply({ error: 'forbidden_origin' }, 403);
     const route = url.pathname;
-    const room = /^\/v1\/chats\/rooms\/((?:level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36}))(\/read)?$/.exec(route);
+    const room = /^\/v1\/chats\/rooms\/((?:level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36}))(?:\/(read)|\/photos\/(\d+))?$/.exec(route);
     const methods = {
       '/health': ['GET'],
       '/v1/chats': ['GET'],
@@ -587,7 +624,12 @@ export default {
       '/v1/chats/find': ['POST'],
       '/v1/chats/direct': ['POST'],
     };
-    const allowed = room ? room[2] ? ['POST'] : ['GET', 'POST'] : methods[route];
+    let allowed = methods[route];
+    if (room) {
+      allowed = ['GET', 'POST'];
+      if (room[2]) allowed = ['POST'];
+      if (room[3]) allowed = ['GET'];
+    }
     if (!allowed) return reply({ error: 'not_found' }, 404);
     if (request.method === 'OPTIONS') return reply(null, 204);
     if (!allowed.includes(request.method)) return reply({ error: 'method_not_allowed' }, 405);
@@ -597,7 +639,7 @@ export default {
         if (!db) return reply({ ok: false }, 503);
         await db.batch([
           db.prepare('SELECT code FROM chat_profiles LIMIT 0'),
-          db.prepare('SELECT video_url FROM chat_messages LIMIT 0'),
+          db.prepare('SELECT video_url, photo, photo_width, photo_height FROM chat_messages LIMIT 0'),
           db.prepare('SELECT id FROM chat_groups LIMIT 0'),
           db.prepare('SELECT id FROM chat_coaching LIMIT 0'),
           db.prepare('SELECT handle FROM chat_coaches LIMIT 0'),
@@ -622,6 +664,7 @@ export default {
       if (room[2]) return reply(await markSeen(env, id, player, now, request));
       if (request.method === 'POST') return reply(await send(env, id, player, request, ctx));
       const access = await requireRoom(env, id, player, now);
+      if (room[3]) return await getPhoto(db, id, room[3]);
       return reply(await messages(db, access, id, player.id, url.searchParams));
     } catch (error) {
       if (error instanceof ChatError) return reply({ error: error.message }, error.status);

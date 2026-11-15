@@ -51,6 +51,9 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   body TEXT NOT NULL,
   video_url TEXT,
   sent_ms INTEGER NOT NULL,
+  photo BLOB,
+  photo_width INTEGER,
+  photo_height INTEGER,
   UNIQUE (room_id, sender_id, client_id)
 );
 
