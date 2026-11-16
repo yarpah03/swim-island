@@ -45,7 +45,7 @@ const security = {
   'X-Robots-Tag': 'noindex, nofollow',
 };
 const portalCsp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'";
-const libraryCsp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src https://kinescope.io https://*.kinescope.io https://kinescope.ru https://*.kinescope.ru https://www.youtube.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'none'; object-src 'none'";
+const libraryCsp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src https://kinescope.io https://*.kinescope.io https://kinescope.ru https://*.kinescope.ru https://www.youtube.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'none'; object-src 'none'";
 
 function httpResponse(response, status, headers = {}) {
   response.writeHead(status, { ...security, ...headers }).end();

@@ -49,7 +49,7 @@ const index = join(library, 'index.html');
 replaceFile(index, '<script src="https://telegram.org/js/telegram-web-app.js"></script>\n', '');
 replaceFile(index, 'const materialBase = new URL("./", location.href).href;',
   'const materialBase = "https://yarpah03.github.io/swim-island/";');
-replaceFile(index, 'window.parent.postMessage({ type:"swim-forward", material }, "https://swim-island-chats.pages.dev");',
-  'window.parent.postMessage({ type:"swim-forward", material }, location.origin);');
+replaceFile(index, 'window.parent.postMessage(message, "https://swim-island-chats.pages.dev");',
+  'window.parent.postMessage(message, location.origin);');
 replaceFile(index, 'href="https://swim-island-chats.pages.dev/partner/"', 'href="/partner/"');
 console.log(bundle);
