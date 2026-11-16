@@ -4670,8 +4670,22 @@ function crumbs(id){
 let chatReturn = "#home";
 let pendingChatRoom;
 let sharedFromChat;
-const clientCatalog = window.parent !== window && new URLSearchParams(location.search).get("view") === "client";
-if(clientCatalog) document.documentElement.classList.add("client-catalog");
+const clientParams = new URLSearchParams(location.search);
+const clientView = window.parent !== window ? clientParams.get("view") : null;
+const clientPortal = clientView === "portal";
+const clientCatalog = clientPortal || clientView === "client";
+const clientChatHash = clientPortal && clientParams.get("from") === "chat" ? location.hash : null;
+if(clientView === "client") document.documentElement.classList.add("client-catalog");
+
+function postToClient(message){
+  window.parent.postMessage(message, "https://swim-island-chats.pages.dev");
+}
+
+function openClientRoute(route, returnToThread = false){
+  if(!clientPortal || (route !== "chats" && route !== "profile" && !SwimPartners.routeParts(route))) return false;
+  postToClient({ type:"swim-portal-route", route, returnToThread });
+  return true;
+}
 const materialBase = new URL("./", location.href).href;
 
 function catalogMaterial(hash){
@@ -4730,7 +4744,7 @@ function forwardMaterial(button){
   const material = catalogMaterial(button.dataset.material);
   if(!material) return;
   if(clientCatalog){
-    window.parent.postMessage({ type:"swim-forward", material }, "https://swim-island-chats.pages.dev");
+    postToClient({ type:"swim-forward", material });
     return;
   }
   SwimChats.forward(material, button, room => {
@@ -4746,7 +4760,8 @@ function render(){
   const route = SwimPartners.routeParts(hash) ? "partners" : shared?.route ?? hash;
   const id = Object.prototype.hasOwnProperty.call(T, route) ? route : "home";
   const d = T[id];
-  const fromChat = sharedFromChat?.hash === hash;
+  const fromClientChat = clientChatHash === location.hash;
+  const fromChat = fromClientChat || sharedFromChat?.hash === hash;
   if(!fromChat){
     if(id === "chats" && sharedFromChat) pendingChatRoom ||= sharedFromChat.room;
     sharedFromChat = null;
@@ -4790,7 +4805,7 @@ function render(){
       : '<section class="page-head">';
     if(!d.game){
       const parent = PARENT[id] || "home";
-      h += `<a class="page-back" href="#${esc(fromChat ? "chats" : parent)}"><span aria-hidden="true">&larr;</span>${fromChat ? "К чату" : "Назад"}</a>`;
+      h += `<a class="page-back" href="#${esc(fromChat ? "chats" : parent)}"${fromClientChat ? ' data-client-return' : ''}><span aria-hidden="true">&larr;</span>${fromChat ? "К чату" : "Назад"}</a>`;
     }
     h += crumbs(id);
     h += `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
@@ -5859,7 +5874,16 @@ function setupVideos(){
   });
 }
 
-function go(id){ location.hash = id; }
+function go(id){
+  if(!openClientRoute(id)) location.hash = id;
+}
+if(clientPortal){
+  document.addEventListener("click", event => {
+    if(event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    const link = event.target.closest('a[href^="#"]');
+    if(link && openClientRoute(link.hash.slice(1), link.hasAttribute("data-client-return"))) event.preventDefault();
+  });
+}
 window.addEventListener("hashchange", render);
 const clubNav = МЕНЮ.map(([id, name]) => `<a href="#${id}">${esc(name)}</a>`).join("");
 document.querySelectorAll(".club-nav").forEach(nav => { nav.innerHTML = clubNav; });
@@ -5881,6 +5905,7 @@ if(pendingChatRoom || startParam === "profile" || startParam === "partners"){
   history.replaceState(history.state, "", pendingChatRoom ? "#chats" : "#" + startParam);
 }
 render();
+if(clientPortal) postToClient({ type:"swim-portal-ready" });
 
 /* Над мини-приложением телеграм рисует собственную полосу и красит её
    в цвет своей темы — у большинства он чёрный. Поэтому поверх синей

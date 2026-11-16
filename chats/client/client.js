@@ -8,11 +8,14 @@
   const registrationTitle = 'Регистрация ' + roleLabel;
   const portal = document.querySelector('.client-login');
   const chat = document.getElementById('swim-chats');
-  const menu = document.getElementById('client-menu');
-  const menuStatus = document.getElementById('client-menu-status');
   const library = document.getElementById('client-library');
-  const libraryBack = document.getElementById('client-library-back');
   const frame = document.getElementById('client-catalog');
+  const libraryNotice = document.getElementById('client-library-notice');
+  const libraryStatus = document.getElementById('client-library-status');
+  const libraryRetry = document.getElementById('client-library-retry');
+  const account = document.getElementById('client-account');
+  const accountStatus = document.getElementById('client-account-status');
+  const installFromAccount = document.getElementById('client-install-menu');
   const partner = document.getElementById('partner-browser');
   const title = document.getElementById('client-title');
   const help = document.getElementById('client-help');
@@ -32,7 +35,7 @@
   loginLink.href = entry;
   retry.addEventListener('click', () => start());
   const catalog = new URL('https://yarpah03.github.io/swim-island/');
-  const views = [portal, menu, library, chat, partner];
+  const views = [portal, library, chat, partner];
   const errors = {
     web_invite_invalid: 'Ссылка устарела. Попросите актуальное приглашение.',
     web_invite_used: 'Приглашение уже использовано. Войдите со своим логином и паролем.',
@@ -102,12 +105,19 @@
   let invite = '';
   let mode;
   let generation = 0;
+  let libraryTimer;
+  let returnToChat;
 
   function display(active) {
     SwimChats.mount(null);
     chat.replaceChildren();
     partner.replaceChildren();
-    if (active !== library) frame.removeAttribute('src');
+    account.close();
+    if (active !== library) {
+      clearTimeout(libraryTimer);
+      frame.removeAttribute('src');
+      returnToChat = undefined;
+    }
     for (const view of views) view.hidden = view !== active;
     document.body.dataset.page = active === chat ? 'chats' : active === library ? 'client-library' : '';
   }
@@ -186,22 +196,35 @@
   }
 
   function showMenu() {
-    display(menu);
     password.value = code.value = '';
-    menuStatus.textContent = '';
-    menu.querySelector('details').open = false;
-    document.getElementById('client-install-menu').hidden =
-      matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    document.title = 'Плавательный остров VIP';
+    showLibrary('home');
   }
 
-  function showLibrary(hash, back = showMenu) {
+  function showLibrary(hash, back) {
     display(library);
+    returnToChat = back;
     const url = new URL(catalog);
-    url.searchParams.set('view', 'client');
+    url.searchParams.set('view', 'portal');
+    if (back) url.searchParams.set('from', 'chat');
     url.hash = hash;
+    frame.inert = true;
+    libraryRetry.hidden = true;
+    libraryRetry.onclick = () => showLibrary(hash, back);
+    clearTimeout(libraryTimer);
+    libraryTimer = setTimeout(() => {
+      libraryStatus.textContent = 'Приложение пока не загрузилось.';
+      libraryNotice.hidden = libraryRetry.hidden = false;
+    }, 15000);
+    libraryStatus.textContent = 'Загружаем приложение…';
+    libraryNotice.hidden = false;
     frame.src = url.href;
-    libraryBack.textContent = back === showMenu ? 'Главное меню' : 'К чату';
-    libraryBack.onclick = () => back();
+  }
+
+  function showAccount() {
+    accountStatus.textContent = '';
+    installFromAccount.hidden = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (!account.open) account.showModal();
   }
 
   function forwardToCoach(entry, opener) {
@@ -357,31 +380,44 @@
       submit.disabled = false;
     }
   });
-  document.getElementById('client-chats').addEventListener('click', () => showChat());
-  document.getElementById('client-library-chats').addEventListener('click', () => showChat());
-  document.getElementById('client-install-menu').addEventListener('click', offerInstall);
-  const leaveMenu = document.getElementById('client-logout');
-  leaveMenu.addEventListener('click', async () => {
-    leaveMenu.disabled = true;
+  document.getElementById('client-account-close').addEventListener('click', () => account.close());
+  installFromAccount.addEventListener('click', () => {
+    account.close();
+    offerInstall();
+  });
+  const leaveAccount = document.getElementById('client-logout');
+  leaveAccount.addEventListener('click', async () => {
+    leaveAccount.disabled = true;
     try {
       const message = await logout();
-      if (message) menuStatus.textContent = message;
-    } finally { leaveMenu.disabled = false; }
-  });
-  for (const button of menu.querySelectorAll('[data-section]')) button.addEventListener('click', () => {
-    const section = button.dataset.section;
-    if (section === 'partners') browserCatalog(section);
-    else showLibrary(section);
+      if (message) accountStatus.textContent = message;
+    } finally { leaveAccount.disabled = false; }
   });
   window.addEventListener('message', event => {
-    if (library.hidden || event.origin !== catalog.origin || event.source !== frame.contentWindow ||
-        event.data?.type !== 'swim-forward') return;
-    const { title, url, detail } = event.data.material || {};
+    if (library.hidden || event.origin !== catalog.origin || event.source !== frame.contentWindow) return;
+    const message = event.data;
+    if (message?.type === 'swim-portal-ready') {
+      clearTimeout(libraryTimer);
+      libraryNotice.hidden = true;
+      frame.inert = false;
+      return;
+    }
+    if (message?.type === 'swim-portal-route') {
+      const { route } = message;
+      if (route === 'profile') showAccount();
+      else if (route === 'chats') {
+        if (message.returnToThread === true && returnToChat) returnToChat();
+        else showChat();
+      } else if (typeof route === 'string' && SwimPartners.routeParts(route)) browserCatalog(route);
+      return;
+    }
+    if (message?.type !== 'swim-forward') return;
+    const { title, url, detail } = message.material || {};
     if (typeof title !== 'string' || title.length > 140 || typeof url !== 'string' || url.length > 4096) return;
     const entry = materialFromText(title + '\n' + url);
     if (!entry || entry.isPartner) return;
     if (typeof detail === 'string') entry.detail = detail.slice(0, 140);
-    forwardToCoach(entry, libraryBack);
+    forwardToCoach(entry, frame);
   });
   async function checkSession() {
     if (isTrainer || !portal.hidden || document.hidden || !chat.hidden) return;

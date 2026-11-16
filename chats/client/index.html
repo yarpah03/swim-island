@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="/client/vip-icon.png">
   <link rel="manifest" href="/client/manifest.webmanifest">
   <link rel="stylesheet" href="/client/chat.css?v=4">
-  <link rel="stylesheet" href="/client/client.css?v=4">
+  <link rel="stylesheet" href="/client/client.css?v=5">
 </head>
 <body class="web-client">
   <main class="client-login">
@@ -46,44 +46,28 @@
       <a class="client-login-link" id="client-login-link" href="/client/" hidden>Перейти ко входу</a>
     </section>
   </main>
-  <main id="client-menu" class="client-home" hidden>
-    <header class="client-menu-head">
-      <div class="client-brand">
-        <img src="/client/vip-icon.png" width="44" height="44" alt="">
-        <span>Плавательный остров <b>VIP</b></span>
-      </div>
-      <button class="chat-button" id="client-chats" type="button">Чаты</button>
-      <details class="client-tools">
-        <summary class="chat-button">Кабинет</summary>
-        <div class="client-tool-list">
-          <button class="chat-button" id="client-install-menu" type="button">Установить приложение</button>
-          <button class="chat-button" id="client-logout" type="button">Выйти</button>
-        </div>
-      </details>
-    </header>
-    <p id="client-menu-status" class="chat-status" role="status"></p>
-    <h1>Главное меню</h1>
-    <nav class="client-sections" aria-label="Разделы клуба">
-      <button class="client-section client-section-main" type="button" data-section="s2">Тренировки в бассейне</button>
-      <button class="client-section" type="button" data-section="s1">Обучение</button>
-      <button class="client-section" type="button" data-section="s3">Суша</button>
-      <button class="client-section" type="button" data-section="partners">Партнёры</button>
-      <button class="client-section" type="button" data-section="s4">Прямой эфир</button>
-      <button class="client-section" type="button" data-section="game">Игра</button>
-      <button class="client-section" type="button" data-section="s7">Сервис</button>
-    </nav>
-  </main>
   <main id="client-library" class="client-library" hidden>
-    <nav class="client-library-bar" aria-label="Навигация кабинета">
-      <button class="chat-button" id="client-library-back" type="button">Главное меню</button>
-      <button class="chat-button" id="client-library-chats" type="button">Чаты</button>
-    </nav>
-    <iframe id="client-catalog" title="Тренировки Плавательного острова VIP"
+    <iframe id="client-catalog" title="Плавательный остров VIP" inert
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
       referrerpolicy="no-referrer" allow="fullscreen" allowfullscreen></iframe>
+    <div id="client-library-notice" class="client-library-notice" hidden>
+      <p id="client-library-status" role="status"></p>
+      <button class="chat-button" id="client-library-retry" type="button" hidden>Загрузить ещё раз</button>
+    </div>
   </main>
   <main id="swim-chats" hidden></main>
   <main id="partner-browser" class="partner-area" hidden></main>
+  <dialog id="client-account" class="chat-forward-sheet" aria-labelledby="client-account-title">
+    <div class="chat-forward-heading">
+      <h2 id="client-account-title">Личный кабинет</h2>
+      <button class="chat-button" id="client-account-close" type="button">Закрыть</button>
+    </div>
+    <div class="client-install-body">
+      <button class="chat-button" id="client-install-menu" type="button">Установить приложение</button>
+      <button class="chat-button" id="client-logout" type="button">Выйти</button>
+      <p class="chat-status" id="client-account-status" role="status"></p>
+    </div>
+  </dialog>
   <dialog id="client-install" class="chat-forward-sheet" aria-labelledby="client-install-title">
     <div class="chat-forward-heading"><h2 id="client-install-title">Установить приложение</h2><button class="chat-button" type="button">Закрыть</button></div>
     <div class="client-install-body">
@@ -93,6 +77,6 @@
   </dialog>
   <script src="/client/chat.js?v=4" defer></script>
   <script src="/client/partners.js?v=3" defer></script>
-  <script src="/client/client.js?v=4" defer></script>
+  <script src="/client/client.js?v=5" defer></script>
 </body>
 </html>
