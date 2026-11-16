@@ -1,3 +1,59 @@
+import { connect, constants } from 'node:http2';
+import { Readable } from 'node:stream';
+
+export function http2Transport(origin) {
+  let session;
+  return (url, options) => new Promise((resolve, reject) => {
+    if (!session || session.closed || session.destroyed) {
+      session = connect(origin, { family: 4, settings: { enablePush: false } });
+      const active = session;
+      active.on('error', error => active.destroy(error));
+      active.setTimeout(45000, () => active.close());
+    }
+
+    const headers = {
+      ':method': options.method,
+      ':path': url.pathname + url.search,
+      ...Object.fromEntries(options.headers),
+      'accept-encoding': 'identity',
+    };
+    const stream = session.request(headers, { endStream: !options.body });
+    const abort = () => {
+      stream.close(constants.NGHTTP2_CANCEL);
+      reject(options.signal.reason);
+    };
+    stream.once('error', reject);
+    stream.once('close', () => {
+      options.signal.removeEventListener('abort', abort);
+      reject(new Error('Upstream stream closed before response'));
+    });
+    stream.once('response', fields => {
+      const status = fields[':status'];
+      const responseHeaders = new Headers();
+      for (const [key, value] of Object.entries(fields)) {
+        if (key.startsWith(':')) continue;
+        for (const part of Array.isArray(value) ? value : [value]) {
+          responseHeaders.append(key, part);
+        }
+      }
+      const body = [204, 205, 304].includes(status) ? null : Readable.toWeb(stream);
+      if (!body) stream.resume();
+      resolve(new Response(body, { status, headers: responseHeaders }));
+    });
+    if (options.signal.aborted) {
+      abort();
+      return;
+    }
+    options.signal.addEventListener('abort', abort, { once: true });
+    if (options.body) {
+      const body = Readable.fromWeb(options.body);
+      body.on('error', error => stream.destroy(error));
+      stream.on('close', () => body.destroy());
+      body.pipe(stream);
+    }
+  });
+}
+
 const defaultUpstream = 'https://swim-island-chats.pages.dev';
 const browserCookie = /^__Host-swim-(?:client|partner)=[a-f0-9]{64}$/;
 
@@ -5,7 +61,7 @@ function jsonError(error, status) {
   return Response.json({ error }, { status, headers: { 'Cache-Control': 'no-store' } });
 }
 
-export function relayApi(source, origin, fetchImpl = fetch) {
+export function relayApi(source, origin) {
   const upstream = new URL(source);
   const local = origin.protocol === 'http:' && upstream.hostname === '127.0.0.1' &&
     upstream.protocol === 'http:';
@@ -13,6 +69,7 @@ export function relayApi(source, origin, fetchImpl = fetch) {
     throw new Error('Use the configured Cloudflare chat service as the upstream origin');
   }
 
+  const fetchUpstream = local ? fetch : http2Transport(upstream.origin);
   return async request => {
     const { pathname, search } = new URL(request.url);
     const health = pathname === '/health';
@@ -49,7 +106,11 @@ export function relayApi(source, origin, fetchImpl = fetch) {
     }
 
     try {
-      const result = await fetchImpl(new URL(pathname + search, upstream), options);
+      const result = await fetchUpstream(new URL(pathname + search, upstream), options);
+      if (result.status >= 300 && result.status < 400) {
+        await result.body?.cancel();
+        return jsonError('unavailable', 503);
+      }
       const output = new Headers({
         'Cache-Control': 'no-store',
         'Referrer-Policy': 'no-referrer',

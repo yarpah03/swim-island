@@ -138,8 +138,10 @@ async function route(request, response) {
   return sendFile(request, response, path, library);
 }
 
-const check = await api(new Request(new URL('/health', origin)));
-assert(check.ok, 'Database schema failed its health check');
+if (!process.env.SWIM_UPSTREAM_ORIGIN) {
+  const check = await api(new Request(new URL('/health', origin)));
+  assert(check.ok, 'Database schema failed its health check');
+}
 const port = Number(process.env.PORT ?? 8080);
 assert(Number.isInteger(port) && port > 0 && port <= 65535, 'PORT must be a valid port');
 const host = process.env.HOST || '127.0.0.1';
