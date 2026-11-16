@@ -10,6 +10,7 @@ const MAX_PHOTO_LENGTH = JPEG_PREFIX.length + 4 * Math.ceil(MAX_PHOTO_BYTES / 3)
 const BOT_NAME = 'SwimIslandVIPBot';
 const BOT_ID = '9271382179';
 const NOTIFICATION_DELAY_MS = 7000;
+const TELEGRAM_TEXT_LIMIT = 4096;
 const avatarEmojis = new Set(["🏊","🌊","🐬","🐟","🦈","🐢","🐙","🤿","🏅","⚡","🏝️","🔥"]);
 const levels = new Set(['n', 's', 'p']);
 const vipCache = new Map();
@@ -337,12 +338,12 @@ async function requireRoom(env, id, player, now) {
     if (room) return { ...room, direct: true };
     throw new ChatError(403, 'room_forbidden');
   }
-  const group = await db.prepare('SELECT level FROM chat_groups WHERE id = ?').bind(id).first();
+  const group = await db.prepare('SELECT title, level FROM chat_groups WHERE id = ?').bind(id).first();
   if (!group || (group.level && group.level !== profile.level)) throw new ChatError(403, 'room_forbidden');
   const vip = await channelStatus(env, player.id);
   if (vip === 'unavailable') throw new ChatError(503, 'vip_unavailable');
   if (!isVip(vip)) throw new ChatError(403, 'room_forbidden');
-  return { group: true, level: group.level };
+  return { group: true, title: group.title, level: group.level };
 }
 
 async function messages(db, room, roomId, playerId, params) {
@@ -431,7 +432,8 @@ async function send(env, id, player, request, ctx) {
     .bind(id, player.id, clientId).first();
   if (!saved) throw new ChatError(429, 'slow_down');
   if (inserted && canNotify(env) && ctx) {
-    ctx.waitUntil(notifyRecipients(env, room, id, player.id, saved.id)
+    const message = { id: saved.id, body, photo: Boolean(picture), video: Boolean(link) };
+    ctx.waitUntil(notifyRecipients(env, room, id, player.id, message)
       .catch(error => console.error('Chat alert failed', error.name)));
   }
   return { ok: true, id: saved.id };
@@ -444,6 +446,7 @@ async function sendAlert(env, recipient, text, start, label) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: recipient, text,
+        link_preview_options: { is_disabled: true },
         reply_markup: { inline_keyboard: [[{ text: label, url: 'https://t.me/' + BOT_NAME + '?startapp=' + start }]] },
       }),
       signal: AbortSignal.timeout(5500),
@@ -457,7 +460,15 @@ async function sendAlert(env, recipient, text, start, label) {
   return 'unavailable';
 }
 
-async function notifyRecipients(env, room, id, sender, messageId) {
+function notificationText(name, room, message) {
+  const heading = room.group ? name + ' · ' + room.title : name;
+  const media = [message.photo && '📷 Фото', message.video && '🎥 Видео'].filter(Boolean).join(' · ');
+  const text = heading + '\n' + [media, message.body].filter(Boolean).join(' — ');
+  if (text.length <= TELEGRAM_TEXT_LIMIT) return text;
+  return text.slice(0, TELEGRAM_TEXT_LIMIT - 1).replace(/[\uD800-\uDBFF]$/u, '').trimEnd() + '…';
+}
+
+async function notifyRecipients(env, room, id, sender, message) {
   const db = env.CHAT_DB;
   let targets;
   if (room.group) {
@@ -475,10 +486,18 @@ async function notifyRecipients(env, room, id, sender, messageId) {
   if (!targets.length) return;
   await new Promise(resolve => setTimeout(resolve, NOTIFICATION_DELAY_MS));
   if (room.coach_id && !await db.prepare('SELECT 1 FROM chat_coaching WHERE id = ? AND expires_ms > ?').bind(id, Date.now()).first()) return;
+  const profile = await db.prepare(`
+    SELECT COALESCE(pref.nickname, coach.name, p.name) AS name
+    FROM chat_profiles p
+    LEFT JOIN chat_coaches coach ON coach.telegram_id = p.telegram_id
+    LEFT JOIN chat_preferences pref ON pref.telegram_id = p.telegram_id
+    WHERE p.telegram_id = ?
+  `).bind(sender).first();
+  const text = notificationText(profile?.name || 'Участник', room, message);
 
   for (let index = 0; index < targets.length; index += 6) {
     await Promise.all(targets.slice(index, index + 6).map(async recipient => {
-      if (room.group && !isVip(await channelStatus(env, recipient))) return;
+      if (room.group && !isVip(await channelStatus(env, recipient, true))) return;
       const now = Date.now();
       const interval = room.group ? 60000 : 12000;
       const claimed = await db.prepare(`
@@ -491,10 +510,10 @@ async function notifyRecipients(env, room, id, sender, messageId) {
           AND chat_notification_state.notified_id < excluded.notified_id
           AND chat_notification_state.notified_ms <= ?
         RETURNING telegram_id
-      `).bind(id, messageId, now, recipient, Number(Boolean(room.group)), room.level ?? null,
+      `).bind(id, message.id, now, recipient, Number(Boolean(room.group)), room.level ?? null,
         recipient, room.level ?? null, now - interval).first();
       if (!claimed) return;
-      await sendAlert(env, recipient, 'Новое сообщение в «Плавательном острове VIP».', 'chat_' + id, 'Открыть чат');
+      await sendAlert(env, recipient, text, 'chat_' + id, 'Открыть чат');
     }));
   }
 }
