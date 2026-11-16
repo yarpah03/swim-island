@@ -825,11 +825,14 @@ const SwimChats = (() => {
         page.append(inviteCard);
         const showInvite = data => {
           const address = element('input');
-          address.value = data.invite;
+          address.value = data.invite.replace(
+            /^https:\/\/swim-island-chats\.pages\.dev(?=\/(?:client|partner)\/#invite=)/,
+            'https://vip.swimisland.ru',
+          );
           address.readOnly = true;
           const copy = button('Скопировать ссылку', async () => {
             try {
-              await navigator.clipboard.writeText(data.invite);
+              await navigator.clipboard.writeText(address.value);
               v.statusText('Ссылка скопирована.');
             } catch {
               address.focus();
