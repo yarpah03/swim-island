@@ -55,6 +55,7 @@ function pathFor(url) {
   const decoded = decodeURIComponent(url.pathname);
   assert(!decoded.includes('\\') && !decoded.includes('\0'), 'invalid path');
   const path = posix.normalize(decoded);
+  if (/^\/(?:client|partner)\/register$/.test(path)) return path + '/index.html';
   return path.endsWith('/') ? path + 'index.html' : path;
 }
 
@@ -132,7 +133,8 @@ async function route(request, response) {
       headers: { Cookie: request.headers.cookie ?? '' },
     }));
     if (!session.ok || !(await session.json()).active) return httpResponse(response, 401);
-  } else if (!path.startsWith('/client/') && path !== '/partner/index.html' && path !== '/robots.txt') {
+  } else if (!path.startsWith('/client/') &&
+      !['/partner/index.html', '/partner/register/index.html', '/robots.txt'].includes(path)) {
     return httpResponse(response, 404);
   }
   return sendFile(request, response, path, library);

@@ -145,7 +145,7 @@ const SwimPartners = (() => {
     }
   }
 
-  async function desk(root, request, leave, sessionLost, selected = 'course') {
+  async function desk(root, request, leave, sessionLost, selected = 'overview') {
     const status = el('p', 'Загружаем кабинет…', 'chat-status');
     status.setAttribute('role', 'status');
     function report(error) {
@@ -163,12 +163,36 @@ const SwimPartners = (() => {
       const tabs = el('nav', '', 'chat-filter-tabs');
       tabs.setAttribute('aria-label', 'Разделы кабинета тренера');
       const reload = (tab = selected) => desk(root, request, leave, sessionLost, tab);
-      for (const [key, title] of [['course', 'Курсы'], ['workout', 'Тренировки'], ['profile', 'Профиль']]) {
+      const sections = [['course', 'Курсы'], ['workout', 'Тренировки'], ['profile', 'Моя страница']];
+      for (const [key, title] of [['overview', 'Обзор'], ...sections]) {
         const tab = button(title, () => reload(key));
         tab.setAttribute('aria-pressed', String(key === selected));
         tabs.append(tab);
       }
       root.append(tabs);
+      if (selected === 'overview') {
+        const overview = el('section', '', 'partner-overview');
+        const identity = el('div', '', 'partner-panel partner-identity');
+        identity.append(el('h2', data.profile.name), el('p', 'Страница партнёра', 'partner-meta'));
+        const grid = el('div', '', 'partner-grid');
+        for (const [key, title] of sections) {
+          const open = button('', () => reload(key));
+          open.className = 'partner-tile partner-desk-tile';
+          open.append(el('strong', title));
+          if (key === 'profile') {
+            open.append(el('span', 'Имя и описание тренера', 'partner-meta'));
+          } else {
+            const items = data.items.filter(item => item.kind === key);
+            const published = items.filter(item => item.published).length;
+            open.append(el('span', 'Опубликовано: ' + published, 'partner-meta'),
+              el('span', 'Черновики: ' + (items.length - published), 'partner-meta'));
+          }
+          grid.append(open);
+        }
+        overview.append(identity, grid);
+        root.append(overview);
+        return;
+      }
       if (selected === 'profile') {
         root.append(profileForm(data.profile));
         return;
@@ -196,9 +220,8 @@ const SwimPartners = (() => {
         return profile;
       }
 
-      const editor = el('div', '', 'partner-list');
+      const editor = el('div', '', 'partner-list partner-editor');
       const library = el('section', '', 'partner-list');
-      library.append(el('h2', section));
       function edit(item = {}) {
         const form = el('form', '', 'partner-panel chat-form');
         form.append(el('h2', item.id ? 'Редактировать материал' : 'Новый материал'));
@@ -227,6 +250,7 @@ const SwimPartners = (() => {
           try {
             await request('desk', { action: 'save', id, kind: kind.value, title: title.value,
               description: about.value, body: body.value, video: video.value, published });
+            if (!status.isConnected) return;
             await reload(kind.value);
             const result = root.querySelector('.chat-status');
             if (result) result.textContent = published ? 'Материал опубликован.' : 'Черновик сохранён.';
@@ -239,28 +263,71 @@ const SwimPartners = (() => {
       }
 
       const create = button(selected === 'workout' ? 'Добавить тренировку' : 'Добавить курс', () => edit(), true);
-      library.append(create);
-      for (const item of data.items.filter(item => item.kind === selected)) {
+      const heading = el('div', '', 'partner-library-head');
+      heading.append(el('h2', section), create);
+      library.append(heading);
+      const items = data.items.filter(item => item.kind === selected);
+      const search = el('input');
+      search.type = 'search';
+      search.placeholder = 'Название материала';
+      const filters = el('div', '', 'partner-filters');
+      const searchField = el('label', 'Поиск по названию', 'chat-field');
+      searchField.append(search);
+      const state = el('select');
+      state.setAttribute('aria-label', 'Статус публикации');
+      state.append(new Option('Все материалы', 'all'), new Option('Опубликованные', 'published'), new Option('Черновики', 'draft'));
+      const statusField = el('label', 'Статус', 'chat-field');
+      statusField.append(state);
+      filters.append(searchField, statusField);
+      const cards = el('div', '', 'partner-list partner-materials');
+      const rows = [];
+      for (const item of items) {
         const row = el('div', '', 'partner-panel');
         const actions = el('div', '', 'chat-account-actions');
-        row.append(el('h3', item.title), el('p', item.published ? 'Опубликовано' : 'Черновик', 'partner-meta'), actions);
-        actions.append(button('Редактировать', async () => {
+        row.append(el('h3', item.title), el('p', item.published ? 'Опубликовано' : 'Черновик', 'partner-meta'));
+        if (item.description) row.append(el('p', item.description));
+        const editButton = button('Редактировать', async () => {
+          editButton.disabled = true;
           try {
             const result = await request('desk/' + item.id);
             if (status.isConnected) edit(result.item);
           } catch (error) { report(error); }
-        }));
-        if (item.published) actions.append(button('Снять с публикации', async () => {
-          try {
-            await request('desk', { action: 'hide', id: item.id });
-            await reload();
-          } catch (error) { report(error); }
-        }));
-        library.append(row);
+          finally { editButton.disabled = false; }
+        });
+        actions.append(editButton);
+        if (item.published) {
+          const hide = button('Снять с публикации', async () => {
+            hide.disabled = true;
+            try {
+              await request('desk', { action: 'hide', id: item.id });
+              if (status.isConnected) await reload();
+            } catch (error) { report(error); }
+            finally { hide.disabled = false; }
+          });
+          actions.append(hide);
+        }
+        row.append(actions);
+        rows.push({ item, row });
       }
-      root.append(library, editor);
+      const empty = el('p', items.length ? 'Материалы не найдены.' : 'Здесь появятся добавленные материалы.', 'partner-meta');
+      function filter() {
+        const query = search.value.trim().toLocaleLowerCase('ru-RU');
+        const shown = rows.filter(({ item }) =>
+          (state.value === 'all' || Boolean(item.published) === (state.value === 'published')) &&
+          item.title.toLocaleLowerCase('ru-RU').includes(query));
+        cards.replaceChildren(...(shown.length ? shown.map(({ row }) => row) : [empty]));
+      }
+      search.addEventListener('input', filter);
+      state.addEventListener('change', filter);
+      if (items.length) library.append(filters);
+      library.append(cards);
+      root.append(editor, library);
+      filter();
     } catch (error) {
-      if (status.isConnected) report(error);
+      if (status.isConnected) {
+        report(error);
+        if (status.isConnected) root.append(button('Обновить', () => desk(root, request, leave, sessionLost, selected)));
+      }
     }
   }
 

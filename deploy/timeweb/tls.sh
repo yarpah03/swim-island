@@ -4,6 +4,7 @@ set -euo pipefail
 domain=vip.swimisland.ru
 base=/opt/swim-island-vip
 site=/etc/nginx/sites-available/swim-island-vip
+log_config=/etc/nginx/conf.d/swim-island-vip-log.conf
 port=8787
 cert=/etc/letsencrypt/live/$domain
 
@@ -14,10 +15,15 @@ certbot certonly --webroot -w "$base/acme" -d "$domain" --cert-name "$domain" \
 test -f "$cert/fullchain.pem"
 test -f "$cert/privkey.pem"
 cp "$site" "$base/http-only.conf"
+# Keep one-time registration codes out of this virtual host's access log.
+cat > "$log_config" <<'LOG'
+log_format swim_island_vip '$remote_addr - [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent';
+LOG
 cat > "$site" <<EOF
 server {
     listen 80;
     server_name $domain;
+    access_log /var/log/nginx/swim-island-vip-access.log swim_island_vip;
     location ^~ /.well-known/acme-challenge/ {
         root $base/acme;
     }
@@ -29,6 +35,7 @@ server {
 server {
     listen 443 ssl;
     server_name $domain;
+    access_log /var/log/nginx/swim-island-vip-access.log swim_island_vip;
     ssl_certificate $cert/fullchain.pem;
     ssl_certificate_key $cert/privkey.pem;
     client_max_body_size 768k;

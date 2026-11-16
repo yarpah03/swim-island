@@ -55,6 +55,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .client-card #client-access { padding: 0; }
 .client-card .chat-status { padding: 0; }
 .client-card .chat-status:empty { display: none; }
+.client-login-link { justify-self: start; padding-block: 8px; color: var(--aqua); font-size: 14px; }
+#client-invite-retry { justify-self: start; }
 #client-code { font-variant-numeric: tabular-nums; letter-spacing: .1em; }
 .web-client [hidden] { display: none !important; }
 .client-card #client-password-form { padding: 0; }
@@ -111,3 +113,17 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   border-bottom: 1px solid var(--line); background: var(--surf);
 }
 .client-library iframe { display: block; width: 100%; min-height: 0; flex: 1; border: 0; }
+
+.partner-overview { display: grid; gap: 10px; margin-block-start: 10px; }
+.partner-identity { padding: clamp(14px, 4vw, 22px); background: linear-gradient(115deg, #343027, var(--surf)); }
+.partner-desk-tile {
+  text-align: start;
+  cursor: pointer;
+  font: inherit;
+  gap: 4px;
+}
+.partner-desk-tile .partner-meta { font-size: 13px; }
+.partner-library-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.partner-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 9px; }
+.partner-materials { margin: 0; }
+.partner-editor:empty { display: none; }

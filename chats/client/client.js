@@ -1,6 +1,11 @@
 (() => {
   const isTrainer = location.pathname.startsWith('/partner/');
-  const prefix = '/v1/' + (isTrainer ? 'partner' : 'client') + '/';
+  const role = isTrainer ? 'partner' : 'client';
+  const prefix = '/v1/' + role + '/';
+  const entry = '/' + role + '/';
+  const roleLabel = isTrainer ? 'тренера' : 'ученика';
+  const loginTitle = 'Кабинет ' + roleLabel;
+  const registrationTitle = 'Регистрация ' + roleLabel;
   const portal = document.querySelector('.client-login');
   const chat = document.getElementById('swim-chats');
   const menu = document.getElementById('client-menu');
@@ -22,6 +27,10 @@
   const status = document.getElementById('client-status');
   const requestCode = document.getElementById('client-request');
   const install = document.getElementById('client-install');
+  const loginLink = document.getElementById('client-login-link');
+  const retry = document.getElementById('client-invite-retry');
+  loginLink.href = entry;
+  retry.addEventListener('click', () => start());
   const catalog = new URL('https://yarpah03.github.io/swim-island/');
   const views = [portal, menu, library, chat, partner];
   const errors = {
@@ -39,11 +48,6 @@
     invalid_name: 'Введите имя от 2 до 40 символов.',
   };
   const errorText = error => errors[error.message] || 'Не удалось связаться с кабинетом. Попробуйте ещё раз.';
-
-  if (isTrainer) {
-    title.textContent = 'Кабинет тренера';
-    document.title = 'Кабинет тренера · Плавательный остров VIP';
-  }
 
   async function api(path, payload) {
     const options = { credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(18000) };
@@ -88,7 +92,13 @@
     install.showModal();
   }
 
-  const inviteFromUrl = () => new URLSearchParams(location.hash.slice(1)).get('invite') || '';
+  function invitationFromUrl() {
+    const registration = /^\/(?:client|partner)\/register(?:\/(?:index\.html)?)?$/.test(location.pathname);
+    const fragment = new URLSearchParams(location.hash.slice(1));
+    if (registration) return { secret: new URLSearchParams(location.search).get('invite') ?? '' };
+    return fragment.has('invite') ? { secret: fragment.get('invite') } : null;
+  }
+
   let invite = '';
   let mode;
   let generation = 0;
@@ -102,25 +112,68 @@
     document.body.dataset.page = active === chat ? 'chats' : active === library ? 'client-library' : '';
   }
 
-  function showLogin(state = {}, message = '') {
+  function setTitle(text) {
+    title.textContent = text;
+    document.title = text + ' · Плавательный остров VIP';
+  }
+
+  function showLogin(message = '') {
     display(portal);
-    mode = state.invite;
-    const register = mode === 'register';
-    const legacy = mode === 'legacy';
+    mode = undefined;
+    setTitle(loginTitle);
+    help.textContent = 'Войдите со своим логином и паролем.';
+    codeForm.hidden = loginLink.hidden = retry.hidden = true;
+    showPasswordForm(false);
+    status.textContent = message;
+  }
+
+  function showPasswordForm(register) {
     code.value = password.value = '';
-    passwordForm.hidden = legacy;
     nameField.hidden = !register;
     name.required = register;
     password.autocomplete = register ? 'new-password' : 'current-password';
     password.minLength = register ? 12 : 0;
     loginButton.textContent = register ? 'Создать аккаунт' : 'Войти';
-    codeForm.hidden = !legacy;
-    requestCode.hidden = !state.mail;
-    help.textContent = register ? 'Придумайте логин и пароль от 12 символов.'
-      : legacy ? (state.mail ? 'Получите одноразовый код на почту.' : 'Введите код из письма тренера.')
-      : 'Войдите со своим логином и паролем.';
-    status.textContent = message || ({ invalid: errors.web_invite_invalid, used: errors.web_invite_used,
-      expired: errors.web_access_ended })[mode] || '';
+    passwordForm.hidden = false;
+  }
+
+  function showInvitation(state) {
+    mode = state.invite;
+    status.textContent = '';
+    loginLink.hidden = false;
+    retry.hidden = mode !== 'unavailable';
+    passwordForm.hidden = codeForm.hidden = true;
+    if (mode === 'register') {
+      help.textContent = 'Укажите имя и придумайте логин и пароль от 12 символов.';
+      loginLink.textContent = 'Уже есть аккаунт? Войти';
+      showPasswordForm(true);
+      return;
+    }
+    if (mode === 'legacy') {
+      setTitle('Вход по коду');
+      help.textContent = state.mail ? 'Получите одноразовый код на почту.' : 'Введите код из письма тренера.';
+      code.value = '';
+      codeForm.hidden = false;
+      requestCode.hidden = !state.mail;
+    } else {
+      const sender = isTrainer ? 'у администратора' : 'у тренера';
+      const messages = {
+        incomplete: 'В адресе нет кода приглашения. Откройте исходную ссылку целиком или попросите новую ' + sender + '.',
+        invalid: 'Приглашение недействительно. Попросите новую ссылку ' + sender + '.',
+        expired: 'Срок действия приглашения закончился. Попросите новую ссылку ' + sender + '.',
+        used: 'Приглашение уже использовано. Войдите с логином и паролем, которые вы создали.',
+        unavailable: 'Не удалось проверить приглашение. Попробуйте ещё раз.',
+      };
+      help.textContent = messages[mode] || messages.invalid;
+    }
+    loginLink.textContent = 'Перейти ко входу';
+  }
+
+  function openSession() {
+    if (location.pathname !== entry || location.search || location.hash) history.replaceState(null, '', entry);
+    invite = '';
+    mode = undefined;
+    openCabinet();
   }
 
   async function logout() {
@@ -200,7 +253,7 @@
           else showLibrary(entry.hash, back);
         },
       },
-      webSessionLost: () => showLogin({ invite: mode }, 'Войдите снова, чтобы открыть переписку.'),
+      webSessionLost: () => showLogin('Войдите снова, чтобы открыть переписку.'),
     });
   }
 
@@ -214,22 +267,33 @@
         const feedback = partner.querySelector('.chat-status');
         if (feedback) feedback.textContent = message;
       }
-    }, () => showLogin({}, 'Войдите снова, чтобы открыть кабинет.'));
+    }, () => showLogin('Войдите снова, чтобы открыть кабинет.'));
   }
 
   async function start(message) {
     const current = ++generation;
-    invite = inviteFromUrl();
+    const invitation = invitationFromUrl();
+    invite = invitation?.secret || '';
     display(portal);
-    passwordForm.hidden = codeForm.hidden = true;
-    help.textContent = 'Проверяем вход…';
+    mode = undefined;
+    passwordForm.hidden = codeForm.hidden = loginLink.hidden = retry.hidden = true;
+    status.textContent = '';
+    setTitle(invitation ? registrationTitle : loginTitle);
+    if (invitation && !/^[a-f0-9]{64}$/.test(invite)) {
+      showInvitation({ invite: invite ? 'invalid' : 'incomplete' });
+      return;
+    }
+    help.textContent = invitation ? 'Проверяем приглашение…' : 'Проверяем вход…';
     try {
-      const state = await api('session', invite ? { invite } : undefined);
+      const state = await api('session', invitation ? { invite } : undefined);
       if (current !== generation) return;
-      if (state.active) openCabinet();
-      else showLogin(state, message);
+      if (state.active) openSession();
+      else if (invitation) showInvitation(state);
+      else showLogin(message);
     } catch (error) {
-      if (current === generation) showLogin({}, errorText(error));
+      if (current !== generation) return;
+      if (invitation) showInvitation({ invite: 'unavailable' });
+      else showLogin(errorText(error));
     }
   }
 
@@ -250,26 +314,28 @@
       const data = register ? { invite, name: name.value, login: user, proof } : { login: user, proof };
       await api(register ? 'register' : 'password', data);
       if (current !== generation) return;
-      history.replaceState(null, '', location.pathname);
-      invite = '';
-      mode = undefined;
-      openCabinet();
+      openSession();
     } catch (error) {
-      if (current === generation) status.textContent = errorText(error);
+      if (current !== generation) return;
+      const inviteError = { web_invite_invalid: 'invalid', web_invite_used: 'used', web_access_ended: 'expired' };
+      if (register && inviteError[error.message]) showInvitation({ invite: inviteError[error.message] });
+      else status.textContent = errorText(error);
     } finally {
       loginButton.disabled = false;
     }
   });
 
   requestCode.addEventListener('click', async () => {
+    const current = generation;
     requestCode.disabled = true;
     status.textContent = 'Отправляем код…';
     try {
       await api('code', { invite });
+      if (current !== generation) return;
       status.textContent = 'Код отправлен. Он действует 15 минут.';
       code.focus();
     } catch (error) {
-      status.textContent = errorText(error);
+      if (current === generation) status.textContent = errorText(error);
     } finally {
       requestCode.disabled = false;
     }
@@ -279,13 +345,14 @@
     event.preventDefault();
     const submit = codeForm.querySelector('[type=submit]');
     if (submit.disabled) return;
+    const current = generation;
     submit.disabled = true;
     status.textContent = 'Проверяем код…';
     try {
       await api('login', { invite, code: code.value });
-      openCabinet();
+      if (current === generation) openSession();
     } catch (error) {
-      status.textContent = errorText(error);
+      if (current === generation) status.textContent = errorText(error);
     } finally {
       submit.disabled = false;
     }
@@ -321,7 +388,7 @@
     const current = generation;
     try {
       const state = await api('session');
-      if (current === generation && !state.active) showLogin({ invite: mode }, 'Войдите снова, чтобы открыть кабинет.');
+      if (current === generation && !state.active) showLogin('Войдите снова, чтобы открыть кабинет.');
     } catch {
       // Chat and account requests still check access on the server.
     }
