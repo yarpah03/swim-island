@@ -65,7 +65,7 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
   text-transform: none;
 }
 .chat-heading h1:focus { outline: none; }
-.chat-heading h1, .chat-heading small, .chat-room-name, .chat-preview {
+.chat-heading h1, .chat-heading small, .chat-room-name, .chat-preview, .chat-room-description {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -140,7 +140,8 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
 .chat-room:focus-visible { outline-offset: -3px; }
 .chat-room-summary { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .chat-room-name { font-size: 15px; font-weight: 800; }
-.chat-preview, .chat-room-time { color: var(--txt-3); }
+.chat-preview, .chat-room-description, .chat-room-time { color: var(--txt-3); }
+.chat-room-description { font-size: 12px; }
 .chat-preview { font-size: 13px; }
 .chat-room-time { align-self: flex-start; margin-top: 4px; font-size: 11px; white-space: nowrap; }
 .chat-avatar {
@@ -269,7 +270,7 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
 }
 .chat-message-meta time { margin-inline-start: auto; }
 .chat-message-meta strong, #swim-chats .chat-coach-label { color: var(--aqua); }
-.chat-empty { align-self: center; margin-block: auto; padding: 10px 16px; color: var(--txt-3); font-size: 14px; }
+.chat-empty { align-self: center; margin-block: auto; padding: 10px 16px; color: var(--txt-3); font-size: 14px; max-width: 34ch; text-align: center; }
 
 .chat-dock { flex: none; border-top: 1px solid #243d44; background: #10232a; padding-bottom: var(--chat-bottom); }
 .chat-composer { padding: 7px calc(10px + var(--chat-right)) 7px calc(10px + var(--chat-left)); }
@@ -532,7 +533,13 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
 .chat-find-person { display: flex; align-items: center; gap: 9px; }
 
 .material-share { margin-block: 8px 0; color: var(--aqua); }
-.page-head > .material-share { margin-top: 14px; }
+.page-title-row > .material-share {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin: 0;
+}
+.page-title-row .material-share > svg { width: 20px; height: 20px; }
 :is(.wk, .ex, .doc) [id^="station-"],
 :is(.wk, .ex, .doc) [id^="exercise-"],
 .wk[id^="workout-"], .ex[id^="lesson-"] { scroll-margin-top: 86px; }

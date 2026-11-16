@@ -595,6 +595,8 @@ h1.xlong { font-size: clamp(27px, 3.85vw, 44px); line-height: 1.12; letter-spaci
 .hm-tile:hover .tph, .card:not(.soon):hover .tph { transform: scale(1.045); filter: brightness(1.44) saturate(1.12); }
 
 .page-head { margin-bottom: 24px; }
+.page-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.page-title-row > h1 { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .page-head-feature {
   overflow: hidden;
   position: relative;
@@ -785,19 +787,19 @@ footer.wrap {
   #app { padding-top: 12px; }
   .club-cover {
     align-items: end;
-    min-height: 438px;
-    padding: 177px 18px 23px;
+    min-height: 336px;
+    padding: 104px 18px 19px;
     border-radius: 19px;
   }
-  .club-cover::before { inset: 0 0 auto; height: 71%; background-position: 70% 37%; }
-  .club-cover::after { background: linear-gradient(0deg, #0a2028 32%, #0a2028f2 41%, #071a2269 65%, transparent 86%); }
-  .club-kicker { margin-bottom: 14px; font-size: 10px; letter-spacing: .15em; }
-  .club-cover h1 { font-size: clamp(32px, 10vw, 53px); margin-bottom: 14px; }
-  .club-cover .lede { max-width: 300px; margin-bottom: 17px; }
+  .club-cover::before { inset: 0 0 auto; height: 76%; background-position: 70% 38%; }
+  .club-cover::after { background: linear-gradient(0deg, #0a2028 24%, #0a2028f2 38%, #071a227a 64%, transparent 88%); }
+  .club-kicker { margin-bottom: 10px; font-size: 10px; letter-spacing: .15em; }
+  .club-cover h1 { font-size: clamp(32px, 10vw, 53px); margin-bottom: 10px; }
+  .club-cover .lede { max-width: 300px; margin-bottom: 13px; }
   .club-actions { gap: 8px; }
   .club-action { padding-inline: 11px; gap: 7px; }
   .club-vip { padding: 5px 6px 4px; font-size: 10px; }
-  .club-library { margin-top: 25px; }
+  .club-library { margin-top: 20px; }
   .club-library > h2 { margin-bottom: 12px; }
   .hm-grid, .grid { gap: 9px; }
   .hm-tile { aspect-ratio: 1.23; min-height: 116px; border-radius: 12px; padding: 10px; }

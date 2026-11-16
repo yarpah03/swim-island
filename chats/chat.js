@@ -121,7 +121,9 @@ const SwimChats = (() => {
   }
 
   function roomDetails(room) {
-    if (room.kind === 'group') return room.level ? 'Группа · ' + levelNames[room.level] : 'Группа к старту';
+    if (room.kind === 'group') {
+      return room.description || (room.level ? 'Тренировки · ' + levelNames[room.level] : 'Подготовка к заплыву');
+    }
     if (room.kind === 'direct') return 'Личный чат';
     if (!room.expires) return 'Онлайн-ведение';
     return (room.coaching ? 'Ученик' : 'Тренер') + ' · ведение до ' + date.format(room.expires - 1);
@@ -256,7 +258,9 @@ const SwimChats = (() => {
     const preview = latest
       ? (latest.own ? 'Вы: ' : '') + (material?.title || latest.text.trim().replace(/\s+/gu, ' ') || (latest.photo ? 'Фото' : 'Видео'))
       : roomDetails(room);
-    summary.append(title, element('span', 'chat-preview', preview));
+    summary.append(title);
+    if (room.kind === 'group') summary.append(element('span', 'chat-room-description', roomDetails(room)));
+    if (latest || room.kind !== 'group') summary.append(element('span', 'chat-preview', preview));
     row.append(summary);
     if (latest) {
       const when = new Date(latest.sent);
@@ -1187,13 +1191,22 @@ const SwimChats = (() => {
           if (data.manager) v.actions.append(iconButton('manage', 'Управление чатами', () => manage(reload)));
         }
 
-        if (data.rooms.length) {
+        const staff = Boolean(data.coach || data.manager);
+        const subscriber = !web && !staff && data.vip === 'active';
+        if (data.rooms.length || subscriber) {
           const rooms = sortedRooms(data.rooms);
           const results = element('ul', 'chat-room-list');
-          const empty = element('p', 'chat-inbox-note', 'Чаты не найдены.');
+          const empty = element('p', 'chat-inbox-note');
           empty.hidden = true;
           const roomCategory = room => room.kind === 'group' ? 'group' : room.coaching ? 'students' : 'personal';
-          let category = rooms.some(room => roomCategory(room) === initialCategory) ? initialCategory : 'all';
+          const allFilters = [['all', 'Все'], ['students', 'Ученики'], ['personal', 'Личные'], ['group', 'Группы']];
+          const filters = staff
+            ? allFilters.filter(([value]) => value === 'all' || rooms.some(room => roomCategory(room) === value))
+            : subscriber ? allFilters.slice(2) : [];
+          let category = filters.some(([value]) => value === initialCategory) ? initialCategory : 'all';
+          if (subscriber && category === 'all') {
+            category = rooms.some(room => roomCategory(room) === 'personal') ? 'personal' : 'group';
+          }
           let query = '';
           const update = () => {
             const selected = rooms.filter(room =>
@@ -1205,9 +1218,13 @@ const SwimChats = (() => {
               row.append(roomRow(room, () => conversation(room, () => list(undefined, backToDesk, category)), material));
               results.append(row);
             }
+            if (!selected.length) {
+              const notes = { personal: 'Личных бесед пока нет.', group: 'Доступных групп пока нет.' };
+              empty.textContent = (query ? '' : notes[category]) || 'Чаты не найдены.';
+            }
             empty.hidden = Boolean(selected.length);
           };
-          if (web || data.coach || data.manager) {
+          if (web || staff) {
             const search = element('input');
             search.type = 'search';
             search.placeholder = web ? 'Введите имя тренера' : 'Имя или название группы';
@@ -1216,12 +1233,10 @@ const SwimChats = (() => {
             field(filter, 'Поиск по имени', search);
             inbox.append(filter);
           }
-          if (data.coach || data.manager) {
+          if (filters.length) {
             const tabs = element('nav', 'chat-filter-tabs');
             tabs.setAttribute('aria-label', 'Категории чатов');
-            const filters = [['all', 'Все'], ['students', 'Ученики'], ['personal', 'Личные'], ['group', 'Группы']];
             for (const [value, label] of filters) {
-              if (value !== 'all' && !rooms.some(room => roomCategory(room) === value)) continue;
               const control = button(label, () => {
                 category = value;
                 for (const tab of tabs.children) tab.setAttribute('aria-pressed', String(tab === control));
@@ -1459,7 +1474,7 @@ const SwimChats = (() => {
       thread.tabIndex = 0;
       const history = element('div', 'chat-history chat-width');
       const items = element('div', 'chat-messages');
-      const empty = element('p', 'chat-empty', 'Здесь появятся сообщения.');
+      const empty = element('p', 'chat-empty', room.welcome || 'Здесь появятся сообщения.');
       empty.hidden = true;
 
       const dock = element('div', 'chat-dock');

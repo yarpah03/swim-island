@@ -13,6 +13,13 @@ const NOTIFICATION_DELAY_MS = 7000;
 const TELEGRAM_TEXT_LIMIT = 4096;
 const avatarEmojis = new Set(["🏊","🌊","🐬","🐟","🦈","🐢","🐙","🤿","🏅","⚡","🏝️","🔥"]);
 const levels = new Set(['n', 's', 'p']);
+const TRAINING_GROUP = {
+  id: 'club-training',
+  title: 'Тренируемся вместе',
+  level: null,
+  description: 'Обсуждение тренировок и результатов',
+  welcome: 'Привет! Расскажите, что вы сейчас тренируете и что получилось на последнем занятии. Здесь можно делиться результатами и обсуждать задания из приложения.',
+};
 const vipCache = new Map();
 
 class ChatError extends Error {
@@ -244,10 +251,10 @@ async function overview(env, player, now, user) {
     db.prepare('SELECT nickname, avatar, status, notify_personal, notify_groups FROM chat_preferences WHERE telegram_id = ?').bind(player.id).first(),
   ]);
   const manager = ownerConfigured(env, player.id) || vip === 'owner';
-  const groups = profile && isVip(vip) ? (await db.prepare(`
+  const groups = profile && isVip(vip) ? [TRAINING_GROUP, ...(await db.prepare(`
     SELECT id, title, level FROM chat_groups WHERE level IS NULL OR level = ?
     ORDER BY id NOT LIKE 'level-%', title
-  `).bind(profile.level).all()).results : [];
+  `).bind(profile.level).all()).results] : [];
   const rooms = [
     ...groups.map(room => ({ ...room, kind: 'group' })),
     ...coaching.results.map(row => ({
@@ -338,7 +345,9 @@ async function requireRoom(env, id, player, now) {
     if (room) return { ...room, direct: true };
     throw new ChatError(403, 'room_forbidden');
   }
-  const group = await db.prepare('SELECT title, level FROM chat_groups WHERE id = ?').bind(id).first();
+  const group = id === TRAINING_GROUP.id
+    ? TRAINING_GROUP
+    : await db.prepare('SELECT title, level FROM chat_groups WHERE id = ?').bind(id).first();
   if (!group || (group.level && group.level !== profile.level)) throw new ChatError(403, 'room_forbidden');
   const vip = await channelStatus(env, player.id);
   if (vip === 'unavailable') throw new ChatError(503, 'vip_unavailable');
@@ -1299,7 +1308,7 @@ export default {
     const origin = request.headers.get('Origin');
     if (origin && origin !== APP_ORIGIN) return reply({ error: 'forbidden_origin' }, 403);
     const route = url.pathname;
-    const room = /^\/v1\/chats\/rooms\/((?:level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36}))(?:\/(read)|\/photos\/(\d+))?$/.exec(route);
+    const room = /^\/v1\/chats\/rooms\/((?:club-training|level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36}))(?:\/(read)|\/photos\/(\d+))?$/.exec(route);
     const catalog = PARTNER_ROUTE.exec(route);
     const methods = {
       '/health': ['GET'],

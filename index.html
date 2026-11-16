@@ -1267,9 +1267,9 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
   .circuit-detail td{padding-inline:7px}
 }
 </style>
-<link rel="stylesheet" href="vip-theme.css">
+<link rel="stylesheet" href="vip-theme.css?v=2">
 <link rel="stylesheet" href="game/ranking.css?v=2">
-<link rel="stylesheet" href="chats/chat.css?v=10">
+<link rel="stylesheet" href="chats/chat.css?v=12">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="markpath" viewBox="0 0 512 512"><g transform="translate(0,512) scale(0.1,-0.1)" fill="var(--gold)"><path d="M1743,3905c135-28,248-110,344-248l56-78l71,74c106,111,210,158,351,159 c152,0,354-67,282-95c-8-3-45-8-83-12c-96-9-143-22-185-51c-22-15-64-29-110-37c-72-12-73-13-80-45c-4-19-12-39-18-45s-11-15-11-19 s60-8,133-8c97,0,154-5,214-20c186-44,356-167,459-330c29-46,105-212,100-217s-142,54-188,81c-52,31-103,81-126,126 c-24,48-42,50-42,6c0-30-4-36-20-36c-50,0-130,75-130,122c0,10-4,18-8,18c-16,0-32-25-32-51c0-15-7-29-15-32c-8-4-52,5-97,18 c-46,14-89,25-96,25s10-33,37-73c89-130,121-232,121-384c0-67-7-126-20-179c-21-84-112-284-129-284c-13,0-59,147-67,215 c-6,45-3,59,16,89c30,49,22,62-20,31s-52-23-58,47c-3,45,0,58,22,88c14,19,32,47,41,63c14,25,14,27-2,27c-10,0-35-12-56-26 s-46-24-55-22s-37,37-61,78c-74,125-210,330-219,330c-12,0-104-144-150-235c-51-102-133-300-160-385c-48-153-62-276-62-550 c0-349,22-559,67-626c15-23,22-25,57-21c54,7,333,148,466,235c122,80,214,159,447,384c197,191,275,252,398,313 c132,66,221,86,390,87c149,2,196-8,297-59c78-38,182-144,223-225c54-108,50-113-42-73c-139,60-283,71-369,29c-53-26-100-92-125-174 c-29-98-24-263,10-333c68-139,242-260,496-346l90-31l-1425,1c-784,0-1445,4-1470,8l-45,7l50,11c28,6,79,17,115,24c36,6,69,15,73,19 s14,105,22,226c55,812,166,1180,484,1594c35,47,69,91,75,99c14,18-52,9-248-35c-82-18-153-31-158-28c-4,3-8,23-8,45 c0,56-23,51-60-13c-37-65-49-79-80-101c-39-27-50-22-50,23c0,22-4,40-9,40s-23-24-39-53c-35-62-94-117-207-193c-95-64-100-59-60,55 c50,141,113,249,195,332c127,128,232,165,449,155c75-3,154-8,176-11l40-6l-45,41c-25,22-80,66-124,98c-131,95-122,80-75,135 c22,26,35,47,27,47c-7,0-40-10-73-22c-65-23-113-20-150,8c-20,15-20,15,3,34c12,10,22,21,22,24s-35,6-77,6c-82,1-159,14-180,32 c-21,17,0,34,76,63C1461,3919,1611,3933,1743,3905z"/></g></symbol></defs></svg>
@@ -1324,7 +1324,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="game/engine.js?v=1"></script>
 <script src="game/ranking.js?v=1"></script>
 <script src="chats/exercises.js?v=1"></script>
-<script src="chats/chat.js?v=13"></script>
+<script src="chats/chat.js?v=15"></script>
 <script src="chats/partners.js?v=3"></script>
 <script src="workout-print/card.js?v=1"></script>
 <script>
@@ -1942,18 +1942,18 @@ bt0:{title:"Баттерфляй с нуля",lede:"Шесть упражнен�
   /* Сюда ведёт плитка меню. Раньше между плиткой и этим экраном
      стоял промежуточный «Вода» с двумя карточками; обучение уехало
      на свою плитку, и прокладка осталась бы экраном из одного пункта. */
-  s2:{water:true,title:"Тренировки в бассейне",lede:"Четыре блока с разной направленностью. В каждом — три уровня и по пятнадцать тренировок.",kids:[
-    {id:"b_vy",n:"01",t:"Выносливость",s:"Длинные ровные серии, которые строят базу и учат держать темп до конца дистанции",m:"3 уровня · 5 блоков · 75 тренировок",ph:"tile-vynoslivost.jpg"},
+  s2:{water:true,title:"Тренировки в бассейне",lede:"Выберите направление, затем свой уровень подготовки.",kids:[
+    {id:"b_vy",n:"01",t:"Выносливость",s:"Длинные ровные серии, которые строят базу и учат держать темп до конца дистанции",ph:"tile-vynoslivost.jpg"},
     {id:"b_sk",n:"02",t:"Скорость",s:"Короткие отрезки в полную силу с длинным отдыхом: учимся плыть быстро, а не терпеть",ph:"tile-skorost.jpg"},
     {id:"b_mo",n:"03",t:"Мощность",s:"Работа под нагрузкой, где судья не секундомер, а длина гребка",ph:"tile-moshchnost.jpg"},
     {id:"b_vo",n:"04",t:"Восстановление",s:"Спокойные тренировки после тяжёлых дней: возвращают гребок и снимают усталость",ph:"tile-vosstanovlenie.jpg"}
   ]},
-  b_vy:{title:"Выносливость",lede:"Аэробная база: длинные серии, ровный пульс, объём. Выберите уровень — внутри пять блоков по пять тренировок.",levelCards:true,kids:[
-    {id:"vy_n",n:"01",t:"Новичок",s:"Отрезки короче, отдых по потребности — задача доплыть ровно, а не быстро",m:"1200–1600 м · 25 тренировок"},
-    {id:"vy_s",n:"02",t:"Средний",s:"Серии длиннее, отдых по интервалу — задача держать один темп до конца",m:"2200–2800 м · 25 тренировок"},
-    {id:"vy_p",n:"03",t:"Продвинутый",s:"Большой объём и минимальный отдых — задача правильно распределить силы",m:"4000–4600 м · 25 тренировок"}
+  b_vy:{title:"Выносливость",lede:"Длинные серии и ровный темп. Выберите уровень, чтобы увидеть доступные блоки и тренировки.",levelCards:true,kids:[
+    {id:"vy_n",n:"01",t:"Новичок",s:"Отрезки короче, отдых по потребности — задача доплыть ровно, а не быстро"},
+    {id:"vy_s",n:"02",t:"Средний",s:"Серии длиннее, отдых по интервалу — задача держать один темп до конца"},
+    {id:"vy_p",n:"03",t:"Продвинутый",s:"Большой объём и минимальный отдых — задача правильно распределить силы"}
   ]},
-  s3:{title:"Суша для пловца",lede:"Пять вкладок. В каждой — справочник упражнений и готовые тренировки.",kids:[
+  s3:{title:"Суша для пловца",lede:"Разминка, упражнения, готовые комплексы и квадратное дыхание.",kids:[
     {id:"d1",n:"01",t:"Разминка перед водой",s:"Пятнадцать минут перед водой, после которых плечи и голеностоп готовы к нагрузке",m:"",ph:"tile-razminka.jpg"},
     {id:"d2",n:"02",t:"Гребковые тренировки на резине",s:"Отрабатываем гребок на суше по фазам, а потом собираем его в рабочую серию",m:"",ph:"tile-rezina.jpg"},
     {id:"d3",n:"03",t:"Кор и стабилизация",s:"Упражнения на удержание корпуса и готовые комплексы, которые делаются по таймеру",m:"",ph:"tile-kor.jpg"},
@@ -2532,18 +2532,24 @@ const TAB_ICON = {
   walk(BLOCKS);
 })();
 
-/* Экраны выносливости собираются из данных по уровням и блокам. */
-Object.keys(AERO).forEach(lvl=>{
+/* Экраны выносливости и подписи к ним собираются из каталога. */
+const enduranceLevels = T.b_vy.kids;
+let enduranceTotal = 0;
+enduranceLevels.forEach(card=>{
+  const lvl = card.id;
   const L = AERO[lvl];
+  const count = L.blocks.reduce((sum, block) => sum + block.w.length, 0);
+  enduranceTotal += count;
+  card.m = L.vol + " · " + workoutCount(count);
   T[lvl] = {
     title: "Выносливость. " + L.level,
-    lede: plural(L.blocks.length, ["блок", "блока", "блоков"]) + ". Внутри каждого — пять готовых тренировок.",
+    lede: plural(L.blocks.length, ["блок", "блока", "блоков"]) + " · " + workoutCount(count) + ".",
     pills: [L.level, L.vol + " за занятие"],
     kids: L.blocks.map(b=>({
       id: lvl + "_" + b.n,
       t: b.t,
       s: b.sub,
-      m: b.w.length + " тренировок"
+      m: workoutCount(b.w.length)
     }))
   };
   PARENT[lvl] = "b_vy";
@@ -2553,20 +2559,15 @@ Object.keys(AERO).forEach(lvl=>{
     T[id] = {
       title: b.t,
       lede: b.sub,
-      pills: [L.level, b.w.length + " тренировок"],
+      pills: [L.level, workoutCount(b.w.length)],
       workouts: b.w
     };
     PARENT[id] = lvl;
   });
 });
 
-(function(){
-  const total = Object.values(AERO).reduce((sum,L) => sum + L.blocks.reduce((s,b) => s+b.w.length,0),0);
-  const card = T.s2.kids.find(k => k.id === "b_vy");
-  if(card) card.m = "3 уровня · " + total + " тренировок";
-  const advanced = T.b_vy.kids.find(k => k.id === "vy_p");
-  if(advanced) advanced.m = AERO.vy_p.vol + " · " + AERO.vy_p.blocks.reduce((s,b) => s+b.w.length,0) + " тренировок";
-})();
+T.s2.kids.find(card => card.id === "b_vy").m =
+  plural(enduranceLevels.length, ["уровень", "уровня", "уровней"]) + " · " + workoutCount(enduranceTotal);
 
 /* Скорость, мощность и восстановление: направление → уровень → тренировка. */
 const LSUB = {
@@ -2596,7 +2597,7 @@ Object.keys(BLOCKS).forEach(dir=>{
   if(card){
     const total = lvls.reduce((sum, k) => sum + D.levels[k].w.length, 0);
     card.m = plural(lvls.length, ["уровень","уровня","уровней"]) + " · " +
-      plural(total, ["тренировка","тренировки","тренировок"]);
+      workoutCount(total);
   }
 
   T[dir] = {
@@ -2607,7 +2608,7 @@ Object.keys(BLOCKS).forEach(dir=>{
       const L = D.levels[k];
       return {
         id: k, n: "0" + (i+1), t: L.level, s: LSUB[L.level],
-        m: L.vol + " · " + plural(L.w.length, ["тренировка","тренировки","тренировок"]),
+        m: L.vol + " · " + workoutCount(L.w.length),
         ph: кадр
       };
     })
@@ -2657,6 +2658,9 @@ function plural(n, forms){
   if(b > 1 && b < 5) return n + " " + forms[1];
   if(b === 1) return n + " " + forms[0];
   return n + " " + forms[2];
+}
+function workoutCount(count){
+  return plural(count, ["тренировка", "тренировки", "тренировок"]);
 }
 const nDrills = n => plural(n, ["упражнение","упражнения","упражнений"]);
 const nErrors = n => plural(n, ["ошибка","ошибки","ошибок"]);
@@ -4541,6 +4545,7 @@ const CLUB_ARROW = '<svg class="club-icon" viewBox="0 0 24 24" aria-hidden="true
 
 function homeHTML(){
   const [title, word, vip] = T.home.title.split(" ");
+  const recent = lastMaterial();
   const links = МЕНЮ.map(([экран, имя, знак, кадр]) => `
     <button type="button" class="hm-tile" onclick="go('${экран}')">
       ${кадр ? `<span class="tph" style="background-image:url('${кадр}')" aria-hidden="true"></span>` : ""}
@@ -4558,8 +4563,10 @@ function homeHTML(){
       </h1>
       <p class="lede">${esc(T.home.lede)}</p>
       <div class="club-actions">
-        <a class="club-action club-action-primary" href="#sv1">${esc(T.sv1.title)} <svg class="club-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M8 6h10v10"/></svg></a>
-        <a class="club-action" href="#about">${esc(T.about.title)} ${CLUB_ARROW}</a>
+        <a class="club-action club-action-primary" href="#s2">К тренировкам ${CLUB_ARROW}</a>
+        ${recent
+          ? `<a class="club-action" href="#${esc(recent.hash)}" title="${esc(recent.title)}">Продолжить ${CLUB_ARROW}</a>`
+          : `<a class="club-action" href="#about">${esc(T.about.title)} ${CLUB_ARROW}</a>`}
       </div>
     </div>
   </section>
@@ -4716,6 +4723,36 @@ function catalogMaterial(hash){
   return title ? { route, anchor, hash, title, detail, url: materialBase + "#" + hash } : null;
 }
 
+const RECENT_MATERIAL_KEY = "swim-recent-material";
+
+function resumableMaterial(hash){
+  const material = catalogMaterial(hash);
+  if(!material) return null;
+  const page = T[material.route];
+  const exercise = /^dr_[a-z]+$/.test(PARENT[material.route] || "");
+  return page.one || page.workouts || page.lesson || page.print || exercise ? material : null;
+}
+
+function lastMaterial(){
+  try { return resumableMaterial(localStorage.getItem(RECENT_MATERIAL_KEY) || ""); }
+  catch { return null; }
+}
+
+function rememberMaterial(hash){
+  if(!resumableMaterial(hash)) return;
+  try { localStorage.setItem(RECENT_MATERIAL_KEY, hash); } catch {}
+}
+
+function rememberVisibleMaterial(route){
+  const page = T[route];
+  const selector = page?.workouts ? ".wk[id]" : page?.lesson ? ".ex[id^='lesson-']" : null;
+  if(!selector) return;
+  const line = Math.min(180, window.innerHeight / 3);
+  const block = [...document.querySelectorAll(selector)].reverse()
+    .find(item => item.getBoundingClientRect().top <= line);
+  if(block) rememberMaterial(route + "/" + block.id);
+}
+
 function materialFromMessage(text){
   const lines = text.split("\n");
   const link = lines[lines.length - 1];
@@ -4733,10 +4770,12 @@ function openChatMaterial(material, room){
   go(material.hash);
 }
 
-function materialShareButton(route, anchor = ""){
+function materialShareButton(route, anchor = "", compact = false){
   const hash = anchor ? route + "/" + anchor : route;
+  const shareIcon = '<svg class="club-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 6 6-6 6v-4H9a5 5 0 0 0-5 5v-2a7 7 0 0 1 7-7h3Z"/></svg>';
   return `<button type="button" class="chat-button material-share" data-material="${esc(hash)}"
-    aria-haspopup="dialog" onclick="forwardMaterial(this)">Переслать</button>`;
+    ${compact ? 'aria-label="Переслать" title="Переслать"' : ""} aria-haspopup="dialog"
+    onclick="forwardMaterial(this)">${compact ? shareIcon : "Переслать"}</button>`;
 }
 
 function forwardMaterial(button){
@@ -4768,6 +4807,8 @@ function render(){
   const mainSection = МЕНЮ.find(([key]) => key === id);
   const reading = !d.feed && !mainSection && !d.kids;
   const previous = document.body.dataset.route;
+  if(previous !== id) rememberVisibleMaterial(previous);
+  rememberMaterial(shared?.hash || id);
   if (d.chats && previous && previous !== id) chatReturn = "#" + previous;
   document.body.dataset.route = id;
   document.body.dataset.page = d.chats ? "chats" : d.feed ? "home" : d.game ? "game" : reading ? "reading" : "section";
@@ -4807,10 +4848,12 @@ function render(){
       h += `<a class="page-back" href="#${esc(fromChat ? "chats" : parent)}"${fromClientChat ? ' data-client-return' : ''}><span aria-hidden="true">&larr;</span>${fromChat ? "К чату" : "Назад"}</a>`;
     }
     h += crumbs(id);
-    h += `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
+    const heading = `<h1 class="${lenCls(d.title, 30, 46).trim()}">${esc(d.title)}</h1>`;
+    h += !d.partners && catalogMaterial(id)
+      ? `<div class="page-title-row">${heading}${materialShareButton(id, "", true)}</div>`
+      : heading;
     if(d.lede) h += `<p class="lede${d.whiteLede ? " wh" : ""}">${esc(d.lede)}</p>`;
     if(d.pills) h += `<div class="pills">${d.pills.map(p=>`<span class="pill">${esc(p)}</span>`).join("")}</div>`;
-    if(!d.partners && catalogMaterial(id)) h += materialShareButton(id);
     h += '</section>';
     if(d.partners){
       h += '<div id="club-partners" class="partner-list"></div>';
@@ -5884,6 +5927,7 @@ if(clientPortal){
   });
 }
 window.addEventListener("hashchange", render);
+window.addEventListener("pagehide", () => rememberVisibleMaterial(document.body.dataset.route));
 const clubNav = МЕНЮ.map(([id, name]) => `<a href="#${id}">${esc(name)}</a>`).join("");
 document.querySelectorAll(".club-nav").forEach(nav => { nav.innerHTML = clubNav; });
 const clubMenu = document.querySelector(".club-menu");
@@ -5899,7 +5943,7 @@ clubMenu.addEventListener("keydown", event => {
 loadLevel();
 const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param ??
   new URLSearchParams(location.search).get("tgWebAppStartParam");
-pendingChatRoom = /^chat_(level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36})$/.exec(startParam || "")?.[1];
+pendingChatRoom = /^chat_(club-training|level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36})$/.exec(startParam || "")?.[1];
 if(pendingChatRoom || startParam === "profile" || startParam === "partners"){
   history.replaceState(history.state, "", pendingChatRoom ? "#chats" : "#" + startParam);
 }
