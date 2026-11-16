@@ -25,6 +25,7 @@ const SwimChats = (() => {
     web_access_ended: 'Срок ведения закончился.',
     web_auth_required: 'Для открытия переписки войдите ещё раз.',
     invalid_assignment: 'Проверьте коды участников и дату окончания ведения.',
+    invalid_invite_link: 'Не удалось подготовить ссылку для регистрации. Выпустите новую ссылку для этого приглашения.',
     slow_down: 'Подождите секунду и повторите отправку.',
     manager_required: 'Управление чатами доступно владельцу клуба.',
     coach_required: 'Поиск по коду доступен тренерам клуба.',
@@ -50,6 +51,10 @@ const SwimChats = (() => {
     back: '<path d="m14 5-7 7 7 7m-7-7h14"/>',
     search: '<circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/>',
     person: '<circle cx="12" cy="8" r="3.25"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/>',
+    invitation: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>',
+    book: '<path d="M12 6.5C9 4.5 6 4 3 5v14c3-1 6-.5 9 1 3-1.5 6-2 9-1V5c-3-1-6-.5-9 1.5Zm0 0V20"/>',
+    message: '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l1.5-4A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 10h8m-8 4h4"/>',
+    next: '<path d="m9 6 6 6-6 6"/>',
     manage: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/>',
     group: '<path d="M3 19v-1a5 5 0 0 1 10 0v1m2-5a4.5 4.5 0 0 1 6 4v1"/><circle cx="8" cy="8" r="3"/><path d="M15 5a3 3 0 0 1 0 6"/>',
     waves: '<path d="M3 9c3 0 3-2 6-2s3 2 6 2 3-2 6-2M3 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/>',
@@ -261,6 +266,22 @@ const SwimChats = (() => {
       row.append(stamp);
     }
     return row;
+  }
+
+  function normalizeName(text) {
+    return text.trim().toLocaleLowerCase('ru-RU').replaceAll('ё', 'е');
+  }
+
+  function registrationUrl(invite, trainers) {
+    const url = new URL(invite);
+    const role = trainers ? 'partner' : 'client';
+    const token = new URLSearchParams(url.hash.slice(1)).get('invite');
+    if (url.pathname !== '/' + role + '/' || !/^[a-f0-9]{64}$/.test(token ?? '')) {
+      throw new Error('invalid_invite_link');
+    }
+    const registration = new URL('/' + role + '/register/', 'https://vip.swimisland.ru');
+    registration.searchParams.set('invite', token);
+    return registration.href;
   }
 
   function sortedRooms(rooms) {
@@ -777,12 +798,8 @@ const SwimChats = (() => {
         access.append(element('h2', '', 'Код для тренера'), codeRow, copied);
         page.append(hero);
         if (data.coach || data.manager) {
-          const work = element('section', 'chat-account-card');
-          const actions = element('div', 'chat-account-actions');
-          work.append(element('h2', '', 'Работа тренера'), actions);
-          if (data.coach) actions.append(button('Клиенты без Telegram', () => webClients(() => account(fromList))));
-          if (data.manager) actions.append(button('Пригласить тренера', () => webClients(() => account(fromList), null, true)));
-          page.append(work);
+          page.append(coachCard('Кабинет тренера', 'Ученики, приглашения, чаты и материалы', 'manage',
+            () => coachDesk(data, () => account(fromList)), true));
         }
         page.append(notificationsForm(v, data), access);
         if (!fromList) {
@@ -796,17 +813,121 @@ const SwimChats = (() => {
       }
     }
 
-    async function webClients(backToAccount, created, trainers = false) {
+    function coachCard(title, description, symbol, action, primary = false) {
+      const link = button('', action, 'chat-coach-card' + (primary ? ' chat-coach-primary' : ''));
+      const text = element('span', 'chat-coach-card-copy');
+      text.append(element('strong', '', title), element('span', '', description));
+      link.append(icon(symbol), text, icon('next'));
+      return link;
+    }
+
+    function coachingRooms(rooms, clients) {
+      const webIds = new Set(clients.map(client => client.id));
+      return rooms.filter(room => room.coaching && !webIds.has(room.id));
+    }
+
+    async function coachDesk(data, backToProfile) {
+      const backToDesk = () => coachDesk(data, backToProfile);
+      const v = view('Кабинет тренера', { back: backToProfile, backLabel: 'В личный кабинет' });
+      const page = element('div', 'chat-width chat-cabinet');
+      const grid = element('div', 'chat-coach-grid');
+      const students = coachCard('Ученики', 'Сроки ведения и переписка', 'person', () => webClients(backToDesk, 'students'));
+      const invites = coachCard('Приглашения', 'Новые ссылки и ожидающие регистрации', 'invitation',
+        () => webClients(backToDesk, 'invites'), true);
+      if (data.coach) grid.append(invites, students);
+      grid.append(
+        coachCard('Чаты', 'Переписка с учениками и группами', 'message', () => list(undefined, backToDesk)),
+        coachCard('Курсы и тренировки', 'Материалы на странице партнёра', 'book', () => coachMaterials(backToDesk)),
+      );
+      page.append(grid);
+      if (data.manager) {
+        const club = element('section', 'chat-coach-section');
+        const controls = element('div', 'chat-coach-grid');
+        club.append(element('h2', '', 'Управление клубом'), controls);
+        controls.append(
+          coachCard('Тренеры', 'Приглашения и доступ к публикациям', 'person', () => webClients(backToDesk, 'trainers')),
+          coachCard('Назначения', 'Закрепить тренера за учеником', 'manage', () => manage(backToDesk, 'assignments')),
+          coachCard('Группы', 'Создать группу к старту', 'group', () => manage(backToDesk, 'groups')),
+        );
+        page.append(club);
+      }
+      v.panel.append(page);
+      if (!data.coach) return;
+      try {
+        const [{ clients }, { rooms }] = await Promise.all([v.request('/clients'), v.request('')]);
+        if (v.signal.aborted) return;
+        const active = clients.filter(client => client.entered && client.expires > Date.now()).length +
+          coachingRooms(rooms, clients).length;
+        const pending = clients.filter(client => !client.entered && client.expires > Date.now()).length;
+        students.querySelector('.chat-coach-card-copy').append(element('small', '', 'Активных учеников: ' + active));
+        invites.querySelector('.chat-coach-card-copy').append(element('small', '', 'Ожидают регистрации: ' + pending));
+      } catch {
+        // The tools remain available even when their summary counts are unavailable.
+      }
+    }
+
+    function coachMaterials(backToDesk) {
+      const v = view('Курсы и тренировки', { back: backToDesk, backLabel: 'В кабинет тренера' });
+      const page = element('div', 'chat-width chat-cabinet');
+      const card = element('section', 'chat-account-card');
+      const editor = element('a', 'chat-button chat-primary', 'Открыть редактор материалов');
+      editor.href = 'https://vip.swimisland.ru/partner/';
+      editor.target = '_blank';
+      editor.rel = 'noopener noreferrer';
+      const catalog = element('a', 'chat-button', 'Смотреть каталог партнёров');
+      catalog.href = '#partners';
+      const actions = element('div', 'chat-account-actions');
+      actions.append(editor, catalog);
+      card.append(element('h2', '', 'Страница партнёра'),
+        element('p', '', 'В редакторе можно добавлять курсы и тренировки, сохранять черновики и управлять публикациями. Войдите с логином и паролем партнёра.'), actions);
+      page.append(card);
+      v.panel.append(page);
+    }
+
+    async function webClients(backToDesk, section, created) {
+      const trainers = section === 'trainers';
+      const students = section === 'students';
       const endpoint = trainers ? '/partner-admin' : '/clients';
-      const reload = invitation => webClients(backToAccount, invitation, trainers);
-      const title = trainers ? 'Приглашения тренеров' : 'Клиенты без Telegram';
-      const v = view(title, { back: backToAccount, backLabel: 'В личный кабинет' });
+      const reload = invitation => webClients(backToDesk, section, invitation);
+      const title = trainers ? 'Тренеры' : students ? 'Ученики' : 'Приглашения';
+      const v = view(title, { back: backToDesk, backLabel: 'В кабинет тренера' });
       const page = element('div', 'chat-width chat-cabinet');
       page.append(v.status);
       v.panel.append(page);
-      v.statusText('Загружаем приглашения…');
+      const inviteCard = element('section', 'chat-account-card chat-form chat-web-invite');
+      inviteCard.hidden = true;
+      page.append(inviteCard);
+      const showInvite = data => {
+        const address = element('input');
+        address.value = registrationUrl(data.invite, trainers);
+        address.type = 'url';
+        address.readOnly = true;
+        const feedback = element('p', 'chat-status');
+        feedback.setAttribute('role', 'status');
+        const copy = button('Скопировать ссылку для регистрации', async () => {
+          try {
+            await navigator.clipboard.writeText(address.value);
+            feedback.textContent = 'Ссылка скопирована.';
+          } catch {
+            address.focus();
+            address.select();
+            feedback.textContent = 'Скопируйте выделенную ссылку целиком.';
+          }
+        }, 'chat-button chat-primary');
+        inviteCard.replaceChildren(element('h2', '', 'Ссылка «' + data.label + '»'), element('p', '',
+          trainers ? 'Тренер откроет форму регистрации и сам задаст свои данные.'
+            : 'Клиент откроет форму регистрации и сам задаст свои данные для входа.'));
+        field(inviteCard, 'Ссылка для регистрации', address);
+        inviteCard.append(copy, feedback);
+        inviteCard.hidden = false;
+        inviteCard.scrollIntoView({ block: 'nearest' });
+      };
+      v.statusText('Загружаем список…');
       try {
-        const { clients, mail } = await v.request(endpoint);
+        if (created) showInvite(created);
+        const [{ clients, mail }, overview] = await Promise.all([
+          v.request(endpoint), students ? v.request('') : null,
+        ]);
         if (v.signal.aborted) return;
         v.statusText('');
         const expiresOn = input => Date.parse(input.value + 'T00:00:00+03:00') + 86400000;
@@ -820,55 +941,48 @@ const SwimChats = (() => {
           return input;
         };
 
-        const inviteCard = element('section', 'chat-account-card chat-form chat-web-invite');
-        inviteCard.hidden = true;
-        page.append(inviteCard);
-        const showInvite = data => {
-          const address = element('input');
-          address.value = data.invite.replace(
-            /^https:\/\/swim-island-chats\.pages\.dev(?=\/(?:client|partner)\/#invite=)/,
-            'https://vip.swimisland.ru',
-          );
-          address.readOnly = true;
-          const copy = button('Скопировать ссылку', async () => {
-            try {
-              await navigator.clipboard.writeText(address.value);
-              v.statusText('Ссылка скопирована.');
-            } catch {
-              address.focus();
-              address.select();
-            }
-          }, 'chat-button chat-primary');
-          inviteCard.replaceChildren(element('h2', '', 'Ссылка «' + data.label + '»'),
-            element('p', '', trainers ? 'Передайте эту ссылку тренеру.' : 'Передайте эту ссылку клиенту.'), copy);
-          field(inviteCard, 'Персональная ссылка', address);
-          inviteCard.hidden = false;
-          inviteCard.scrollIntoView({ block: 'nearest' });
-        };
-        if (created) showInvite(created);
-
-        const form = element('form', 'chat-account-card chat-form');
-        const invitation = element('details', 'chat-roster-section');
-        invitation.open = !created && clients.length === 0;
-        invitation.append(element('summary', '', trainers ? 'Новая ссылка для тренера' : 'Новая ссылка для клиента'), form);
-        const label = field(form, 'Название ссылки', textInput('Например, Алексей', 60));
-        label.autocomplete = 'off';
-        const expiry = trainers ? null : field(form, 'Последний день ведения по Москве', dateInput(0));
-        v.formSubmit(form, 'Создать ссылку', async () => {
-          const result = await v.request(endpoint, { action: 'invite', label: label.value, expires: expiry ? expiresOn(expiry) : undefined });
-          if (!v.signal.aborted) await reload(result);
-        });
-        page.append(invitation);
+        if (!students) {
+          const form = element('form', 'chat-account-card chat-form');
+          const invitation = element('details', 'chat-roster-section');
+          invitation.open = !created;
+          invitation.append(element('summary', '', trainers ? 'Новая ссылка для тренера' : 'Новая ссылка для клиента'), form);
+          const label = field(form, 'Название ссылки', textInput('Например, Алексей', 60));
+          label.autocomplete = 'off';
+          const expiry = trainers ? null : field(form, 'Последний день ведения по Москве', dateInput(0));
+          v.formSubmit(form, 'Создать ссылку', async () => {
+            const result = await v.request(endpoint,
+              { action: 'invite', label: label.value, expires: expiry ? expiresOn(expiry) : undefined });
+            if (!v.signal.aborted) await reload(result);
+          });
+          page.append(invitation);
+        } else {
+          page.append(button('Найти ученика по коду', () => findPerson(reload, 'К ученикам'), 'chat-button chat-coach-find'));
+        }
 
         const sections = new Map();
-        for (const [id, heading] of [['active', 'Активные'], ['pending', 'Ожидают входа'], ['closed', 'Завершённые']]) {
+        for (const [id, heading] of [
+          ['telegram', 'Ученики в Telegram'], ['active', 'Активные'], ['pending', 'Ожидают регистрации'],
+          ['closed', students || trainers ? 'Завершённые' : 'Истёкшие приглашения'],
+        ]) {
           const group = element('details', 'chat-roster-section');
           group.open = id !== 'closed';
           const summary = element('summary', '', heading);
           group.append(summary);
-          sections.set(id, { group, summary, heading, count: 0 });
+          sections.set(id, { group, summary, heading, rows: [] });
+        }
+        if (students) {
+          for (const room of coachingRooms(overview.rooms, clients)) {
+            const card = element('article', 'chat-roster-row');
+            const main = element('div', 'chat-roster-main');
+            const identity = element('div', 'chat-roster-name');
+            identity.append(element('h2', '', room.title), element('small', '', 'до ' + date.format(room.expires - 1)));
+            main.append(identity, button('Открыть чат', () => conversation(room, reload, 'К ученикам')));
+            card.append(main);
+            sections.get('telegram').rows.push({ card, label: normalizeName(room.title) });
+          }
         }
         for (const client of clients) {
+          if (!trainers && Boolean(client.entered) !== students) continue;
           const card = element('article', 'chat-roster-row');
           const main = element('div', 'chat-roster-main');
           const name = element('div', 'chat-roster-name');
@@ -881,7 +995,7 @@ const SwimChats = (() => {
           main.append(name);
           card.append(main);
           const access = element('details', 'chat-roster-access');
-          access.append(element('summary', '', 'Доступ'));
+          access.append(element('summary', '', trainers || students ? 'Управление доступом' : 'Управление приглашением'));
           const actions = element('div', 'chat-account-actions');
           if (client.email) access.append(element('p', 'chat-web-email', client.email));
           const feedback = element('p', 'chat-status');
@@ -891,17 +1005,20 @@ const SwimChats = (() => {
             try {
               const result = await v.request(endpoint, { action, id: client.id });
               if (v.signal.aborted) return;
-              if (action === 'replace') showInvite(result);
-              else await reload();
+              await reload(action === 'replace' ? result : undefined);
             } catch (error) { v.errorText(error); }
             finally { control.disabled = false; }
           }
           if (active) {
-            if (!trainers) main.append(button('Открыть чат', () => list(client.id)));
-            const rotate = button(client.entered ? 'Ссылка для восстановления' : 'Выпустить новую ссылку', () => {
-              if (window.confirm('Обновление ссылки завершит текущие сеансы и заменит данные для входа. Продолжить?')) {
-                return change('replace', rotate);
-              }
+            if (students) {
+              const room = overview.rooms.find(room => room.id === client.id);
+              if (room) main.append(button('Открыть чат', () => conversation(room, reload, 'К ученикам')));
+            }
+            const rotate = button(client.entered ? 'Восстановить доступ по новой ссылке' : 'Выпустить новую ссылку', () => {
+              const question = client.entered
+                ? 'Новая ссылка сбросит пароль и завершит текущие сеансы. Продолжить?'
+                : 'После выпуска новой ссылки прежняя перестанет действовать. Продолжить?';
+              if (window.confirm(question)) return change('replace', rotate);
             });
             actions.append(rotate);
             const code = button(mail ? 'Код вручную' : 'Подготовить письмо с кодом', async () => {
@@ -940,23 +1057,46 @@ const SwimChats = (() => {
             access.append(renewal);
           }
           card.append(access);
-          const section = sections.get(!active ? 'closed' : client.entered ? 'active' : 'pending');
-          section.group.append(card);
-          section.count++;
+          const group = sections.get(!active ? 'closed' : client.entered ? 'active' : 'pending');
+          group.rows.push({ card, label: normalizeName([client.label, client.name, client.email].filter(Boolean).join(' ')) });
         }
-        for (const { group, summary, count, heading } of sections.values()) {
-          if (!count) continue;
-          summary.textContent = heading + ' · ' + count;
-          page.append(group);
+        const groups = [...sections.values()].filter(group => group.rows.length);
+        if (!groups.length) {
+          page.append(element('p', 'chat-inbox-note',
+            students ? 'Здесь появятся ваши ученики.' : 'Здесь появятся созданные приглашения.'));
+          return;
         }
+        const search = element('input');
+        search.type = 'search';
+        search.placeholder = students ? 'Имя ученика' : trainers ? 'Имя или название ссылки' : 'Название ссылки';
+        const filter = element('div', 'chat-roster-search');
+        field(filter, 'Поиск по списку', search);
+        const empty = element('p', 'chat-inbox-note', 'По вашему запросу ничего не найдено.');
+        const update = () => {
+          const query = normalizeName(search.value);
+          let total = 0;
+          for (const { group, summary, heading, rows } of groups) {
+            const visible = rows.filter(row => row.label.includes(query));
+            group.hidden = !visible.length;
+            if (query && visible.length) group.open = true;
+            summary.textContent = heading + ' · ' + visible.length;
+            group.replaceChildren(summary, ...visible.map(row => row.card));
+            total += visible.length;
+          }
+          empty.hidden = total !== 0;
+        };
+        search.addEventListener('input', update);
+        page.append(filter, ...groups.map(group => group.group), empty);
+        update();
+        if (created) inviteCard.scrollIntoView({ block: 'nearest' });
       } catch (error) {
         v.errorText(error);
         if (!v.signal.aborted) page.append(button('Обновить', () => reload()));
       }
     }
 
-    function findPerson() {
-      const v = view('Найти по коду', { back: list });
+    function findPerson(returnTo = list, backLabel) {
+      const v = view('Найти по коду', { back: returnTo, backLabel });
       const form = element('form', 'chat-form chat-width chat-sheet');
       form.append(element('p', '', 'Попросите участника прислать код из его профиля.'));
       const code = field(form, 'Код из профиля', textInput('12 символов'));
@@ -993,7 +1133,7 @@ const SwimChats = (() => {
             feedback.textContent = '';
             try {
               const room = await v.request('/direct', { code: value });
-              if (!v.signal.aborted && result.contains(open)) await conversation(room);
+              if (!v.signal.aborted && result.contains(open)) await conversation(room, () => findPerson(returnTo, backLabel), 'К поиску');
             } catch (error) {
               if (result.contains(open)) showError(error);
             } finally { open.disabled = false; }
@@ -1008,9 +1148,10 @@ const SwimChats = (() => {
       v.panel.append(form);
     }
 
-    async function list(roomToOpen) {
+    async function list(roomToOpen, backToDesk, initialCategory = 'all') {
       if (typeof roomToOpen === 'string') targetRoom = roomToOpen;
-      const v = view('Чаты');
+      const reload = () => list(undefined, backToDesk, initialCategory);
+      const v = view('Чаты', backToDesk ? { back: backToDesk, backLabel: 'В кабинет тренера' } : {});
       const inbox = element('div', 'chat-width chat-inbox');
       v.panel.append(inbox);
       inbox.append(v.status);
@@ -1021,12 +1162,12 @@ const SwimChats = (() => {
         v.statusText('');
         if (!web && !data.profile) {
           const sheet = element('div', 'chat-sheet');
-          sheet.append(profileForm(v, data, list), v.status);
+          sheet.append(profileForm(v, data, reload), v.status);
           inbox.append(sheet);
           return;
         }
         if (data.coach) {
-          const find = iconButton('search', 'Найти по коду', findPerson);
+          const find = iconButton('search', 'Найти по коду', () => findPerson(reload));
           find.classList.add('chat-find-button');
           find.append(element('span', '', 'По коду'));
           v.actions.append(find);
@@ -1036,14 +1177,14 @@ const SwimChats = (() => {
           const room = data.rooms.find(room => room.id === targetRoom);
           targetRoom = '';
           if (room) {
-            await conversation(room);
+            await conversation(room, reload);
             return;
           }
           v.statusText('Эта беседа сейчас недоступна.');
         }
         if (!web) {
           v.actions.append(iconButton('person', 'Профиль', () => account(true, data)));
-          if (data.manager) v.actions.append(iconButton('manage', 'Управление чатами', manage));
+          if (data.manager) v.actions.append(iconButton('manage', 'Управление чатами', () => manage(reload)));
         }
 
         if (data.rooms.length) {
@@ -1052,31 +1193,30 @@ const SwimChats = (() => {
           const empty = element('p', 'chat-inbox-note', 'Чаты не найдены.');
           empty.hidden = true;
           const roomCategory = room => room.kind === 'group' ? 'group' : room.coaching ? 'students' : 'personal';
-          let category = 'all';
+          let category = rooms.some(room => roomCategory(room) === initialCategory) ? initialCategory : 'all';
           let query = '';
-          const normalize = text => text.trim().toLocaleLowerCase('ru-RU').replaceAll('ё', 'е');
           const update = () => {
             const selected = rooms.filter(room =>
-              (category === 'all' || roomCategory(room) === category) && normalize(room.title).includes(query));
+              (category === 'all' || roomCategory(room) === category) && normalizeName(room.title).includes(query));
             results.replaceChildren();
             for (const room of selected) {
               const row = element('li');
               const material = room.latest && launch.materials?.resolve(room.latest.text);
-              row.append(roomRow(room, () => conversation(room), material));
+              row.append(roomRow(room, () => conversation(room, () => list(undefined, backToDesk, category)), material));
               results.append(row);
             }
             empty.hidden = Boolean(selected.length);
           };
-          if (web) {
+          if (web || data.coach || data.manager) {
             const search = element('input');
             search.type = 'search';
-            search.placeholder = 'Введите имя тренера';
-            search.addEventListener('input', () => { query = normalize(search.value); update(); });
+            search.placeholder = web ? 'Введите имя тренера' : 'Имя или название группы';
+            search.addEventListener('input', () => { query = normalizeName(search.value); update(); });
             const filter = element('div', 'chat-inbox-filter');
             field(filter, 'Поиск по имени', search);
             inbox.append(filter);
           }
-          if (data.coach) {
+          if (data.coach || data.manager) {
             const tabs = element('nav', 'chat-filter-tabs');
             tabs.setAttribute('aria-label', 'Категории чатов');
             const filters = [['all', 'Все'], ['students', 'Ученики'], ['personal', 'Личные'], ['group', 'Группы']];
@@ -1107,7 +1247,7 @@ const SwimChats = (() => {
         if (web && ['web_auth_required', 'web_access_ended'].includes(error.message)) launch.webSessionLost();
         else {
           v.errorText(error);
-          inbox.append(button('Обновить', list));
+          inbox.append(button('Обновить', reload));
         }
       }
     }
@@ -1308,8 +1448,8 @@ const SwimChats = (() => {
       return node;
     }
 
-    async function conversation(room) {
-      const v = view(room.title, { back: list, room });
+    async function conversation(room, returnTo = list, backLabel) {
+      const v = view(room.title, { back: returnTo, backLabel, room });
       const openExercise = exerciseSheet(v.panel);
       const thread = element('div', 'chat-thread');
       const endpoint = '/rooms/' + room.id;
@@ -1544,9 +1684,11 @@ const SwimChats = (() => {
       await refresh(true);
     }
 
-    async function manage() {
-      const v = view('Управление чатами', { back: list });
-      const sheet = element('div', 'chat-width chat-sheet');
+    async function manage(backTo = list, section = '') {
+      const title = section === 'groups' ? 'Группы' : section === 'assignments' ? 'Назначения' : 'Управление чатами';
+      const v = view(title, { back: backTo, backLabel: section ? 'В кабинет тренера' : 'К списку чатов' });
+      const reload = () => manage(backTo, section);
+      const sheet = element('div', 'chat-width chat-cabinet');
       v.panel.append(sheet);
       sheet.append(v.status);
       v.statusText('Загружаем настройки…');
@@ -1554,7 +1696,15 @@ const SwimChats = (() => {
         const data = await v.request('/manage');
         if (v.signal.aborted) return;
         v.statusText('');
-        const assigning = element('form', 'chat-form');
+        if (section !== 'groups') renderAssignments(data);
+        if (section !== 'assignments') renderGroups();
+      } catch (error) {
+        v.errorText(error);
+        if (!v.signal.aborted) sheet.append(button('Обновить', reload));
+      }
+
+      function renderAssignments(data) {
+        const assigning = element('form', 'chat-form chat-account-card');
         assigning.append(element('h3', '', 'Назначить тренера'));
         const student = field(assigning, 'Код ученика', textInput('Из профиля ученика', 12));
         student.autocapitalize = 'none';
@@ -1587,11 +1737,11 @@ const SwimChats = (() => {
           const expires = Date.parse(end.value + 'T00:00:00+03:00') + 86400000;
           const coach = select.value === 'code' ? coachCode.value.trim() : select.value;
           await v.request('/manage', { action: 'assign', student: student.value.trim(), coach, expires });
-          if (!v.signal.aborted) await manage();
+          if (!v.signal.aborted) await reload();
         });
         sheet.append(assigning);
         if (data.assignments.length) {
-          const active = element('section', 'chat-section');
+          const active = element('section', 'chat-account-card');
           active.append(element('h3', '', 'Активное ведение'));
           for (const item of data.assignments) {
             const row = element('div', 'chat-profile');
@@ -1602,7 +1752,7 @@ const SwimChats = (() => {
               finish.disabled = true;
               try {
                 await v.request('/manage', { action: 'end', id: item.id });
-                if (!v.signal.aborted) await manage();
+                if (!v.signal.aborted) await reload();
               } catch (error) { v.errorText(error); }
               finally { finish.disabled = false; }
             });
@@ -1612,17 +1762,24 @@ const SwimChats = (() => {
           sheet.append(active);
         }
 
-        const group = element('form', 'chat-form');
+      }
+
+      function renderGroups() {
+        const group = element('form', 'chat-form chat-account-card');
         group.append(element('h3', '', 'Создать группу к старту'));
         const name = field(group, 'Название старта или группы', textInput('Например, «Первый старт на 1 км»', 60));
         name.minLength = 2;
         const level = field(group, 'Для кого', choices('', true));
         v.formSubmit(group, 'Создать группу', async () => {
           await v.request('/manage', { action: 'createGroup', title: name.value, level: level.value });
-          if (!v.signal.aborted) await list();
+          if (!v.signal.aborted) {
+            if (section) await list(undefined, backTo, 'group');
+            else await list();
+          }
         });
         sheet.append(group);
-      } catch (error) { v.errorText(error); }
+        if (section) sheet.append(button('Открыть групповые чаты', () => list(undefined, backTo, 'group'), 'chat-button chat-coach-find'));
+      }
     }
 
     if (launch.account) account();

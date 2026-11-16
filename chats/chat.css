@@ -666,3 +666,48 @@ html.client-catalog #app { padding-top: 10px; }
 .chat-roster-access > summary { padding: 8px 0; font-size: 13px; }
 .chat-roster-row .chat-status:empty { display: none; }
 
+
+.chat-coach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 245px), 1fr));
+  gap: 9px;
+}
+.chat-coach-section { display: grid; gap: 10px; padding-block-start: 10px; }
+.chat-coach-card {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 19px;
+  align-items: center;
+  gap: 11px;
+  min-height: 76px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--txt);
+  background: var(--surf);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.chat-coach-card:hover { border-color: var(--aqua); }
+.chat-coach-card:focus-visible { outline: 2px solid var(--aqua); outline-offset: 2px; }
+.chat-coach-card > .chat-icon:first-child {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surf-2);
+  color: var(--aqua);
+}
+.chat-coach-card > .chat-icon:last-child { color: var(--txt-3); }
+.chat-coach-primary { border-color: #76633d; background: linear-gradient(110deg, #333027, var(--surf)); }
+.chat-coach-primary > .chat-icon:first-child { color: var(--gold-lt); background: #4c402b; }
+.chat-coach-card-copy { display: grid; gap: 2px; overflow-wrap: anywhere; }
+.chat-coach-card-copy strong { font-size: 15px; line-height: 1.25; }
+.chat-coach-card-copy span { color: var(--txt-2); font-size: 13px; line-height: 1.35; }
+.chat-coach-card-copy small { color: var(--gold-lt); font-size: 12px; }
+.chat-coach-find { justify-self: start; }
+.chat-roster-search { min-width: 0; }
+.chat-roster-section[hidden], .chat-cabinet > .chat-inbox-note[hidden] { display: none; }
+.chat-cabinet > .chat-inbox-note { padding: 4px 0; }
+.chat-web-invite > .chat-status:empty { display: none; }

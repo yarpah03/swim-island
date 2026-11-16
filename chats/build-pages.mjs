@@ -27,9 +27,17 @@ const securityHeaders = `  Content-Security-Policy: default-src 'self'; script-s
 `;
 writeFileSync(resolve(output, '_headers'), '/client/*\n' + securityHeaders + '/partner/*\n' + securityHeaders);
 const client = readFileSync(source('client/index.html'), 'utf8');
-writeFileSync(resolve(output, 'partner/index.html'), client
+const partner = client
   .replace('  <link rel="manifest" href="/client/manifest.webmanifest">\n', '')
-  .replaceAll('Кабинет ученика', 'Кабинет тренера'));
+  .replaceAll('Кабинет ученика', 'Кабинет тренера');
+writeFileSync(resolve(output, 'partner/index.html'), partner);
+for (const [role, label, page] of [['client', 'ученика', client], ['partner', 'тренера', partner]]) {
+  const registration = resolve(output, role, 'register');
+  mkdirSync(registration, { recursive: true });
+  writeFileSync(resolve(registration, 'index.html'), page
+    .replaceAll('Кабинет ' + label, 'Регистрация ' + label)
+    .replace('Проверяем вход…', 'Проверяем приглашение…'));
+}
 for (const [from, to] of [
   ['client/index.html', 'index.html'], ['client/client.js', 'client.js'], ['client/client.css', 'client.css'],
   ['chat.js', 'chat.js'], ['chat.css', 'chat.css'], ['partners.js', 'partners.js'],
