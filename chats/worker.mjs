@@ -346,6 +346,11 @@ async function requireRoom(env, id, player, now) {
   return { group: true, title: group.title, level: group.level };
 }
 
+function chatPeer(room, playerId) {
+  if (room.direct) return room.first_id === playerId ? room.second_id : room.first_id;
+  return room.coach_id === playerId ? room.student_id : room.coach_id;
+}
+
 async function messages(db, room, roomId, playerId, params) {
   const before = params.get('before');
   const after = params.get('after');
@@ -357,7 +362,12 @@ async function messages(db, room, roomId, playerId, params) {
   if (before !== null && after !== null) throw new ChatError(400, 'invalid_cursor');
   const ascending = after !== null;
   const cursor = Number(after ?? before ?? Number.MAX_SAFE_INTEGER);
-  const result = await db.prepare(`
+  const receipts = room.group
+    ? db.prepare('SELECT MAX(seen_id) AS seen_id FROM chat_notification_state WHERE room_id = ? AND telegram_id <> ?')
+      .bind(roomId, playerId)
+    : db.prepare('SELECT seen_id FROM chat_notification_state WHERE telegram_id = ? AND room_id = ?')
+      .bind(chatPeer(room, playerId), roomId);
+  const rows = db.prepare(`
     SELECT m.id, m.sender_id, COALESCE(pref.nickname, coach.name, p.name) AS name, m.body, m.video_url, m.sent_ms,
       m.photo_width, m.photo_height, coach.telegram_id IS NOT NULL AS registered_coach, pref.avatar
     FROM chat_messages m JOIN chat_profiles p ON p.telegram_id = m.sender_id
@@ -365,7 +375,8 @@ async function messages(db, room, roomId, playerId, params) {
     LEFT JOIN chat_preferences pref ON pref.telegram_id = m.sender_id
     WHERE m.room_id = ? AND m.id ${ascending ? '>' : '<'} ?
     ORDER BY m.id ${ascending ? 'ASC' : 'DESC'} LIMIT ?
-  `).bind(roomId, cursor, PAGE_SIZE + 1).all();
+  `).bind(roomId, cursor, PAGE_SIZE + 1);
+  const [result, receipt] = await Promise.all([rows.all(), receipts.first()]);
   const page = result.results.slice(0, PAGE_SIZE);
   if (!ascending) page.reverse();
   const photos = new Map();
@@ -382,7 +393,12 @@ async function messages(db, room, roomId, playerId, params) {
       person,
     };
   });
-  return { more: result.results.length > PAGE_SIZE, messages: pageMessages, photos: [...photos.keys()] };
+  return {
+    more: result.results.length > PAGE_SIZE,
+    messages: pageMessages,
+    photos: [...photos.keys()],
+    readThrough: receipt?.seen_id ?? 0,
+  };
 }
 
 function videoLink(value) {
@@ -478,8 +494,7 @@ async function notifyRecipients(env, room, id, sender, message) {
     `).bind(room.level, room.level, sender).all();
     targets = results.map(row => row.telegram_id);
   } else {
-    const pair = room.direct ? [room.first_id, room.second_id] : [room.student_id, room.coach_id];
-    const target = pair.find(id => id !== sender);
+    const target = chatPeer(room, sender);
     const enabled = await db.prepare('SELECT notify_personal FROM chat_preferences WHERE telegram_id = ? AND notify_personal = 1').bind(target).first();
     targets = enabled ? [target] : [];
   }
@@ -525,12 +540,12 @@ async function markSeen(env, id, player, now, request) {
   await requireRoom(env, id, player, now);
   await db.prepare(`
     INSERT INTO chat_notification_state (telegram_id, room_id, seen_id)
-    SELECT p.telegram_id, m.room_id, m.id
-    FROM chat_messages m JOIN chat_preferences p ON p.telegram_id = ?
-    WHERE m.id = ? AND m.room_id = ? AND (p.notify_personal = 1 OR p.notify_groups = 1)
+    SELECT ?, m.room_id, m.id
+    FROM chat_messages m
+    WHERE m.id = ? AND m.room_id = ? AND m.sender_id <> ?
     ON CONFLICT (telegram_id, room_id) DO UPDATE SET seen_id = excluded.seen_id
     WHERE chat_notification_state.seen_id < excluded.seen_id
-  `).bind(player.id, through, id).run();
+  `).bind(player.id, through, id, player.id).run();
   return { ok: true };
 }
 
@@ -1276,14 +1291,19 @@ async function webApi(request, env, ctx, url) {
     const catalog = PARTNER_ROUTE.exec(path);
     if (catalog && request.method === 'GET') return webReply(await publishedPartners(db, catalog[1], catalog[2]));
     if (path === '/v1/client/chats' && request.method === 'GET') return webReply(await webOverview(db, player, now));
-    const room = /^\/v1\/client\/chats\/rooms\/(lesson-[a-f0-9-]{36})(?:\/photos\/(\d+))?$/.exec(path);
+    const room = /^\/v1\/client\/chats\/rooms\/(lesson-[a-f0-9-]{36})(?:\/(read)|\/photos\/(\d+))?$/.exec(path);
     if (!room) throw new ChatError(404, 'not_found');
-    if (room[1] !== player.room) throw new ChatError(403, 'room_forbidden');
-    if (room[2] && request.method !== 'GET') throw new ChatError(405, 'method_not_allowed');
-    if (request.method === 'POST') return webReply(await send(env, player.room, player, request, ctx));
+    const [, roomId, read, photo] = room;
+    if (roomId !== player.room) throw new ChatError(403, 'room_forbidden');
+    if (read) {
+      if (request.method !== 'POST') throw new ChatError(405, 'method_not_allowed');
+      return webReply(await markSeen(env, roomId, player, now, request));
+    }
+    if (photo && request.method !== 'GET') throw new ChatError(405, 'method_not_allowed');
+    if (request.method === 'POST') return webReply(await send(env, roomId, player, request, ctx));
     if (request.method !== 'GET') throw new ChatError(405, 'method_not_allowed');
-    const access = await requireRoom(env, player.room, player, now);
-    if (room[2]) return await getPhoto(db, player.room, room[2]);
+    const access = await requireRoom(env, roomId, player, now);
+    if (photo) return await getPhoto(db, roomId, photo);
     return webReply(await messages(db, access, player.room, player.id, url.searchParams));
   } catch (error) {
     if (error instanceof ChatError) return webReply({ error: error.message }, error.status);

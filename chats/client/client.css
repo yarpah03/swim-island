@@ -61,6 +61,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .web-client [hidden] { display: none !important; }
 .client-card #client-password-form { padding: 0; }
 .client-install-body { display: grid; gap: 12px; padding: 16px; color: var(--txt-2); }
+.client-guide-steps { margin: 0; padding-inline-start: 36px; overflow: auto; }
 .partner-area {
   width: min(100%, 720px);
   margin-inline: auto;

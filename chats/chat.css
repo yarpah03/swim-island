@@ -268,6 +268,9 @@ body[data-page="chats"] #app { max-width: none; min-height: 0; padding: 0; }
   font-size: 11px;
 }
 .chat-message-meta time { margin-inline-start: auto; }
+.chat-message-receipt { display: inline-flex; align-self: center; color: var(--txt-3); }
+.chat-message-receipt[data-read="true"] { color: var(--aqua); }
+.chat-message-receipt .chat-icon, .chat-message-receipt svg { width: 17px; height: 17px; }
 .chat-message-meta strong, #swim-chats .chat-coach-label { color: var(--aqua); }
 .chat-empty { align-self: center; margin-block: auto; padding: 10px 16px; color: var(--txt-3); font-size: 14px; }
 

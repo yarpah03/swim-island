@@ -62,6 +62,8 @@ const SwimChats = (() => {
     install: '<path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/>',
     close: '<path d="m6 6 12 12M18 6 6 18"/>',
     send: '<path d="M21 3 9.7 14.3M21 3l-7 18-4.3-6.7L3 10z"/>',
+    delivered: '<path d="m5 12 4.3 4.3L19 6.7"/>',
+    read: '<path d="m2 12 4.4 4.4L16 6.8m-4.6 8 .9 1L22 6.1"/>',
   };
   let dispose = () => {};
   let closeForward = () => {};
@@ -1395,7 +1397,15 @@ const SwimChats = (() => {
       return { tile, clear };
     }
 
-    function message(item, openExercise, photos, room) {
+    function paintReceipt(node, read) {
+      const label = read ? 'Прочитано' : 'Доставлено';
+      node.dataset.read = String(read);
+      node.setAttribute('aria-label', label);
+      node.title = label;
+      node.replaceChildren(icon(read ? 'read' : 'delivered'));
+    }
+
+    function message(item, openExercise, photos, room, receipt) {
       const node = element('article', 'chat-message' + (item.own ? ' chat-message-own' : ''));
       const meta = element('div', 'chat-message-meta');
       if (item.person && !item.own) {
@@ -1409,6 +1419,7 @@ const SwimChats = (() => {
       stamp.dateTime = new Date(item.sent).toISOString();
       stamp.title = dateTime.format(item.sent);
       meta.append(stamp);
+      if (receipt) meta.append(receipt);
       node.append(meta);
       if (item.photo) node.append(photos.tile(item));
       const material = item.text && launch.materials?.resolve(item.text);
@@ -1527,15 +1538,17 @@ const SwimChats = (() => {
       let refreshAfterSend = false;
       let sentThrough = 0;
       const appended = new Set();
+      const unreadReceipts = new Map();
+      let readThrough = 0;
+      let lastIncoming = 0;
       let follow = true;
       let seen = 0;
       let reporting = false;
       const active = () => !document.hidden && telegram?.isActive !== false;
       const scrollToEnd = () => { thread.scrollTop = thread.scrollHeight; };
       async function reportSeen() {
-        if (!alerts[room.kind === 'group' ? 'groups' : 'personal'] || !active() || !follow ||
-          !last || last <= seen || reporting || v.signal.aborted || accessLost) return;
-        const through = last;
+        if (!active() || !follow || lastIncoming <= seen || reporting || v.signal.aborted || accessLost) return;
+        const through = lastIncoming;
         reporting = true;
         try {
           await v.request(endpoint + '/read', { through });
@@ -1552,6 +1565,14 @@ const SwimChats = (() => {
       }, { passive: true });
 
       function append(page, prepend = false) {
+        if (Number.isSafeInteger(page.readThrough) && page.readThrough > readThrough) {
+          readThrough = page.readThrough;
+          for (const [id, receipt] of unreadReceipts) {
+            if (id > readThrough) continue;
+            paintReceipt(receipt, true);
+            unreadReceipts.delete(id);
+          }
+        }
         const list = page.messages;
         if (!list.length) return;
         empty.hidden = true;
@@ -1564,7 +1585,17 @@ const SwimChats = (() => {
           if (typeof item.person?.avatar === 'number') {
             item.person.avatar = page.photos?.[item.person.avatar] || '';
           }
-          chunk.append(message(item, openExercise, photos, room));
+          let receipt;
+          if (item.own) {
+            receipt = element('span', 'chat-message-receipt');
+            receipt.setAttribute('role', 'img');
+            const read = item.id <= readThrough;
+            paintReceipt(receipt, read);
+            if (!read) unreadReceipts.set(item.id, receipt);
+          } else {
+            lastIncoming = Math.max(lastIncoming, item.id);
+          }
+          chunk.append(message(item, openExercise, photos, room, receipt));
         }
         if (prepend) items.prepend(chunk);
         else items.append(chunk);
@@ -1598,6 +1629,7 @@ const SwimChats = (() => {
         pending = null;
         attach.disabled = true;
         items.replaceChildren();
+        unreadReceipts.clear();
         empty.hidden = true;
         earlier.hidden = true;
         setDelivery('');
@@ -1676,8 +1708,10 @@ const SwimChats = (() => {
       const heightChanges = new ResizeObserver(() => { if (follow) scrollToEnd(); });
       heightChanges.observe(thread);
       timer = setInterval(() => { if (active()) refresh(); }, 5000);
+      document.addEventListener('visibilitychange', reportSeen);
       cleanup = () => {
         clearInterval(timer);
+        document.removeEventListener('visibilitychange', reportSeen);
         heightChanges.disconnect();
         photos.clear();
       };

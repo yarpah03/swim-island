@@ -16,6 +16,9 @@
   const account = document.getElementById('client-account');
   const accountStatus = document.getElementById('client-account-status');
   const installFromAccount = document.getElementById('client-install-menu');
+  const guide = document.getElementById('client-guide');
+  const guideKey = 'swim-vip-web-guide';
+  let guideShown = false;
   const partner = document.getElementById('partner-browser');
   const title = document.getElementById('client-title');
   const help = document.getElementById('client-help');
@@ -113,6 +116,7 @@
     chat.replaceChildren();
     partner.replaceChildren();
     account.close();
+    guide.close();
     if (active !== library) {
       clearTimeout(libraryTimer);
       frame.removeAttribute('src');
@@ -219,6 +223,18 @@
     libraryStatus.textContent = 'Загружаем приложение…';
     libraryNotice.hidden = false;
     frame.src = url.href;
+  }
+
+  function showGuide() {
+    guideShown = true;
+    try { localStorage.setItem(guideKey, '1'); } catch { /* Keep the choice for this page. */ }
+    if (!guide.open) guide.showModal();
+  }
+
+  function showFirstGuide() {
+    if (guideShown) return;
+    try { if (localStorage.getItem(guideKey)) return; } catch { /* Storage can be disabled. */ }
+    showGuide();
   }
 
   function showAccount() {
@@ -381,6 +397,11 @@
     }
   });
   document.getElementById('client-account-close').addEventListener('click', () => account.close());
+  guide.querySelector('button').addEventListener('click', () => guide.close());
+  document.getElementById('client-guide-menu').addEventListener('click', () => {
+    account.close();
+    showGuide();
+  });
   installFromAccount.addEventListener('click', () => {
     account.close();
     offerInstall();
@@ -400,6 +421,7 @@
       clearTimeout(libraryTimer);
       libraryNotice.hidden = true;
       frame.inert = false;
+      if (!returnToChat) showFirstGuide();
       return;
     }
     if (message?.type === 'swim-portal-route') {

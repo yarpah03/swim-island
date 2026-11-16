@@ -10,8 +10,8 @@
   <link rel="icon" href="/client/vip-icon.png">
   <link rel="apple-touch-icon" href="/client/vip-icon.png">
   <link rel="manifest" href="/client/manifest.webmanifest">
-  <link rel="stylesheet" href="/client/chat.css?v=4">
-  <link rel="stylesheet" href="/client/client.css?v=5">
+  <link rel="stylesheet" href="/client/chat.css?v=5">
+  <link rel="stylesheet" href="/client/client.css?v=6">
 </head>
 <body class="web-client">
   <main class="client-login">
@@ -63,10 +63,22 @@
       <button class="chat-button" id="client-account-close" type="button">Закрыть</button>
     </div>
     <div class="client-install-body">
+      <button class="chat-button" id="client-guide-menu" type="button">Как пользоваться сайтом</button>
       <button class="chat-button" id="client-install-menu" type="button">Установить приложение</button>
       <button class="chat-button" id="client-logout" type="button">Выйти</button>
       <p class="chat-status" id="client-account-status" role="status"></p>
     </div>
+  </dialog>
+  <dialog id="client-guide" class="chat-forward-sheet" aria-labelledby="client-guide-title">
+    <div class="chat-forward-heading">
+      <h2 id="client-guide-title">Как пользоваться сайтом</h2>
+      <button class="chat-button chat-primary" type="button">Понятно</button>
+    </div>
+    <ol class="client-install-body client-guide-steps">
+      <li>В «Обучении» выберите стиль. В «Тренировках в бассейне» выберите цель и свой уровень.</li>
+      <li>Чтобы написать тренеру, нажмите значок чата в верхней панели.</li>
+      <li>Чтобы вынести сайт на главный экран телефона, откройте значок профиля и выберите «Установить приложение».</li>
+    </ol>
   </dialog>
   <dialog id="client-install" class="chat-forward-sheet" aria-labelledby="client-install-title">
     <div class="chat-forward-heading"><h2 id="client-install-title">Установить приложение</h2><button class="chat-button" type="button">Закрыть</button></div>
@@ -75,8 +87,8 @@
       <p><strong>На Android</strong> откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».</p>
     </div>
   </dialog>
-  <script src="/client/chat.js?v=4" defer></script>
+  <script src="/client/chat.js?v=5" defer></script>
   <script src="/client/partners.js?v=3" defer></script>
-  <script src="/client/client.js?v=5" defer></script>
+  <script src="/client/client.js?v=6" defer></script>
 </body>
 </html>
