@@ -1,4 +1,4 @@
-import { CHECKOUT, APP, WEB, CATEGORIES, PHOTOS, SEED, button, link, nav, escape, isAdmin, publicCard } from './catalog.mjs';
+import { CHECKOUT, APP, WEB, CATEGORIES, PHOTOS, SEED, button, link, nav, escape, isAdmin, publicCard, replyAction } from './catalog.mjs';
 import { telegram, text, photoCard, document, asset } from './telegram.mjs';
 import { rows, one, run, subscribe, claimUpdate } from './store.mjs';
 import { adminHome, adminMessage, adminCallback } from './admin.mjs';
@@ -137,9 +137,30 @@ export async function handleUpdate(request,env,update,ctx){
     const key=command[1]==='start'?(command[2]==='crawl'?'materials':command[2]==='brass'?'breaststroke8':'home'):command[1]==='menu'?'home':command[1]==='vip'?'buy':command[1];
     return key==='breaststroke8'?material(env,origin,id,key):showPublic(env,origin,id,key);
   }
+  const keyboardAction=replyAction(m.text);
+  if(keyboardAction){
+    // These exact button labels are navigation, including while an admin draft is open.
+    // Keep the draft untouched and reuse the existing role-checked callback handlers.
+    return handleUpdate(request,env,{callback_query:{from,data:keyboardAction,message:{chat,message_id:m.message_id}}},ctx);
+  }
   if(await adminMessage(env,origin,id,m))return;
   await subscribe(env.BOT_DB,id);
   return showPublic(env,origin,id,'home');
+}
+export async function configureChatMenu(env){
+  const menuButton={type:'commands'};
+  const apply=async chat=>{
+    const form=new FormData();form.set('menu_button',JSON.stringify(menuButton));
+    if(chat!==undefined)form.set('chat_id',String(chat));
+    await telegram(env,'setChatMenuButton',form);
+  };
+  await apply();
+  for(const chat of (env.BOT_ADMIN_IDS||'').split(',').map(Number).filter(Number.isSafeInteger)){
+    try{await apply(chat);}catch(e){if(e.status!==400)throw e;}
+  }
+  const configuredMenu=await telegram(env,'getChatMenuButton');
+  if(configuredMenu.type!=='commands')throw new Error('menu_not_applied');
+  return {menuButton:configuredMenu,keyboardMode:'reply'};
 }
 export async function setup(env,origin){
   const me=await telegram(env,'getMe');
@@ -158,13 +179,7 @@ export async function setup(env,origin){
   await telegram(env,'setMyName',{name:'Плавательный остров | Уроки и VIP'});
   await telegram(env,'setMyDescription',{description:'Полезные материалы по плаванию от Ярослава Пахомова и Макара Марченко. Бесплатные PDF, уроки и чек-листы, новости клуба и подписка на Плавательный остров VIP. Нажмите «Начать» и выберите раздел.'});
   await telegram(env,'setMyShortDescription',{short_description:'Уроки, чек-листы и новости плавания. Бесплатные материалы и вход в Плавательный остров VIP.'});
-  const menuButton={type:'web_app',text:'Меню',web_app:{url:'https://vip.swimisland.ru/v1/client/entry/menu'}};
-  await telegram(env,'setChatMenuButton',{menu_button:JSON.stringify(menuButton)});
-  for(const chat of (env.BOT_ADMIN_IDS||'').split(',').map(Number).filter(Number.isSafeInteger)){
-    try{await telegram(env,'setChatMenuButton',{chat_id:chat,menu_button:JSON.stringify(menuButton)});}catch(e){if(e.status!==400)throw e;}
-  }
-  const configuredMenu=await telegram(env,'getChatMenuButton');
-  if(configuredMenu.type!=='web_app'||configuredMenu.web_app?.url!==menuButton.web_app.url)throw new Error('menu_not_applied');
+  await configureChatMenu(env);
 
   const data=new FormData();
   data.set('photo',JSON.stringify({type:'static',photo:'attach://avatar'}));
@@ -186,10 +201,17 @@ export default {
     if(path==='/health'){
       if(request.method!=='GET')return json({error:'method'},405);
       const db=await one(env.BOT_DB,'SELECT count(*) AS n FROM bot_materials WHERE active=1');
-      return json({ok:true,version:'news-menu-2',materials:db.n,paymentConfigured:!!env.TRIBUTE_API_KEY});
+      return json({ok:true,version:'news-menu-3-keyboard',materials:db.n,paymentConfigured:!!env.TRIBUTE_API_KEY});
     }
     if(path.startsWith('/control/')){
       if(!env.BOT_CONTROL_TOKEN||request.headers.get('Authorization')!=='Bearer '+env.BOT_CONTROL_TOKEN)return json({error:'unauthorized'},401);
+      if(path==='/control/menu'&&request.method==='POST'){
+        try{
+          const me=await telegram(env,'getMe');
+          if(me.username!=='swim_island_entry_bot')throw new Error('wrong_bot');
+          return json(await configureChatMenu(env));
+        }catch(e){return json({error:e.message,status:e.status||0},502);}
+      }
       if(path==='/control/setup'&&request.method==='POST'){
         try{return json(await setup(env,url.origin));}catch(e){return json({error:e.message,status:e.status||0},502);}
       }

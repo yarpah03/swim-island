@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import worker, { handleUpdate, tariffs, setup } from './worker.mjs';
-import { SEED, publicCard } from './catalog.mjs';
+import { SEED, publicCard, replyKeyboard } from './catalog.mjs';
 import { adminCallback } from './admin.mjs';
 import { drain } from './broadcast.mjs';
 import { rows, one, run } from './store.mjs';
@@ -60,7 +60,7 @@ async function mocked(f,fn){
 }
 test('unsigned hooks and control calls never register users or send messages',async()=>{
   const f=fixture();
-  for(const path of ['/telegram','/control/setup']){
+  for(const path of ['/telegram','/control/setup','/control/menu']){
     const r=await worker.fetch(new Request('https://bot.test'+path,{method:'POST',body:JSON.stringify(f.message(42,'/start'))}),f.env,f.ctx);
     assert.equal(r.status,401);
   }
@@ -77,8 +77,10 @@ test('start opens a photo menu; stop persists after restarting; updates are dedu
     assert.equal((await send(update)).status,200);assert.equal(f.calls.length,n);
     const first=f.calls.find(x=>x.method==='sendPhoto');
     assert(first.body.caption.includes('Плавательный остров'));
-    const keyboard=JSON.parse(first.body.reply_markup).inline_keyboard.flat();
-    assert(keyboard.some(x=>x.callback_data==='materials')&&keyboard.some(x=>x.callback_data==='buy'));
+    const markup=JSON.parse(first.body.reply_markup),keyboard=markup.keyboard.flat();
+    assert(keyboard.some(x=>x.text==='🎁 Материалы')&&keyboard.some(x=>x.text==='💎 Подписка VIP'));
+    assert.equal(markup.is_persistent,true);assert.equal(markup.one_time_keyboard,false);
+    assert(!markup.inline_keyboard);assert(keyboard.every(x=>!x.web_app&&!x.callback_data));
     await send(f.message(42,'/stop'));
     await send(f.message(42,'/start'));
     assert.equal((await one(f.db,'SELECT subscribed FROM bot_subscribers WHERE chat_id=42')).subscribed,0);
@@ -203,13 +205,13 @@ test('tile menu verifies Telegram data, rejects replayed identity changes and ex
   assert.equal(await menuUser(f.env,initData(f.env,42,Math.floor(Date.now()/1000)-3601)),null);
   assert.equal(await menuUser(f.env,valid+'&user=forged'),null);
 });
-test('native Menu opens the tile web app and role-protected actions are delivered only once',async()=>{
+test('native Menu no longer opens a web app; existing signed menu actions remain protected and deduplicated',async()=>{
   const f=fixture();
   await mocked(f,async()=>{
     await setup(f.env,'https://bot.test');
     const configured=JSON.parse(f.calls.find(x=>x.method==='setChatMenuButton').body.menu_button);
-    assert.equal(configured.type,'web_app');
-    assert.equal(configured.web_app.url,'https://vip.swimisland.ru/v1/client/entry/menu');
+    assert.equal(configured.type,'commands');
+    assert.equal(configured.web_app,undefined);
     const call=(id,path,extra={})=>worker.fetch(new Request('https://bot.test/menu/'+path,{method:'POST',body:JSON.stringify({initData:initData(f.env,id),...extra})}),f.env,f.ctx);
     assert.equal((await(await call(42,'bootstrap')).json()).admin,false);
     assert.equal((await(await call(1,'bootstrap')).json()).admin,true);
@@ -220,5 +222,61 @@ test('native Menu opens the tile web app and role-protected actions are delivere
     const n=f.calls.filter(x=>x.method==='sendPhoto').length;
     await call(42,'action',{action:'materials',nonce});
     assert.equal(f.calls.filter(x=>x.method==='sendPhoto').length,n);
+  });
+});
+
+
+test('all reply keyboard buttons open chat sections without a web app or callback answer',async()=>{
+  const f=fixture();
+  await mocked(f,async()=>{
+    for(const item of replyKeyboard(false).keyboard.flat()){
+      const before=f.calls.length;
+      await handleUpdate(f.request,f.env,f.message(42,item.text),f.ctx);
+      const sent=f.calls.slice(before);
+      assert(sent.some(x=>x.method==='sendPhoto'),item.text);
+      assert(!sent.some(x=>x.method==='answerCallbackQuery'||x.method==='editMessageMedia'),item.text);
+    }
+    assert(!replyKeyboard(false).keyboard.flat().some(x=>x.text==='Управление ботом'));
+    assert(replyKeyboard(true).keyboard.flat().some(x=>x.text==='Управление ботом'));
+    await handleUpdate(f.request,f.env,f.message(42,'Управление ботом'),f.ctx);
+    assert.equal((await one(f.db,'SELECT count(*) AS n FROM bot_admin_drafts')).n,0);
+    const last=JSON.parse(f.calls.at(-1).body.reply_markup);
+    assert(!last.keyboard.flat().some(x=>x.text==='Управление ботом'));
+  });
+});
+
+test('returning home from an old inline photo restores a reply keyboard on a new message',async()=>{
+  const f=fixture();
+  await mocked(f,async()=>{
+    await handleUpdate(f.request,f.env,f.callback(42,'home'),f.ctx);
+    const result=f.calls.at(-1);assert.equal(result.method,'sendPhoto');
+    const markup=JSON.parse(result.body.reply_markup);
+    assert.equal(markup.keyboard.length,4);
+    assert.equal(markup.is_persistent,true);
+    assert(markup.keyboard.flat().some(x=>x.text==='🏠 Главное меню'));
+  });
+});
+
+test('keyboard navigation never becomes draft content or discards an unfinished material',async()=>{
+  const f=fixture();
+  await mocked(f,async()=>{
+    await handleUpdate(f.request,f.env,f.callback(1,'admin:category:lessons'),f.ctx);
+    const before=await one(f.db,'SELECT * FROM bot_admin_drafts WHERE actor_id=1');
+    await handleUpdate(f.request,f.env,f.message(1,'📰 Новости'),f.ctx);
+    const after=await one(f.db,'SELECT * FROM bot_admin_drafts WHERE actor_id=1');
+    assert.deepEqual(after,before);
+    await handleUpdate(f.request,f.env,f.message(1,'Новый урок'),f.ctx);
+    assert.equal((await one(f.db,'SELECT step FROM bot_admin_drafts WHERE actor_id=1')).step,'material:description');
+  });
+});
+
+test('menu-only configuration clears web app overrides without sending messages or changing the profile',async()=>{
+  const f=fixture();
+  await mocked(f,async()=>{
+    const response=await worker.fetch(new Request('https://bot.test/control/menu',{method:'POST',headers:{Authorization:'Bearer '+f.env.BOT_CONTROL_TOKEN}}),f.env,f.ctx);
+    assert.equal(response.status,200);
+    const result=await response.json();assert.equal(result.keyboardMode,'reply');assert.equal(result.menuButton.type,'commands');
+    assert.equal(f.calls.filter(x=>x.method==='setChatMenuButton').length,3);
+    assert(!f.calls.some(x=>['sendPhoto','sendMessage','copyMessage','setMyProfilePhoto','setWebhook','setMyName','setMyCommands'].includes(x.method)));
   });
 });
