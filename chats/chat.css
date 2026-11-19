@@ -718,3 +718,5 @@ html.client-catalog #app { padding-top: 10px; }
 .chat-roster-section[hidden], .chat-cabinet > .chat-inbox-note[hidden] { display: none; }
 .chat-cabinet > .chat-inbox-note { padding: 4px 0; }
 .chat-web-invite > .chat-status:empty { display: none; }
+
+.chat-pdf-confirm{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5}.chat-pdf-confirm input{width:20px;height:20px;flex:0 0 20px;accent-color:var(--gold,#d7b866)}.chat-pdf-access{margin-top:20px;padding-top:16px;border-top:1px solid #31494d}

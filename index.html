@@ -1250,9 +1250,12 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
   margin:18px auto 26px;padding-inline:12px;max-width:760px;text-align:center
 }
 .workout-print-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;max-width:100%}
+.workout-print-button:disabled{opacity:.55;cursor:default}
 .workout-print-button .club-icon{width:17px;height:17px}
 .workout-print-help,.workout-print-status{color:var(--txt-2);font-size:13px}
 .workout-print-status:empty{display:none}
+.workout-print-status{max-width:420px;line-height:1.5}
+.workout-print-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
 .workout-print-browser{min-height:44px;padding:0;border:0;background:none;color:var(--gold-lt);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer}
 .circuit-detail .doc p{font-size:15px;margin-bottom:9px}
 @media(max-width:420px){
@@ -1326,7 +1329,7 @@ footer{border-top:1px solid rgba(var(--gold-rgb),.14);margin-top:56px;padding:22
 <script src="chats/exercises.js?v=1"></script>
 <script src="chats/chat.js?v=15"></script>
 <script src="chats/partners.js?v=3"></script>
-<script src="workout-print/card.js?v=1"></script>
+<script src="workout-print/card.js?v=2-paid"></script>
 <script>
 /* ============================================================
    ВИДЕО НА KINESCOPE
@@ -3865,12 +3868,12 @@ function openExt(url){
 function workoutPrintButton(index = null){
   const suffix = index === null ? "" : ' data-workout-index="' + index + '"';
   return `<div class="workout-print">
-    <button type="button" class="ref-btn workout-print-button"${suffix} onclick="printWorkout(this)">
+    <button type="button" class="ref-btn workout-print-button"${suffix} disabled onclick="printWorkout(this)">
       <svg class="club-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></svg>
       Скачать тренировку (PDF)
     </button>
-    <span class="workout-print-help">Для печати на А4</span>
-    <span class="workout-print-status" data-print-status role="status"></span>
+    <span class="workout-print-help">Компактная версия для печати на А4</span>
+    <span class="workout-print-status" data-print-status role="status">Проверяем оплаченную подписку…</span>
   </div>`;
 }
 
@@ -3885,11 +3888,7 @@ function printWorkout(button){
         [T[PARENT[id]]?.title, index === undefined ? "" : d.title].filter(Boolean).join(" · "))
     : d.print ? WorkoutPrint.fromLand(d) : null;
   if(!card) return;
-  const tg = window.Telegram?.WebApp;
-  const url = new URL(location.href);
-  url.hash = id;
-  if(index !== undefined) url.searchParams.set("workout", String(Number(index) + 1));
-  WorkoutPrint.download(button, card, tg?.initData && tg.openLink ? () => tg.openLink(url.href) : null);
+  WorkoutPrint.download(button, card);
 }
 
 /* Сервис: пять экранов. Всё, кроме приглашения друга, — обычный текст
@@ -5199,6 +5198,7 @@ if(d.lesson){
   } else if(d.workouts && /^[1-9]\d*$/.test(printIndex || "")){
     document.querySelectorAll(".wk")[Number(printIndex) - 1]?.scrollIntoView({block:"start"});
   }
+  WorkoutPrint.mount(document.getElementById("app"));
   setupVideos();
   setupRef();
   setupGame();

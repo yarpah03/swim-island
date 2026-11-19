@@ -15,7 +15,10 @@ assert(authEnd > 0 && game.slice(0, authEnd).includes('async function authentica
 mkdirSync(resolve(output, 'client'), { recursive: true });
 mkdirSync(resolve(output, 'partner'), { recursive: true });
 const auth = 'const authenticate = (() => {\n' + game.slice(0, authEnd) + 'return authenticate;\n})();\n';
-writeFileSync(resolve(output, '_worker.js'), auth + script.slice(importLine.length));
+const paidImport = "import { pdfEntitlement, tributeConfiguration } from './paid-access.mjs';";
+assert(script.includes(paidImport));
+const paid = readFileSync(source('paid-access.mjs'), 'utf8').replace(/^export /gm, '');
+writeFileSync(resolve(output, '_worker.js'), auth + paid + script.slice(importLine.length).replace(paidImport, ''));
 writeFileSync(resolve(output, '_routes.json'), JSON.stringify({
   version: 1, include: ['/health', '/v1/chats', '/v1/chats/*', '/v1/client/*', '/v1/partner/*'], exclude: [],
 }));
