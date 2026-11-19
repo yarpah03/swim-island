@@ -1,62 +1,139 @@
 {
   "home-v2.jpg": {
-    "source": "personal-pool.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "бассейн 5.jpeg",
+    "sourceSha256": "7b31e7bfa118a471ccce9ab08a0f6cfbc1c25c3c8d1b75e2ad222ade77308f37",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.62
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "materials-v2.jpg": {
-    "source": "breathing-inhale.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "бассейн 1.jpeg",
+    "sourceSha256": "67e418687cb749bdee065e4b2327d0e22198e22bb49c0872e28b884a09ded1f5",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.48
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "about-v2.jpg": {
-    "source": "personal-athlete.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "бассейн 14.jpg",
+    "sourceSha256": "3a26ac0de2121d7e3fd03baee9ffb49ffbedc100d2ee0d2cda3ccb4118b9efed",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.54
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "tariffs-v2.jpg": {
-    "source": "cover-swimming.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "басс 4.jpg",
+    "sourceSha256": "4a2e6c3feec529bd4ab5ccf2eb6826c7baa083ed7cd8308cf63445d3a4beae9e",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.57
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "buy-v2.jpg": {
-    "source": "personal-pool.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "закат басса.jpeg",
+    "sourceSha256": "90dc6c5590f4c0b8b88bff9b8e7aadf0b59f0d7176ed5bba62f2d58f4bc63e26",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.49
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "access-v2.jpg": {
-    "source": "cover-swimming.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "swimming pool after training.jpeg",
+    "sourceSha256": "9e77bff1b261b71fc291e6fa0744fdf89bbcfbe0394bc3d80096e50582aa8da3",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.58
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "news-v2.jpg": {
-    "source": "personal-athlete.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "Solo Swim, Sydney (Foto_ Bradscanvas) #bradwalls #fotografie #pool #adgermany.jpeg",
+    "sourceSha256": "c47bc45c17fe0c92ef4a9da79ae821b84a800ad78564d7b5864ee5283c97f932",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.12
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "help-v2.jpg": {
-    "source": "personal-pool.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "Water.jpeg",
+    "sourceSha256": "82604687bda22735efc08b88988631c7986d046ff8d14d6494a1e16d1691cc70",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.5
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "lessons-v2.jpg": {
-    "source": "breathing-inhale.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "бассейн 45.jpeg",
+    "sourceSha256": "8119fa8f17c9833cb04043464a192352c15947a3c0325a007b7b777ae0c80c66",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.5
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "checklists-v2.jpg": {
-    "source": "breathing-exhale.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "pool.jpeg",
+    "sourceSha256": "c643250caa7b5c1c0bd0d9d6745e696c83a7e296b91def3e26366ace94713e5a",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.48
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "plans-v2.jpg": {
-    "source": "cover-swimming.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "бассейн 4.jpeg",
+    "sourceSha256": "7d07a7a5c86196fcaf758d4d190006c1785977232ff586efa08df9ef4c550e86",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.5
+    ],
+    "sourceRegion": null,
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   },
   "admin-v2.jpg": {
-    "source": "personal-athlete.jpg",
-    "kind": "real-photo",
-    "edits": "crop, branded layout, typography; no generative alteration"
+    "source": "бассейн чбд.jpg",
+    "sourceSha256": "2e9213706fba6f63a5d231db3ec877e8417b116f9440b93973661bd70d1f0774",
+    "kind": "local-pool-photo",
+    "cropFocus": [
+      0.5,
+      0.5
+    ],
+    "sourceRegion": [
+      0,
+      310,
+      700,
+      630
+    ],
+    "edits": "crop; existing official VIP mark in gold; no people added, no AI generation, no colour grading, no titles or subtitles"
   }
 }
