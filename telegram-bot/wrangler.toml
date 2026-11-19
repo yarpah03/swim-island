@@ -1,0 +1,8 @@
+name = "swim-island-entry-bot"
+pages_build_output_dir = "../dist/bot"
+compatibility_date = "2026-11-19"
+
+[[d1_databases]]
+binding = "BOT_DB"
+database_name = "swim-island-entry"
+database_id = "b1b4ade2-2916-4c35-9b99-9d68edeaf6b7"
