@@ -144,3 +144,10 @@ CREATE TABLE IF NOT EXISTS chat_partner_materials (
 );
 
 CREATE INDEX IF NOT EXISTS chat_partner_materials_list ON chat_partner_materials (partner_id, published, updated_ms);
+
+CREATE TABLE IF NOT EXISTS chat_pdf_access (
+  room_id TEXT PRIMARY KEY REFERENCES chat_coaching(id),
+  paid_until_ms INTEGER NOT NULL CHECK (paid_until_ms >= 0),
+  updated_by INTEGER NOT NULL CHECK (updated_by > 0),
+  updated_ms INTEGER NOT NULL
+);

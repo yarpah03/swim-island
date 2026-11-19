@@ -1,4 +1,5 @@
 import { authenticate } from '../game/worker.mjs';
+import { pdfEntitlement, tributeConfiguration } from './paid-access.mjs';
 
 const APP_ORIGIN = 'https://yarpah03.github.io';
 const PAGE_SIZE = 40;
@@ -643,6 +644,23 @@ async function endCoaching(db, room, now) {
   ]);
 }
 
+async function recordPdfPayment(db, owner, room, data, now) {
+  if (typeof data.paid !== 'boolean') throw new ChatError(400, 'invalid_pdf_access');
+  const client = await db.prepare('SELECT expires_ms FROM chat_coaching WHERE id = ? AND coach_id = ?')
+    .bind(room, owner).first();
+  if (!client) throw new ChatError(403, 'room_forbidden');
+  const until = data.paid ? data.paidUntil : 0;
+  if (data.paid && (!Number.isSafeInteger(until) || until <= now || until > client.expires_ms)) {
+    throw new ChatError(400, 'invalid_pdf_access');
+  }
+  await db.prepare(`
+    INSERT INTO chat_pdf_access (room_id, paid_until_ms, updated_by, updated_ms) VALUES (?, ?, ?, ?)
+    ON CONFLICT (room_id) DO UPDATE SET paid_until_ms = excluded.paid_until_ms,
+      updated_by = excluded.updated_by, updated_ms = excluded.updated_ms
+  `).bind(room, until, owner, now).run();
+  return { ok: true };
+}
+
 const WEB_ORIGIN = 'https://swim-island-chats.pages.dev';
 const WEB_COOKIE = '__Host-swim-client';
 const WEB_TOKEN = /^[a-f0-9]{64}$/;
@@ -809,11 +827,11 @@ async function manageWebClients(env, player, now, request) {
   if (request.method === 'GET') {
     const { results } = await db.prepare(`
       SELECT * FROM (
-        SELECT a.id, a.label, a.display_name AS name, NULL AS email, a.password_hash IS NOT NULL AS entered, c.expires_ms AS expires
+        SELECT a.id, a.label, a.display_name AS name, NULL AS email, a.password_hash IS NOT NULL AS entered, c.expires_ms AS expires, coalesce((SELECT min(paid_until_ms, c.expires_ms) FROM chat_pdf_access WHERE room_id = c.id), 0) AS pdfPaidUntil
         FROM chat_web_accounts a JOIN chat_coaching c ON c.id = a.room_id
         WHERE c.coach_id = ? AND a.role = 'client'
         UNION ALL
-        SELECT w.room_id AS id, p.name AS label, p.name, w.email, w.verified_ms IS NOT NULL AS entered, c.expires_ms AS expires
+        SELECT w.room_id AS id, p.name AS label, p.name, w.email, w.verified_ms IS NOT NULL AS entered, c.expires_ms AS expires, coalesce((SELECT min(paid_until_ms, c.expires_ms) FROM chat_pdf_access WHERE room_id = c.id), 0) AS pdfPaidUntil
         FROM chat_web_clients w JOIN chat_profiles p ON p.telegram_id = w.student_id
         JOIN chat_coaching c ON c.id = w.room_id
         WHERE w.coach_id = ? AND NOT EXISTS (SELECT 1 FROM chat_web_accounts WHERE id = w.room_id)
@@ -823,7 +841,8 @@ async function manageWebClients(env, player, now, request) {
   }
   const data = await input(request);
   if (data.action === 'invite') {
-    return createNamedInvite(db, player, 'client', cleanName(data.label, 60), webDate(data.expires, now));
+    if (data.pdfPaid !== undefined && typeof data.pdfPaid !== 'boolean') throw new ChatError(400, 'invalid_pdf_access');
+    return createNamedInvite(db, player, 'client', cleanName(data.label, 60), webDate(data.expires, now), data.pdfPaid === true, now);
   }
   if (data.action === 'create') {
     const name = cleanName(data.name);
@@ -860,6 +879,7 @@ async function manageWebClients(env, player, now, request) {
     WHERE c.coach_id = ? AND c.id = ? AND (a.id IS NOT NULL OR w.room_id IS NOT NULL)
   `).bind(player.id, data.id).first();
   if (!client) throw new ChatError(403, 'room_forbidden');
+  if (data.action === 'pdfAccess') return recordPdfPayment(db, player.id, data.id, data, now);
   if (data.action === 'renew') {
     await db.prepare('UPDATE chat_coaching SET expires_ms = ? WHERE id = ? AND coach_id = ?')
       .bind(webDate(data.expires, now), data.id, player.id).run();
@@ -977,7 +997,7 @@ function namedInviteUrl(role, token) {
   return WEB_ORIGIN + '/' + role + '/#invite=' + token;
 }
 
-async function createNamedInvite(db, player, role, label, expires) {
+async function createNamedInvite(db, player, role, label, expires, pdfPaid = false, now = Date.now()) {
   const token = webToken();
   const hash = await webTokenHash(token);
   const id = (role === 'client' ? 'lesson-' : 'partner-') + crypto.randomUUID();
@@ -993,6 +1013,8 @@ async function createNamedInvite(db, player, role, label, expires) {
       db.prepare('INSERT INTO chat_coaching (id, student_id, coach_id, expires_ms) VALUES (?, ?, ?, ?)')
         .bind(id, guestId, player.id, expires),
       account,
+      ...(pdfPaid ? [db.prepare('INSERT INTO chat_pdf_access (room_id, paid_until_ms, updated_by, updated_ms) VALUES (?, ?, ?, ?)')
+        .bind(id, expires, player.id, now)] : []),
     ]);
   } else {
     await account.run();
@@ -1282,6 +1304,10 @@ async function webApi(request, env, ctx, url) {
       if (!desk) throw new ChatError(404, 'not_found');
       return webReply(await partnerDesk(db, player.account, now, request, desk[1]));
     }
+    if (path === '/v1/client/pdf-access' && request.method === 'GET') {
+      const access = await pdfEntitlement(env, player, now);
+      return webReply(access, access.reason === 'unavailable' ? 503 : 200);
+    }
     const catalog = PARTNER_ROUTE.exec(path);
     if (catalog && request.method === 'GET') return webReply(await publishedPartners(db, catalog[1], catalog[2]));
     if (path === '/v1/client/chats' && request.method === 'GET') return webReply(await webOverview(db, player, now));
@@ -1314,6 +1340,7 @@ export default {
       '/health': ['GET'],
       '/v1/chats': ['GET'],
       '/v1/chats/profile': ['POST'],
+      '/v1/chats/pdf-access': ['GET'],
       '/v1/chats/notifications': ['POST'],
       '/v1/chats/manage': ['GET', 'POST'],
       '/v1/chats/clients': ['GET', 'POST'],
@@ -1348,14 +1375,19 @@ export default {
           db.prepare('SELECT id FROM chat_web_accounts LIMIT 0'),
           db.prepare('SELECT token_hash FROM chat_web_account_sessions LIMIT 0'),
           db.prepare('SELECT id FROM chat_partner_materials LIMIT 0'),
+          db.prepare('SELECT paid_until_ms FROM chat_pdf_access LIMIT 0'),
         ]);
-        return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN), notificationsConfigured: canNotify(env), webConfigured: true, partnersConfigured: true, emailConfigured: webMailReady(env) });
+        return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN), notificationsConfigured: canNotify(env), webConfigured: true, partnersConfigured: true, emailConfigured: webMailReady(env), pdfPaymentConfigured: Boolean(tributeConfiguration(env)) });
       }
       const now = Date.now();
       const player = await authenticate(request, now);
       if (!player) return reply({ error: 'telegram_auth_required' }, 401);
       if (!db) return reply({ error: 'unavailable' }, 503);
       if (route === '/v1/chats') return reply(await overview(env, player, now, signedUser(request)));
+      if (route === '/v1/chats/pdf-access') {
+        const access = await pdfEntitlement(env, player, now);
+        return reply(access, access.reason === 'unavailable' ? 503 : 200);
+      }
       if (route === '/v1/chats/notifications') return reply(await saveNotifications(env, player, request));
       if (route === '/v1/chats/clients') return reply(await manageWebClients(env, player, now, request));
       if (route === '/v1/chats/partner-admin') return reply(await managePartnerInvites(env, player, request, now));

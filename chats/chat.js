@@ -24,6 +24,7 @@ const SwimChats = (() => {
     web_code_wait: 'Подождите перед выпуском нового кода.',
     web_access_ended: 'Срок ведения закончился.',
     web_auth_required: 'Для открытия переписки войдите ещё раз.',
+    invalid_pdf_access: 'Укажите срок оплаченного доступа к PDF в пределах действующего ведения.',
     invalid_assignment: 'Проверьте коды участников и дату окончания ведения.',
     invalid_invite_link: 'Не удалось подготовить ссылку для регистрации. Выпустите новую ссылку для этого приглашения.',
     slow_down: 'Подождите секунду и повторите отправку.',
@@ -953,9 +954,16 @@ const SwimChats = (() => {
           const label = field(form, 'Название ссылки', textInput('Например, Алексей', 60));
           label.autocomplete = 'off';
           const expiry = trainers ? null : field(form, 'Последний день ведения по Москве', dateInput(0));
+          const paid = trainers ? null : element('input');
+          if (paid) {
+            paid.type = 'checkbox';
+            const confirmation = element('label', 'chat-pdf-confirm');
+            confirmation.append(paid, document.createTextNode('Оплата получена — PDF до конца ведения'));
+            form.append(confirmation);
+          }
           v.formSubmit(form, 'Создать ссылку', async () => {
             const result = await v.request(endpoint,
-              { action: 'invite', label: label.value, expires: expiry ? expiresOn(expiry) : undefined });
+              { action: 'invite', label: label.value, expires: expiry ? expiresOn(expiry) : undefined, pdfPaid: paid?.checked });
             if (!v.signal.aborted) await reload(result);
           });
           page.append(invitation);
@@ -1059,6 +1067,29 @@ const SwimChats = (() => {
               if (!v.signal.aborted) await reload();
             });
             access.append(renewal);
+            if (active) {
+              const pdf = element('form', 'chat-form chat-pdf-access');
+              pdf.append(element('h3', '', 'Файлы PDF'), element('p', '',
+                client.pdfPaidUntil > Date.now()
+                  ? 'Оплата подтверждена до ' + date.format(client.pdfPaidUntil - 1) + '.'
+                  : 'PDF закрыт: оплаченный период не подтверждён.'));
+              const paid = element('input');
+              paid.type = 'checkbox';
+              paid.checked = client.pdfPaidUntil > Date.now();
+              const confirmation = element('label', 'chat-pdf-confirm');
+              confirmation.append(paid, document.createTextNode('Оплата подтверждена'));
+              pdf.append(confirmation);
+              const paidDate = field(pdf, 'Последний оплаченный день по Москве', dateInput(client.pdfPaidUntil || client.expires));
+              paidDate.max = new Date(client.expires - 1 + 3 * 3600000).toISOString().slice(0, 10);
+              paidDate.disabled = !paid.checked;
+              paid.addEventListener('change', () => { paidDate.disabled = !paid.checked; });
+              v.formSubmit(pdf, 'Сохранить доступ к PDF', async () => {
+                await v.request(endpoint, { action: 'pdfAccess', id: client.id,
+                  paid: paid.checked, paidUntil: paid.checked ? expiresOn(paidDate) : undefined });
+                if (!v.signal.aborted) await reload();
+              });
+              access.append(pdf);
+            }
           }
           card.append(access);
           const group = sections.get(!active ? 'closed' : client.entered ? 'active' : 'pending');
