@@ -36,3 +36,9 @@ CREATE INDEX IF NOT EXISTS bot_active_materials ON bot_materials(category,active
 CREATE INDEX IF NOT EXISTS bot_queued_delivery ON bot_deliveries(broadcast_id,status,chat_id);
 CREATE INDEX IF NOT EXISTS bot_recent_news ON bot_broadcasts(status,created_ms);
 CREATE INDEX IF NOT EXISTS bot_update_cleanup ON bot_updates(lease_until);
+CREATE TABLE IF NOT EXISTS bot_menu_limits (
+  user_id INTEGER PRIMARY KEY, window_ms INTEGER NOT NULL, count INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS bot_menu_actions (
+  nonce TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_ms INTEGER NOT NULL
+);

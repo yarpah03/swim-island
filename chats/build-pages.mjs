@@ -14,13 +14,23 @@ assert(authEnd > 0 && game.slice(0, authEnd).includes('async function authentica
 
 mkdirSync(resolve(output, 'client'), { recursive: true });
 mkdirSync(resolve(output, 'partner'), { recursive: true });
+mkdirSync(resolve(output, 'vip'), { recursive: true });
+for(const file of ['index.html','portal.js','portal.css']) copyFileSync(source('vip/'+file),resolve(output,'vip',file));
+const vipChat = readFileSync(source('chat.js'),'utf8')
+  .replace("web ? 'Ведение по ' + date.format(room.expires - 1) : roomDetails(room)",'roomDetails(room)')
+  .replace("const subscriber = !web && !staff && data.vip === 'active';","const subscriber = (!web || launch.fullWeb === true) && !staff && data.vip === 'active';")
+  .replace("web ? 'Введите имя тренера' : 'Имя или название группы'","'Имя или название чата'");
+writeFileSync(resolve(output,'vip/chat.js'),vipChat);
 const auth = 'const authenticate = (() => {\n' + game.slice(0, authEnd) + 'return authenticate;\n})();\n';
 const paidImport = "import { pdfEntitlement, tributeConfiguration } from './paid-access.mjs';";
 assert(script.includes(paidImport));
 const paid = readFileSync(source('paid-access.mjs'), 'utf8').replace(/^export /gm, '');
-writeFileSync(resolve(output, '_worker.js'), auth + paid + script.slice(importLine.length).replace(paidImport, ''));
+const tributeImport = "import { tributeWeb } from './tribute-web.mjs';";
+const tribute = readFileSync(source('tribute-web.mjs'),'utf8').replace("import { createTributeChecker } from './paid-access.mjs';", '').replace(/^export /gm,'');
+assert(script.includes(tributeImport));
+writeFileSync(resolve(output, '_worker.js'), auth + paid + tribute + script.slice(importLine.length).replace(paidImport, '').replace(tributeImport, ''));
 writeFileSync(resolve(output, '_routes.json'), JSON.stringify({
-  version: 1, include: ['/health', '/v1/chats', '/v1/chats/*', '/v1/client/*', '/v1/partner/*'], exclude: [],
+  version: 1, include: ['/health', '/v1/internal/tribute-web', '/v1/chats', '/v1/chats/*', '/v1/client/*', '/v1/partner/*'], exclude: [],
 }));
 writeFileSync(resolve(output, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
 const securityHeaders = `  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src https://yarpah03.github.io/swim-island/; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'

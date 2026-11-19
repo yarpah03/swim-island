@@ -1,5 +1,6 @@
 import { authenticate } from '../game/worker.mjs';
 import { pdfEntitlement, tributeConfiguration } from './paid-access.mjs';
+import { tributeWeb } from './tribute-web.mjs';
 
 const APP_ORIGIN = 'https://yarpah03.github.io';
 const PAGE_SIZE = 40;
@@ -228,7 +229,7 @@ async function overview(env, player, now, user) {
   const db = env.CHAT_DB;
   const [profile, vip, coaching, direct, coachProfile, preferences] = await Promise.all([
     profileOf(db, player.id),
-    channelStatus(env, player.id),
+    player.paidWeb ? Promise.resolve('active') : channelStatus(env, player.id),
     db.prepare(`
       SELECT c.id, c.expires_ms, COALESCE(pref.nickname, coach.name, other.name) AS name,
         c.coach_id = ? AS coaching, pref.avatar
@@ -350,7 +351,7 @@ async function requireRoom(env, id, player, now) {
     ? TRAINING_GROUP
     : await db.prepare('SELECT title, level FROM chat_groups WHERE id = ?').bind(id).first();
   if (!group || (group.level && group.level !== profile.level)) throw new ChatError(403, 'room_forbidden');
-  const vip = await channelStatus(env, player.id);
+  const vip = player.paidWeb ? 'active' : await channelStatus(env, player.id);
   if (vip === 'unavailable') throw new ChatError(503, 'vip_unavailable');
   if (!isVip(vip)) throw new ChatError(403, 'room_forbidden');
   return { group: true, title: group.title, level: group.level };
@@ -724,7 +725,11 @@ async function webGuestForToken(db, token) {
   return client;
 }
 
-async function webSession(db, request, now, role = 'client') {
+async function webSession(db, request, now, role = 'client', env) {
+  if(role === 'client' && env) {
+    const linked = await tributeWeb.session(env, request, now);
+    if(linked.known) return linked.active ? linked.player : null;
+  }
   const session = await accountSession(db, request, role, now);
   if (session || role === 'partner') return session;
   const token = webCookieToken(request);
@@ -1044,6 +1049,7 @@ async function registerNamedAccount(db, role, data, now) {
   if (!account.claimable) throw new ChatError(409, 'web_invite_used');
   const login = accountLogin(data.login);
   const proof = accountProof(data.proof);
+  if(await db.prepare('SELECT 1 FROM chat_tribute_accounts WHERE login=?').bind(login).first()) throw new ChatError(409, 'web_login_taken');
   const name = cleanName(data.name);
   const salt = webToken();
   // The browser stretches the password with PBKDF2. Store a separate salted hash of that proof.
@@ -1058,7 +1064,8 @@ async function registerNamedAccount(db, role, data, now) {
         SET display_name = ?, login = ?, password_salt = ?, password_hash = ?, claimable = 0, login_attempts = 0
         WHERE id = ? AND invite_hash = ? AND claimable = 1 AND disabled_ms IS NULL
           AND (room_id IS NULL OR EXISTS (SELECT 1 FROM chat_coaching WHERE id = room_id AND expires_ms > ?))
-      `).bind(name, login, salt, hash, account.id, account.invite_hash, now),
+          AND NOT EXISTS (SELECT 1 FROM chat_tribute_accounts WHERE login = ?)
+      `).bind(name, login, salt, hash, account.id, account.invite_hash, now, login),
       db.prepare(`
         UPDATE chat_profiles SET name = ? WHERE telegram_id = ?
           AND EXISTS (SELECT 1 FROM chat_web_accounts WHERE id = ? AND password_salt = ?)
@@ -1073,7 +1080,10 @@ async function registerNamedAccount(db, role, data, now) {
     if (taken) throw new ChatError(409, 'web_login_taken');
     throw error;
   }
-  if (!results[0].meta.changes || !results[2].meta.changes) throw new ChatError(409, 'web_invite_used');
+  if (!results[0].meta.changes || !results[2].meta.changes) {
+    if(await db.prepare('SELECT 1 FROM chat_tribute_accounts WHERE login=?').bind(login).first()) throw new ChatError(409,'web_login_taken');
+    throw new ChatError(409,'web_invite_used');
+  }
   return webReply({ ok: true }, 200, webCookie(token, Math.ceil((expires - now) / 1000), role));
 }
 
@@ -1253,9 +1263,11 @@ async function webApi(request, env, ctx, url) {
   if (!db) return webReply({ error: 'unavailable' }, 503);
   try {
     const now = Date.now();
+    const tributeRoute = role === 'client' && await tributeWeb.routes(request, env, url, now);
+    if(tributeRoute) return tributeRoute;
     if (path === prefix + 'session' && ['GET', 'POST'].includes(request.method)) {
       const data = request.method === 'POST' ? await input(request, 1024) : {};
-      const player = await webSession(db, request, now, role);
+      const player = await webSession(db, request, now, role, env);
       const hasInvite = data.invite !== undefined;
       const hash = typeof data.invite === 'string' && WEB_TOKEN.test(data.invite) ? await webTokenHash(data.invite) : null;
       const active = Boolean(player && (!hasInvite || hash === player.invite_hash));
@@ -1279,7 +1291,7 @@ async function webApi(request, env, ctx, url) {
       if (token) {
         const hash = await webTokenHash(token);
         const changes = [db.prepare('DELETE FROM chat_web_account_sessions WHERE token_hash = ?').bind(hash)];
-        if (role === 'client') changes.push(db.prepare('DELETE FROM chat_web_sessions WHERE token_hash = ?').bind(hash));
+        if (role === 'client') changes.push(db.prepare('DELETE FROM chat_web_sessions WHERE token_hash = ?').bind(hash), db.prepare('DELETE FROM chat_tribute_sessions WHERE token_hash = ?').bind(hash));
         await db.batch(changes);
       }
       return webReply({ ok: true }, 200, webCookie('', 0, role));
@@ -1288,7 +1300,12 @@ async function webApi(request, env, ctx, url) {
       return await registerNamedAccount(db, role, await input(request, 4096), now);
     }
     if (path === prefix + 'password' && request.method === 'POST') {
-      return await loginNamedAccount(db, role, await input(request, 1024), now);
+      const credentials = await input(request, 1024);
+      if(role === 'client' && typeof credentials.login === 'string' &&
+          await db.prepare('SELECT 1 FROM chat_tribute_accounts WHERE login=?').bind(credentials.login.trim().toLowerCase()).first()) {
+        return tributeWeb.password(env, credentials, now);
+      }
+      return await loginNamedAccount(db, role, credentials, now);
     }
     if (role === 'client' && (path === prefix + 'code' || path === prefix + 'login') && request.method === 'POST') {
       const { invite, code } = await input(request, 1024);
@@ -1297,7 +1314,7 @@ async function webApi(request, env, ctx, url) {
       if (path.endsWith('/code')) return webReply(await mailWebCode(env, client, now));
       return await verifyWebCode(db, client, code, now);
     }
-    const player = await webSession(db, request, now, role);
+    const player = await webSession(db, request, now, role, env);
     if (!player) throw new ChatError(401, 'web_auth_required');
     if (role === 'partner') {
       const desk = new RegExp('^/v1/partner/desk(?:/(' + PARTNER_MATERIAL_ID + '))?$').exec(path);
@@ -1310,16 +1327,20 @@ async function webApi(request, env, ctx, url) {
     }
     const catalog = PARTNER_ROUTE.exec(path);
     if (catalog && request.method === 'GET') return webReply(await publishedPartners(db, catalog[1], catalog[2]));
-    if (path === '/v1/client/chats' && request.method === 'GET') return webReply(await webOverview(db, player, now));
-    const room = /^\/v1\/client\/chats\/rooms\/(lesson-[a-f0-9-]{36})(?:\/photos\/(\d+))?$/.exec(path);
+    if (path === '/v1/client/chats' && request.method === 'GET') return webReply(player.paidWeb ? await overview(env, player, now, {}) : await webOverview(db, player, now));
+    const room = /^\/v1\/client\/chats\/rooms\/((?:club-training|level-[nsp]|(?:start|lesson|direct)-[a-f0-9-]{36}))(?:\/(read)|\/photos\/(\d+))?$/.exec(path);
     if (!room) throw new ChatError(404, 'not_found');
-    if (room[1] !== player.room) throw new ChatError(403, 'room_forbidden');
-    if (room[2] && request.method !== 'GET') throw new ChatError(405, 'method_not_allowed');
-    if (request.method === 'POST') return webReply(await send(env, player.room, player, request, ctx));
+    if (!player.paidWeb && room[1] !== player.room) throw new ChatError(403, 'room_forbidden');
+    if(room[2]){
+      if(request.method !== 'POST') throw new ChatError(405,'method_not_allowed');
+      return webReply(await markSeen(env,room[1],player,now,request));
+    }
+    if (room[3] && request.method !== 'GET') throw new ChatError(405, 'method_not_allowed');
+    if (request.method === 'POST') return webReply(await send(env, room[1], player, request, ctx));
     if (request.method !== 'GET') throw new ChatError(405, 'method_not_allowed');
-    const access = await requireRoom(env, player.room, player, now);
-    if (room[2]) return await getPhoto(db, player.room, room[2]);
-    return webReply(await messages(db, access, player.room, player.id, url.searchParams));
+    const access = await requireRoom(env, room[1], player, now);
+    if (room[3]) return await getPhoto(db, room[1], room[3]);
+    return webReply(await messages(db, access, room[1], player.id, url.searchParams));
   } catch (error) {
     if (error instanceof ChatError) return webReply({ error: error.message }, error.status);
     console.error('Web chat request failed', error.name);
@@ -1330,6 +1351,7 @@ async function webApi(request, env, ctx, url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if(url.pathname === '/v1/internal/tribute-web') return tributeWeb.rpc(request,env);
     if (url.pathname.startsWith('/v1/client/') || url.pathname.startsWith('/v1/partner/')) return webApi(request, env, ctx, url);
     const origin = request.headers.get('Origin');
     if (origin && origin !== APP_ORIGIN) return reply({ error: 'forbidden_origin' }, 403);
@@ -1376,8 +1398,9 @@ export default {
           db.prepare('SELECT token_hash FROM chat_web_account_sessions LIMIT 0'),
           db.prepare('SELECT id FROM chat_partner_materials LIMIT 0'),
           db.prepare('SELECT paid_until_ms FROM chat_pdf_access LIMIT 0'),
+          db.prepare('SELECT telegram_id FROM chat_tribute_accounts LIMIT 0'),
         ]);
-        return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN), notificationsConfigured: canNotify(env), webConfigured: true, partnersConfigured: true, emailConfigured: webMailReady(env), pdfPaymentConfigured: Boolean(tributeConfiguration(env)) });
+        return reply({ ok: true, membershipConfigured: Boolean(env.VIP_CHANNEL_ID && env.VIP_BOT_TOKEN), notificationsConfigured: canNotify(env), webConfigured: true, partnersConfigured: true, emailConfigured: webMailReady(env), pdfPaymentConfigured: Boolean(tributeConfiguration(env)), tributeWebConfigured: Boolean(env.TRIBUTE_WEB_BRIDGE_SECRET && tributeConfiguration(env)) });
       }
       const now = Date.now();
       const player = await authenticate(request, now);
