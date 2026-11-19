@@ -3,6 +3,7 @@ import { rows, one, run, draft, saveDraft } from './store.mjs';
 import { telegram, text, photoCard, document } from './telegram.mjs';
 import { drain, progress } from './broadcast.mjs';
 import { snapshotPost } from './posts.mjs';
+import { phoneGuide } from './admin-guide.mjs';
 
 const cancelRows=[[button('Отменить','admin:cancel')]];
 export async function adminHome(env,origin,id,message) {
@@ -10,7 +11,7 @@ export async function adminHome(env,origin,id,message) {
   const materials=await one(env.BOT_DB,'SELECT count(*) AS n FROM bot_materials WHERE active=1');
   return photoCard(env,origin,id,{photo:PHOTOS.admin,caption:'<b>Управление ботом</b>\n\nЧитатели: '+stat.total+'\nПолучают новости: '+(stat.active||0)+'\nМатериалов в каталоге: '+materials.n+
     '\n\nДобавляйте уроки и файлы в каталог. Для рассылки сначала создайте черновик, проверьте его и подтвердите отправку. До подтверждения подписчикам ничего не отправляется.',
-    rows:[[button('＋ Добавить материал','admin:add')],[button('📚 Каталог материалов','admin:catalog')],[button('✉️ Новая рассылка','admin:newsletter')],[button('📊 Рассылки и статистика','admin:jobs')],...nav()]},message);
+    rows:[[button('＋ Добавить материал','admin:add')],[button('📚 Каталог материалов','admin:catalog')],[button('✉️ Новая рассылка','admin:newsletter')],[button('📊 Рассылки и статистика','admin:jobs')],[button('Как работать с телефона','admin:guide:materials')],...nav()]},message);
 }
 async function materialPreview(env,origin,id,d) {
   const item=d.data;
@@ -67,6 +68,7 @@ export async function adminMessage(env,origin,id,message) {
 }
 export async function adminCallback(env,origin,id,data,message,ctx) {
   if(!isAdmin(env,id)) return false;
+  if(data==='admin:guide:materials'||data==='admin:guide:news'){await phoneGuide(env,origin,id,data.endsWith('materials')?'materials':'news',message);return true;}
   if(data==='admin') {await adminHome(env,origin,id,message);return true;}
   if(data==='admin:cancel') {
     const d=await draft(env.BOT_DB,id);

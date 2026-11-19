@@ -55,7 +55,7 @@ test('API filter is checked again, cache is brief, expiry is checked on every us
     assert.equal(url.origin, 'https://tribute.tg');
     assert.equal(url.search, '?subscriptionID=100');
     assert.equal(options.headers['Api-Key'], env.TRIBUTE_API_KEY);
-    assert.equal(options.redirect, 'error');
+    assert.equal(options.redirect, 'manual');
     return Response.json({ result: [paid({ expireAt: new Date(ends).toISOString() }), paid({ subscriptionId: 999 })] });
   });
   const [a, b] = await Promise.all([check(env, id, now), check(env, id, now)]);
@@ -81,6 +81,7 @@ test('known VIP links work without numeric IDs, while other creator subscription
 test('provider errors and missing settings fail closed without leaking credentials', async () => {
   for (const mock of [
     () => new Response('', { status: 503 }),
+    () => new Response('', { status: 302, headers: { Location: 'https://example.invalid' } }),
     () => Response.json({ result: {} }),
     () => { throw new Error('provider test failure'); },
     () => new Response('x'.repeat(2 * 1024 * 1024 + 1)),
@@ -169,7 +170,8 @@ test('only the owning coach can confirm a web payment, and confirmation never ex
   const source = readFileSync(new URL('../chats/worker.mjs', import.meta.url), 'utf8')
     .replace("import { authenticate } from '../game/worker.mjs';",
       "const authenticate = async request => ({ id: Number(request.headers.get('x-test-user')) });")
-    .replace("from './paid-access.mjs'", "from " + JSON.stringify(new URL('../chats/paid-access.mjs', import.meta.url).href));
+    .replace("from './paid-access.mjs'", "from " + JSON.stringify(new URL('../chats/paid-access.mjs', import.meta.url).href))
+    .replace("from './tribute-web.mjs'", "from " + JSON.stringify(new URL('../chats/tribute-web.mjs', import.meta.url).href));
   const { default: fixture } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
   const ctx = { waitUntil() {} };
   const send = (user, data) => fixture.fetch(new Request('https://swim-island-chats.pages.dev/v1/chats/clients', {

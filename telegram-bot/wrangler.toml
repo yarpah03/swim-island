@@ -1,6 +1,7 @@
 name = "swim-island-entry-bot"
 pages_build_output_dir = "../dist/bot"
 compatibility_date = "2026-11-19"
+compatibility_flags = ["global_fetch_strictly_public"]
 
 [[d1_databases]]
 binding = "BOT_DB"

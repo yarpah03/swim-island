@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { createHmac } from 'node:crypto';
+import { menuUser } from './menu-auth.mjs';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
@@ -27,7 +29,7 @@ function fixture(){
   for(const item of SEED)sqlite.prepare('INSERT INTO bot_materials(id,category,title,description,kind,payload,photo,created_ms) VALUES(?,?,?,?,?,?,?,?)').run(item.id,item.category,item.title,item.description,item.kind,item.payload,item.photo,1);
   const env={BOT_DB:db,BOT_ADMIN_IDS:'1,2',TELEGRAM_BOT_TOKEN:'test-only',TELEGRAM_WEBHOOK_SECRET:'webhook-test-only',BOT_CONTROL_TOKEN:'control-test-only',TRIBUTE_API_KEY:'tribute-test-only',TRIBUTE_VIP_SUBSCRIPTION_IDS:'228039',ASSETS:{fetch:async()=>new Response('test-only-file',{headers:{'Content-Type':'image/jpeg'}})}};
   const calls=[],tasks=[];
-  let updateId=0,messageId=100;
+  let updateId=0,messageId=100,menuButton={type:'commands'};
   const ctx={waitUntil:p=>tasks.push(p)};
   const request=new Request('https://bot.test/telegram');
   const mockFetch=async (url,options)=>{
@@ -43,6 +45,8 @@ function fixture(){
     if(method==='getMe')result={id:9155572612,username:'swim_island_entry_bot'};
     if(method==='getWebhookInfo')result={url:'https://bot.test/telegram',pending_update_count:0};
     if(method==='getMyCommands')result=[{command:'menu'}];
+    if(method==='setChatMenuButton'&&!body.chat_id)menuButton=JSON.parse(body.menu_button);
+    if(method==='getChatMenuButton')result=menuButton;
     if(method==='getUserProfilePhotos')result={total_count:1,photos:[]};
     return Response.json({ok:true,result});
   };
@@ -183,5 +187,38 @@ test('growing material catalogues paginate without hiding older lessons',async()
     keys=JSON.parse(f.calls.at(-1).body.reply_markup).inline_keyboard.flat();
     assert.equal(keys.filter(x=>x.callback_data?.startsWith('mat:')).length,4);
     assert(keys.some(x=>x.callback_data==='cat:lessons:0'));
+  });
+});
+function initData(env,id=42,date=Math.floor(Date.now()/1000)){
+  const params=new URLSearchParams({auth_date:String(date),query_id:'test-query',signature:'test-third-party-signature',user:JSON.stringify({id,first_name:'Пловец',is_bot:false})});
+  params.sort();
+  const key=createHmac('sha256','WebAppData').update(env.TELEGRAM_BOT_TOKEN).digest();
+  params.set('hash',createHmac('sha256',key).update([...params].map(([k,v])=>k+'='+v).join('\n')).digest('hex'));
+  return params.toString();
+}
+test('tile menu verifies Telegram data, rejects replayed identity changes and expired signatures',async()=>{
+  const f=fixture(),valid=initData(f.env);
+  assert.equal((await menuUser(f.env,valid)).id,42);
+  assert.equal(await menuUser(f.env,valid.replace('test-query','forged-query')),null);
+  assert.equal(await menuUser(f.env,initData(f.env,42,Math.floor(Date.now()/1000)-3601)),null);
+  assert.equal(await menuUser(f.env,valid+'&user=forged'),null);
+});
+test('native Menu opens the tile web app and role-protected actions are delivered only once',async()=>{
+  const f=fixture();
+  await mocked(f,async()=>{
+    await setup(f.env,'https://bot.test');
+    const configured=JSON.parse(f.calls.find(x=>x.method==='setChatMenuButton').body.menu_button);
+    assert.equal(configured.type,'web_app');
+    assert.equal(configured.web_app.url,'https://vip.swimisland.ru/v1/client/entry/menu');
+    const call=(id,path,extra={})=>worker.fetch(new Request('https://bot.test/menu/'+path,{method:'POST',body:JSON.stringify({initData:initData(f.env,id),...extra})}),f.env,f.ctx);
+    assert.equal((await(await call(42,'bootstrap')).json()).admin,false);
+    assert.equal((await(await call(1,'bootstrap')).json()).admin,true);
+    assert.equal((await call(42,'action',{action:'admin',nonce:crypto.randomUUID()})).status,403);
+    const nonce=crypto.randomUUID();
+    const r=await call(42,'action',{action:'materials',nonce});
+    assert.equal(r.status,200);
+    const n=f.calls.filter(x=>x.method==='sendPhoto').length;
+    await call(42,'action',{action:'materials',nonce});
+    assert.equal(f.calls.filter(x=>x.method==='sendPhoto').length,n);
   });
 });

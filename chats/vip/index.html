@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08191f">
+<meta name="color-scheme" content="dark">
+<title>Плавательный остров VIP</title>
+<link rel="icon" href="/client/vip-icon.png">
+<link rel="apple-touch-icon" href="/client/vip-icon-512.png">
+<link rel="manifest" href="/v1/client/vip/manifest.webmanifest">
+<link rel="stylesheet" href="/client/client.css">
+<link rel="stylesheet" href="/client/chat.css">
+<link rel="stylesheet" href="/v1/client/vip/portal.css">
+<script src="/v1/client/vip/chat.js" defer></script>
+<script src="/v1/client/vip/portal.js" defer></script>
+</head>
+<body class="web-client">
+<main id="auth" class="auth-shell">
+<a class="brand" href="/v1/client/vip"><img src="/client/vip-icon.png" alt="Логотип VIP" width="52" height="52"><span>ПЛАВАТЕЛЬНЫЙ<br>ОСТРОВ <b>VIP</b></span></a>
+<div class="eyebrow">ВАШ КЛУБ ПЛАВАНИЯ</div>
+<h1 id="title">Войти<br>в свой остров</h1>
+<p class="lede" id="intro">Используйте логин и пароль, которые создали после подключения через бота.</p>
+<form id="credentials" hidden>
+<label id="name-field" hidden>Как к вам обращаться<input id="name" autocomplete="nickname" maxlength="40" minlength="2" placeholder="Ваше имя"></label>
+<label>Логин<input id="login" autocomplete="username" autocapitalize="none" spellcheck="false" inputmode="text" required minlength="3" maxlength="32" placeholder="Например, swimmer_25"></label>
+<label>Пароль<span class="password-wrap"><input id="password" type="password" autocomplete="current-password" minlength="12" maxlength="256" required placeholder="Не менее 12 символов"><button id="show-password" type="button" class="reveal" aria-label="Показать пароль">Показать</button></span></label>
+<label id="repeat-field" hidden>Повторите пароль<input id="repeat" type="password" autocomplete="new-password" minlength="12" maxlength="256"></label>
+<p id="form-status" class="status" role="status" aria-live="polite"></p>
+<button id="submit" class="primary" type="submit">Войти в приложение <span>↗</span></button>
+</form>
+<div id="loading" class="checking" role="status">Проверяем доступ…</div>
+<div class="auth-links"><a href="https://t.me/swim_island_entry_bot?start=web">Подключить доступ или восстановить пароль</a><button id="to-login" class="text-button" hidden>Уже есть аккаунт — войти</button></div>
+<p class="fine">Одна подписка Tribute — доступ в Telegram и на сайте. Пароль хранится в защищённом виде.</p>
+<a class="support" href="https://t.me/rese1go">Нужна помощь? Напишите нам ↗</a>
+</main>
+<section id="blocked" class="auth-shell" hidden>
+<div class="brand"><img src="/client/vip-icon.png" alt="Логотип VIP" width="52" height="52"><span>ПЛАВАТЕЛЬНЫЙ<br>ОСТРОВ <b>VIP</b></span></div>
+<div class="eyebrow">ВАШ АККАУНТ СОХРАНЁН</div>
+<h1 id="blocked-title">Подписка<br>закончилась</h1>
+<p class="lede" id="blocked-copy">Продлите подписку в Tribute, чтобы вернуться к тренировкам. Логин, профиль и переписка останутся с вами.</p>
+<a id="renew" class="primary" href="https://t.me/tribute/app?startapp=sXk3" target="_blank" rel="noopener noreferrer">Продлить в Tribute <span>↗</span></a>
+<button id="check-payment" class="secondary">Я оплатил — проверить доступ</button>
+<p id="payment-status" class="status" aria-live="polite"></p>
+<button id="other-login" class="text-button">Войти в другой аккаунт</button>
+<a class="support" href="https://t.me/rese1go">Помочь с подпиской ↗</a>
+</section>
+<section id="app" class="library" hidden><iframe id="catalog" title="Приложение Плавательный остров VIP" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads" referrerpolicy="no-referrer" allow="fullscreen"></iframe><div id="app-loading" class="app-loading">Открываем главное меню…</div></section>
+<div id="swim-chats" hidden></div>
+<dialog id="profile" class="profile-dialog"><div class="dialog-head"><h2>Мой аккаунт</h2><button id="close-profile" type="button" aria-label="Закрыть">×</button></div><p class="profile-meta" id="profile-login"></p><p id="profile-subscription"></p><p class="fine">Профиль и переписка связаны с вашим аккаунтом Telegram.</p><button id="install" class="secondary">Добавить на экран «Домой»</button><p id="install-help" class="fine" hidden>На iPhone откройте меню браузера → «Поделиться» → «На экран Домой». На Android: меню ⋮ → «Добавить на главный экран» или «Установить приложение».</p><button id="logout" class="text-button">Выйти из аккаунта</button><p id="profile-status" class="status" role="status"></p></dialog>
+</body>
+</html>

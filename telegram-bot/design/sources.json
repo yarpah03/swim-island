@@ -1,0 +1,62 @@
+{
+  "home-v2.jpg": {
+    "source": "personal-pool.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "materials-v2.jpg": {
+    "source": "breathing-inhale.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "about-v2.jpg": {
+    "source": "personal-athlete.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "tariffs-v2.jpg": {
+    "source": "cover-swimming.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "buy-v2.jpg": {
+    "source": "personal-pool.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "access-v2.jpg": {
+    "source": "cover-swimming.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "news-v2.jpg": {
+    "source": "personal-athlete.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "help-v2.jpg": {
+    "source": "personal-pool.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "lessons-v2.jpg": {
+    "source": "breathing-inhale.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "checklists-v2.jpg": {
+    "source": "breathing-exhale.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "plans-v2.jpg": {
+    "source": "cover-swimming.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  },
+  "admin-v2.jpg": {
+    "source": "personal-athlete.jpg",
+    "kind": "real-photo",
+    "edits": "crop, branded layout, typography; no generative alteration"
+  }
+}

@@ -3,6 +3,8 @@ import { telegram, text, photoCard, document, asset } from './telegram.mjs';
 import { rows, one, run, subscribe, claimUpdate } from './store.mjs';
 import { adminHome, adminMessage, adminCallback } from './admin.mjs';
 import { sendPost } from './posts.mjs';
+import { menuUser } from './menu-auth.mjs';
+import { webAccess } from './web-access.mjs';
 import { createTributeChecker } from '../chats/paid-access.mjs';
 
 const checkPaid=createTributeChecker();
@@ -14,7 +16,7 @@ export async function tariffs(env) {
   if(priceCache?.until>now) return priceCache.card;
   let periods=null;
   try {
-    const r=await fetch('https://tribute.tg/api/v1/subscriptions',{headers:{'Api-Key':env.TRIBUTE_API_KEY},signal:AbortSignal.timeout(6000),redirect:'error'});
+    const r=await fetch('https://tribute.tg/api/v1/subscriptions',{headers:{'Api-Key':env.TRIBUTE_API_KEY},signal:AbortSignal.timeout(6000),redirect:'manual'});
     if(r.ok){
       const data=await r.json();
       periods=data.result?.find(x=>x.subscriptionId===Number(env.TRIBUTE_VIP_SUBSCRIPTION_IDS)&&x.currency==='rub')?.periods;
@@ -93,7 +95,7 @@ export async function handleUpdate(request,env,update,ctx){
   if(chat?.type!=='private'||!Number.isSafeInteger(chat.id)||chat.id<=0||from?.id!==chat.id||from?.is_bot)return;
   const id=chat.id;
   if(q){
-    try{await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});}catch(e){if(e.status!==400)throw e;}
+    if(q.id)try{await telegram(env,'answerCallbackQuery',{callback_query_id:q.id});}catch(e){if(e.status!==400)throw e;}
     await subscribe(env.BOT_DB,id);
     const data=String(q.data||'').slice(0,64);
     if(await adminCallback(env,origin,id,data,q.message,ctx))return;
@@ -103,6 +105,7 @@ export async function handleUpdate(request,env,update,ctx){
       return showPublic(env,origin,id,'news',q.message);
     }
     if(data==='news:list'||data.startsWith('newsitem:'))return news(env,origin,id,data,q.message);
+    if(data==='web'||data==='web:reset'||data==='web:reset:confirm')return webAccess(env,origin,id,from,q.message,data==='web:reset'?true:data==='web:reset:confirm'?'confirmed':false);
     if(data==='checkpaid')return paymentStatus(env,origin,id,q.message);
     const cat=/^cat:(lessons|checklists|plans)(?::(\d{1,4}))?$/.exec(data);
     if(cat)return showCategory(env,origin,id,cat[1],q.message,Number(cat[2]||0));
@@ -130,6 +133,7 @@ export async function handleUpdate(request,env,update,ctx){
       const url=env.TRIBUTE_TEST_CHECKOUT_URL;
       if(url&&/^https:\/\/t\.me\/tribute\//.test(url))return photoCard(env,origin,id,{photo:PHOTOS.home,caption:'<b>Тестовый вход для друзей</b>\n\nЭто отдельная разовая тестовая подписка. Её сумму и условия проверьте на экране Tribute перед оплатой.\n\nПосле оформления откройте VIP-канал через Tribute и приложение в закрепе.',rows:[[link('Открыть тестовую подписку',url)],...nav()]});
     }
+    if(command[1]==='start'&&command[2]==='web')return webAccess(env,origin,id,from);
     const key=command[1]==='start'?(command[2]==='crawl'?'materials':command[2]==='brass'?'breaststroke8':'home'):command[1]==='menu'?'home':command[1]==='vip'?'buy':command[1];
     return key==='breaststroke8'?material(env,origin,id,key):showPublic(env,origin,id,key);
   }
@@ -154,10 +158,17 @@ export async function setup(env,origin){
   await telegram(env,'setMyName',{name:'Плавательный остров | Уроки и VIP'});
   await telegram(env,'setMyDescription',{description:'Полезные материалы по плаванию от Ярослава Пахомова и Макара Марченко. Бесплатные PDF, уроки и чек-листы, новости клуба и подписка на Плавательный остров VIP. Нажмите «Начать» и выберите раздел.'});
   await telegram(env,'setMyShortDescription',{short_description:'Уроки, чек-листы и новости плавания. Бесплатные материалы и вход в Плавательный остров VIP.'});
-  await telegram(env,'setChatMenuButton',{menu_button:{type:'commands'}});
+  const menuButton={type:'web_app',text:'Меню',web_app:{url:'https://vip.swimisland.ru/v1/client/entry/menu'}};
+  await telegram(env,'setChatMenuButton',{menu_button:JSON.stringify(menuButton)});
+  for(const chat of (env.BOT_ADMIN_IDS||'').split(',').map(Number).filter(Number.isSafeInteger)){
+    try{await telegram(env,'setChatMenuButton',{chat_id:chat,menu_button:JSON.stringify(menuButton)});}catch(e){if(e.status!==400)throw e;}
+  }
+  const configuredMenu=await telegram(env,'getChatMenuButton');
+  if(configuredMenu.type!=='web_app'||configuredMenu.web_app?.url!==menuButton.web_app.url)throw new Error('menu_not_applied');
+
   const data=new FormData();
   data.set('photo',JSON.stringify({type:'static',photo:'attach://avatar'}));
-  data.set('avatar',await asset(env,origin,'/media/logo.jpg'),'swim-island.jpg');
+  data.set('avatar',await asset(env,origin,'/media/avatar-entry-v2.jpg'),'swim-island-start.jpg');
   await telegram(env,'setMyProfilePhoto',data);
   const webhook=await telegram(env,'getWebhookInfo');
   if(webhook.url!==origin+'/telegram'){
@@ -168,10 +179,14 @@ export async function setup(env,origin){
 export default {
   async fetch(request,env,ctx){
     const url=new URL(request.url),path=url.pathname;
+    if((path==='/menu'||path==='/menu/')&&request.method==='GET'){
+      const asset=await env.ASSETS.fetch(new Request(new URL('/menu/',url.origin)));
+      return new Response(asset.body,{status:asset.status,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}});
+    }
     if(path==='/health'){
       if(request.method!=='GET')return json({error:'method'},405);
       const db=await one(env.BOT_DB,'SELECT count(*) AS n FROM bot_materials WHERE active=1');
-      return json({ok:true,version:'news-menu-1',materials:db.n,paymentConfigured:!!env.TRIBUTE_API_KEY});
+      return json({ok:true,version:'news-menu-2',materials:db.n,paymentConfigured:!!env.TRIBUTE_API_KEY});
     }
     if(path.startsWith('/control/')){
       if(!env.BOT_CONTROL_TOKEN||request.headers.get('Authorization')!=='Bearer '+env.BOT_CONTROL_TOKEN)return json({error:'unauthorized'},401);
@@ -181,9 +196,37 @@ export default {
       if(path==='/control/inspect'&&request.method==='GET'){
         const me=await telegram(env,'getMe'),webhook=await telegram(env,'getWebhookInfo'),commands=await telegram(env,'getMyCommands');
         const profile=await telegram(env,'getUserProfilePhotos',{user_id:me.id,limit:1});
-        return json({username:me.username,webhook:webhook.url,pending:webhook.pending_update_count,commands:commands.map(x=>x.command),avatarCount:profile.total_count,materials:await rows(env.BOT_DB,'SELECT id,category,title FROM bot_materials WHERE active=1')});
+        const menuButton=await telegram(env,'getChatMenuButton');
+        let webBridge={ok:false};
+        try {
+          const response=await fetch('https://swim-island-chats.pages.dev/v1/internal/tribute-web',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+env.TRIBUTE_WEB_BRIDGE_SECRET},body:JSON.stringify({operation:'health'}),redirect:'manual',signal:AbortSignal.timeout(22000)});
+          const check=await response.json();webBridge={ok:response.ok&&check.ok===true,status:response.status,menuAssets:check.entryStatus===200};
+        } catch {}
+
+        return json({username:me.username,webhook:webhook.url,pending:webhook.pending_update_count,commands:commands.map(x=>x.command),avatarCount:profile.total_count,menuButton,webBridge,materials:await rows(env.BOT_DB,'SELECT id,category,title FROM bot_materials WHERE active=1')});
       }
       return json({error:'not_found'},404);
+    }
+    if((path==='/menu/bootstrap'||path==='/menu/action')&&request.method==='POST'){
+      let data;try{const raw=await request.text();if(raw.length>16384)return json({error:'too_large'},413);data=JSON.parse(raw);}catch{return json({error:'invalid_json'},400);}
+      const user=await menuUser(env,data.initData);
+      if(!user)return json({error:'telegram_auth_required'},401);
+      if(path==='/menu/bootstrap')return json({ok:true,admin:isAdmin(env,user.id),firstName:user.first_name||''});
+      const allowed=['home','materials','about','tariffs','buy','access','news','help','web','admin'];
+      if(!allowed.includes(data.action)||data.action==='admin'&&!isAdmin(env,user.id))return json({error:'not_allowed'},403);
+      if(typeof data.nonce!=='string'||!/^[a-f0-9-]{36}$/.test(data.nonce))return json({error:'invalid_input'},400);
+      const now=Date.now();
+      const limit=await env.BOT_DB.prepare('INSERT INTO bot_menu_limits(user_id,window_ms,count) VALUES(?,?,1) ON CONFLICT(user_id) DO UPDATE SET window_ms=CASE WHEN window_ms<? THEN excluded.window_ms ELSE window_ms END,count=CASE WHEN window_ms<? THEN 1 ELSE count+1 END WHERE window_ms<? OR count<30 RETURNING user_id').bind(user.id,now,now-60000,now-60000,now-60000).first();
+      if(!limit)return json({error:'slow_down'},429);
+      const claim=await env.BOT_DB.prepare('INSERT OR IGNORE INTO bot_menu_actions(nonce,user_id,created_ms) VALUES(?,?,?) RETURNING nonce').bind(data.nonce,user.id,now).first();
+      if(!claim)return json({ok:true});
+      try{
+        await handleUpdate(request,env,{callback_query:{from:user,data:data.action,message:{chat:{id:user.id,type:'private'},message_id:0}}},ctx);
+        return json({ok:true});
+      }catch(e){
+        await run(env.BOT_DB,'DELETE FROM bot_menu_actions WHERE nonce=?',data.nonce);
+        return json({error:e.status===403?'start_bot_first':'unavailable'},502);
+      }
     }
     if(path==='/telegram'){
       if(request.method!=='POST')return json({error:'method'},405);

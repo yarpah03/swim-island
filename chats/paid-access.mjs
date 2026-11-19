@@ -79,7 +79,7 @@ export function createTributeChecker(fetcher = (...args) => fetch(...args)) {
             if (id !== null) url.searchParams.set('subscriptionID', String(id));
             const response = await fetcher(url, {
               headers: { 'Api-Key': config.key, Accept: 'application/json' },
-              redirect: 'error', signal: AbortSignal.timeout(6000),
+              redirect: 'manual', signal: AbortSignal.timeout(6000),
             });
             const rows = await boundedJson(response);
             // Tribute ignores invalid filters, so never trust the filter alone.
