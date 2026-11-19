@@ -3,7 +3,7 @@ export async function telegram(env, method, body = {}) {
   let r, data;
   try {
     r = await fetch('https://api.telegram.org/bot' + env.TELEGRAM_BOT_TOKEN + '/' + method, {
-      method: 'POST', headers: multipart ? undefined : { 'Content-Type': 'application/json' },
+      method: 'POST', cache: 'no-store', headers: multipart ? undefined : { 'Content-Type': 'application/json' },
       body: multipart ? body : JSON.stringify(body), signal: AbortSignal.timeout(8000),
     });
     data = await r.json();
@@ -33,12 +33,13 @@ export async function photoCard(env, origin, chat, card, message) {
     const cached = await env.BOT_DB.prepare('SELECT file_id FROM bot_media WHERE name=?').bind(photo).first();
     if (cached) photo = cached.file_id;
   }
-  const edit = message?.photo?.length;
+  // Reply keyboards can only be attached to new messages, never to media edits.
+  const edit = !card.keyboard && message?.photo?.length;
   let result;
   try {
     const data = new FormData();
     data.set('chat_id', String(chat));
-    data.set('reply_markup', JSON.stringify({ inline_keyboard: card.rows }));
+    data.set('reply_markup', JSON.stringify(card.keyboard || { inline_keyboard: card.rows }));
     if (card.photo.startsWith('/') && photo.startsWith('/')) {
       data.set('upload', await asset(env, origin, card.photo), 'cover.jpg');
       photo = 'attach://upload';

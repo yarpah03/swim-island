@@ -37,9 +37,22 @@ export function mainKeyboard(admin = false) {
     ...(admin ? [[button('Управление ботом', 'admin')]] : []),
   ];
 }
+export function replyKeyboard(admin = false) {
+  const rows = mainKeyboard(admin).map(row => row.map(item => ({ text: item.text })));
+  rows[3].unshift({ text: '🏠 Главное меню' });
+  return { keyboard: rows, resize_keyboard: true, is_persistent: true, one_time_keyboard: false,
+    input_field_placeholder: 'Выберите раздел или напишите сообщение' };
+}
+const REPLY_ACTIONS = new Map([
+  ...mainKeyboard(true).flat().map(item => [item.text, item.callback_data]),
+  ['🏠 Главное меню', 'home'],
+]);
+export function replyAction(value) {
+  return typeof value === 'string' ? REPLY_ACTIONS.get(value.trim()) : undefined;
+}
 export function publicCard(key, admin = false, subscribed = true) {
   const cards = {
-    home: ['<b>Плавательный остров</b>\n\nПривет! Мы Ярослав Пахомов и Макар Марченко.\n\nСобрали здесь полезные материалы по плаванию и всё, что поможет познакомиться с нашим клубом VIP.\n\nВыберите раздел ниже. В этом боте будем присылать новые материалы, новости клуба и анонсы эфиров. Управлять сообщениями можно в разделе «Новости» или командой /stop.', mainKeyboard(admin)],
+    home: ['<b>Плавательный остров</b>\n\nПривет! Мы Ярослав Пахомов и Макар Марченко.\n\nСобрали здесь полезные материалы по плаванию и всё, что поможет познакомиться с нашим клубом VIP.\n\nВыберите раздел на кнопках вместо клавиатуры. В этом боте будем присылать новые материалы, новости клуба и анонсы эфиров. Управлять сообщениями можно в разделе «Новости» или командой /stop.', mainKeyboard(admin)],
     materials: ['<b>Полезные материалы</b>\n\nНачните с бесплатного PDF «Брасс с нуля: 8 тренировок» или заберите чек-листы для ближайшего занятия.\n\nМатериалы остаются в меню — к ним можно возвращаться в своём темпе.', [[button('📥 Брасс с нуля: 8 тренировок', 'mat:breaststroke8')], [button('🏊 Уроки с нуля', 'cat:lessons'), button('📄 Чек-листы', 'cat:checklists')], [button('🗓 Все планы тренировок', 'cat:plans')], ...nav()]],
     about: ['<b>Плавательный остров VIP</b>\n\nКлуб для тех, кто хочет плавать увереннее, понимать свою технику и приходить в бассейн с готовым планом.\n\nВ приложении: обучение с нуля, совершенствование техники, тренировки в воде и на суше, упражнения, эфиры и общение.\n\nВыбирайте свой уровень и занимайтесь в удобном ритме. Индивидуальное онлайн-ведение с тренером оформляется отдельно.', [[button('💳 Посмотреть тарифы', 'tariffs')], [button('💎 Присоединиться к VIP', 'buy')], ...nav()]],
     buy: ['<b>Присоединиться к VIP</b>\n\n1. Нажмите кнопку оплаты — откроется официальный Tribute.\n2. Выберите срок и проверьте сумму и условия продления.\n3. После оплаты вступите в закрытый VIP-канал через Tribute.\n4. Откройте приложение кнопкой в закреплённом сообщении канала.\n\nОплата проходит в Tribute, данные карты бот не получает.', [[link('💎 Оформить подписку в Tribute', CHECKOUT)], [button('💳 Сначала посмотреть тарифы', 'tariffs')], [button('Подписка уже оформлена', 'access')], ...nav()]],
@@ -48,5 +61,5 @@ export function publicCard(key, admin = false, subscribed = true) {
     help: ['<b>Поможем разобраться</b>\n\n<b>Оплатили, но не нашли вход?</b> Откройте Tribute с того же Telegram-аккаунта, с которого оформляли подписку. Там будет переход в закрытый канал.\n\n<b>Забыли, где материалы?</b> Вернитесь в главное меню командой /menu.\n\n<b>Есть вопрос об оплате, веб-входе или онлайн-ведении?</b> Напишите Ярославу — кнопка ниже.', [[link('💬 Написать Ярославу', CONTACT)], [button('📲 Вход в приложение', 'access')], ...nav()]],
   };
   const [caption, rows] = cards[key] || cards.home;
-  return { caption, photo: PHOTOS[key] || PHOTOS.home, rows };
+  return { caption, photo: PHOTOS[key] || PHOTOS.home, rows, ...(key === 'home' ? { keyboard: replyKeyboard(admin) } : {}) };
 }
