@@ -140,17 +140,16 @@ const WorkoutPrint = (() => {
     retry.textContent = 'Проверить оплату';
     retry.addEventListener('click', () => mount(container, true));
     actions.appendChild(retry);
-    if (window.Telegram?.WebApp?.initData) {
-      const subscribe = document.createElement('button');
-      subscribe.className = 'workout-print-browser';
-      subscribe.type = 'button';
-      subscribe.textContent = 'Оформить подписку';
-      subscribe.addEventListener('click', () => {
-        const url = 'https://t.me/tribute/app?startapp=sXk3';
-        window.Telegram.WebApp.openTelegramLink(url);
-      });
-      actions.appendChild(subscribe);
-    }
+    const subscribe = document.createElement('button');
+    subscribe.className = 'workout-print-browser';
+    subscribe.type = 'button';
+    subscribe.textContent = 'Оформить подписку';
+    subscribe.addEventListener('click', () => {
+      const url = 'https://t.me/tribute/app?startapp=sXk3';
+      if (window.Telegram?.WebApp?.initData) window.Telegram.WebApp.openTelegramLink(url);
+      else window.open(url, '_blank', 'noopener,noreferrer');
+    });
+    actions.appendChild(subscribe);
     container.appendChild(actions);
   }
 

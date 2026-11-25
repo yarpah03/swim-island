@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { createPdf } from './pdf-template.mjs';
+import { BREASTSTROKE_PROGRAM } from './programs.mjs';
 
 const TELEGRAM_ORIGIN = 'https://yarpah03.github.io';
 const MAX_BODY = 96 * 1024;
@@ -55,6 +56,25 @@ export function createRenderer(assetRoot = new URL('./pdf/', import.meta.url)) {
   return card => Buffer.from(createPdf(jsPDF, fonts, card).output('arraybuffer'));
 }
 
+export function loadApprovedProgram(asset = new URL('./' + BREASTSTROKE_PROGRAM.path, import.meta.url)) {
+  const bytes = readFileSync(asset);
+  if (createHash('sha256').update(bytes).digest('hex') !== BREASTSTROKE_PROGRAM.sha256) {
+    throw new Error('Approved program checksum mismatch');
+  }
+  return bytes;
+}
+
+function validateDocument(value) {
+  if (value && typeof value === 'object' && Object.hasOwn(value, 'program')) {
+    if (value.program !== BREASTSTROKE_PROGRAM.id ||
+        Object.keys(value).some(key => !['program', 'title', 'volume'].includes(key))) {
+      throw new PdfError(400, 'invalid_workout');
+    }
+    return { program: BREASTSTROKE_PROGRAM.id };
+  }
+  return validateCard(value);
+}
+
 async function readCard(request) {
   if (request.headers.get('Content-Type')?.split(';')[0].trim() !== 'application/json') {
     throw new PdfError(415, 'json_required');
@@ -72,7 +92,7 @@ async function readCard(request) {
       if ((size += value.length) > MAX_BODY) throw new PdfError(413, 'workout_too_large');
       chunks.push(value);
     }
-    return validateCard(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+    return validateDocument(JSON.parse(Buffer.concat(chunks).toString('utf8')));
   } catch (error) {
     await reader.cancel().catch(() => {});
     if (error instanceof PdfError) throw error;
@@ -80,7 +100,7 @@ async function readCard(request) {
   }
 }
 
-export function createPdfService({ origin, api, render = createRenderer(), now = Date.now }) {
+export function createPdfService({ origin, api, render = createRenderer(), readProgram = loadApprovedProgram, now = Date.now }) {
   const downloads = new Map();
   const limits = new Map();
   function headers(request) {
@@ -187,10 +207,12 @@ export function createPdfService({ origin, api, render = createRenderer(), now =
       if (!entitlement.allowed) return json(request, { error: 'paid_subscription_required', reason: entitlement.reason }, 403);
       rateLimit(auth);
       const card = await readCard(request);
-      const bytes = await render(card);
-      if (!Buffer.isBuffer(bytes) || bytes.length > 1024 * 1024) throw new PdfError(503, 'pdf_unavailable');
+      const bytes = await (card.program ? readProgram() : render(card));
+      if (!Buffer.isBuffer(bytes) || bytes.length > 1024 * 1024 || !bytes.subarray(0, 5).equals(Buffer.from('%PDF-'))) {
+        throw new PdfError(503, 'pdf_unavailable');
+      }
       if (entitlement.expiresAt <= now()) throw new PdfError(403, 'paid_subscription_required');
-      const filename = [card.title, card.volume, 'Плавательный остров VIP'].filter(Boolean)
+      const filename = card.program ? BREASTSTROKE_PROGRAM.filename : [card.title, card.volume, 'Плавательный остров VIP'].filter(Boolean)
         .join(' - ').slice(0, 140).replace(/[<>:"/\\|?*\r\n]/g, '-') + '.pdf';
       const token = randomBytes(32).toString('hex');
       cleanup(now());
