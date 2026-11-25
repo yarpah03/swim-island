@@ -12,7 +12,7 @@ const BreaststrokeProgram = (() => {
       lede: 'Брасс с нуля: от дыхания и отдельных движений до полного цикла и технических упражнений.',
       slot: false, breaststrokeCourse: true,
       kids: DATA.workouts.map(w => ({ id: ROUTE + '_' + w.number, n: String(w.number).padStart(2, '0'),
-        t: w.title, s: w.goal, m: w.metres + ' м', ph: 'tile-br.jpg' })),
+        t: 'Тренировка ' + w.number, s: w.goal, m: w.metres + ' м', ph: 'tile-br.jpg' })),
     };
     parents[ROUTE] = 'br0';
     DATA.workouts.forEach(w => {
