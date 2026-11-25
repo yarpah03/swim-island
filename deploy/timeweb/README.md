@@ -6,7 +6,7 @@
 
 Рабочий сервис запускается через Node.js 22.17 или новее. Для локальной базы используйте Node.js 24.
 
-    node deploy/timeweb/build.mjs /path/to/checkout /opt/swim-island-vip/NEW_RELEASE
+    node deploy/timeweb/build.mjs /path/to/checkout /opt/swim-island-vip/NEW_RELEASE /private/source/breaststroke-beginner-8.pdf
 
 Для первой установки на сервере Debian с Nginx и Certbot:
 
@@ -19,6 +19,18 @@
 Проверьте /health, вход ученика по приглашению, каталог, чат и настоящее видео из внешнего плеера. Запросы кабинета идут на HTTPS. Сервер передаёт только свои cookies сессии, проверяет Origin и оставляет базу в текущем сервисе.
 
 Для локальной отладки запустите server.mjs с SWIM_PUBLIC_ORIGIN, SWIM_DB и PORT. Создайте тестовую базу командой node database.mjs init /path/to/test.sqlite. SQL-экспорт D1 можно восстановить командой node database.mjs import /path/to/new.sqlite /path/to/export.sql.
+
+## Программа «Брасс с нуля»: восемь тренировок
+
+В конце «Обучение с нуля → Брасс» находится программа из восьми тренировок. Седьмая содержит первые три задания по 4 × 25 м и основное 16 × 25 м: всего 700 м. Восьмая - техническая работа на 900 м.
+
+Утверждённый PDF передаётся сборке отдельным третьим аргументом или переменной SWIM_BREASTSTROKE_PROGRAM_PDF. Исходный PDF хранится вне публичного GitHub checkout. Сборка проверяет SHA-256 из programs.mjs и копирует файл только в private/breaststroke-beginner-8.pdf, вне public/. Не добавляйте PDF в Git, GitHub Pages, Cloudflare assets или бесплатный каталог бота.
+
+Кнопка отправляет на существующий POST /v1/pdf идентификатор program: breaststroke-beginner-8. Клиент не выбирает путь к файлу. Сервер проверяет текущую оплату до чтения закрытого PDF; временная ссылка на скачивание повторно проверяет оплату и ограничена сроком подписки и двумя минутами. При отсутствии или несовпадении файла выдача закрыта.
+
+При активации release назначьте каталог private/ и PDF пользователю/группе действующего сервиса (сейчас swimvip), каталог - с правами 750, файл - 640. После распаковки от root обязательно проверьте чтение файла от имени сервисного пользователя: runuser -u swimvip -- test -r /opt/swim-island-vip/NEW_RELEASE/private/breaststroke-beginner-8.pdf. Успешный /health сам по себе не подтверждает права чтения закрытого файла.
+
+Ссылки PDF имеют вид https://vip.swimisland.ru/client/?material=br0%2Flesson-1 или ?material=dr_br_7. Веб-кабинет сохраняет разрешённый раздел до входа и открывает его после авторизации. Обычные приглашения без material продолжают открывать главное меню.
 
 ## PDF только по оплаченной подписке
 
@@ -35,7 +47,7 @@
 1. Создать или использовать API-ключ Tribute и сохранить в Cloudflare Pages → swim-island-chats → Settings → Variables and secrets как Secret с именем TRIBUTE_API_KEY. Оставить TRIBUTE_VIP_SUBSCRIPTION_IDS незаданным, если используются указанные выше ссылки.
 2. В существующей D1 чатов применить chats/migrations/2026-11-18-pdf-access.sql. Это добавление таблицы без изменения существующих клиентов и сообщений.
 3. Собрать Cloudflare Pages командой node chats/build-pages.mjs /path/to/new-pages-output и опубликовать результат в существующий проект swim-island-chats. Проверить /health: ok и pdfPaymentConfigured должны быть true. Наличие ключа ещё не доказывает его правильность — нужна проверка реального оплаченного аккаунта.
-4. Собрать полный актуальный checkout в новый каталог Timeweb: node deploy/timeweb/build.mjs /path/to/checkout /opt/swim-island-vip/NEW_RELEASE. В sparse checkout должны присутствовать все изображения и материалы, необходимые действующему приложению. Новый сервер берёт PDF-библиотеку и шрифты из закрытого каталога pdf/, вне public/.
+4. Собрать полный актуальный checkout в новый каталог Timeweb: node deploy/timeweb/build.mjs /path/to/checkout /opt/swim-island-vip/NEW_RELEASE /private/source/breaststroke-beginner-8.pdf. В sparse checkout должны присутствовать все изображения и материалы, необходимые действующему приложению. Новый сервер берёт PDF-библиотеку и шрифты из закрытого каталога pdf/, вне public/.
 5. Сохранить предыдущий release и конфигурацию systemd. Обновить существующий сервис swim-island-vip на новый server.mjs и WorkingDirectory, сохранив его пользователя, порт и переменные окружения. Скрипты первой установки повторно не запускать. При ошибке вернуть оба пути на предыдущий release и перезапустить сервис.
 6. Проверить PDF в оплаченной и пробной подписке, просроченный доступ, отменённое автопродление до конца срока и клиента без Telegram. После этого объединить frontend PR в main: GitHub Pages и Timeweb должны использовать одну версию приложения.
 
@@ -45,6 +57,6 @@
 
 Проверка кода:
 
-    node --test tests/paid-pdf.test.mjs
+    node --test tests/paid-pdf.test.mjs tests/breaststroke-program.test.mjs tests/pdf-lock-ui.test.mjs
 
 Тесты используют фиктивные оплаты и отдельную SQLite в памяти. Реальные пользователи, платежи и рассылки не затрагиваются.

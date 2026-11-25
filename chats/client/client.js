@@ -3,6 +3,9 @@
   const role = isTrainer ? 'partner' : 'client';
   const prefix = '/v1/' + role + '/';
   const entry = '/' + role + '/';
+  const requestedMaterial = new URLSearchParams(location.search).get('material') || '';
+  let pendingMaterial = !isTrainer && /^(?:br0(?:\/lesson-[1-6])?|br0_plan(?:_[1-8])?|dr_br_(?:[1-9]|1[0-2]))$/.test(requestedMaterial) ? requestedMaterial : '';
+
   const roleLabel = isTrainer ? 'тренера' : 'ученика';
   const loginTitle = 'Кабинет ' + roleLabel;
   const registrationTitle = 'Регистрация ' + roleLabel;
@@ -198,7 +201,9 @@
   function showMenu() {
     password.value = code.value = '';
     document.title = 'Плавательный остров VIP';
-    showLibrary('home');
+    const material = pendingMaterial || 'home';
+    pendingMaterial = '';
+    showLibrary(material);
   }
 
   function showLibrary(hash, back) {
