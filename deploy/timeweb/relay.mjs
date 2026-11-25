@@ -1,57 +1,111 @@
-import { connect, constants } from 'node:http2';
+import { connect } from 'node:http2';
 import { Readable } from 'node:stream';
 
 export function http2Transport(origin) {
-  let session;
-  return (url, options) => new Promise((resolve, reject) => {
-    if (!session || session.closed || session.destroyed) {
-      session = connect(origin, { family: 4, settings: { enablePush: false } });
-      const active = session;
-      active.on('error', error => active.destroy(error));
-      active.setTimeout(45000, () => active.close());
-    }
+  // A session belongs to one request: an idle/half-closed Cloudflare connection
+  // must never poison later authentication or entitlement checks.
+  const attempt = (url, options) => new Promise((resolve, reject) => {
+    const active = connect(origin, { family: 4, settings: { enablePush: false } });
+    const signal = options.signal;
+    let stream;
+    let socket;
+    let responded = false;
+    let finished = false;
+    let responseTimer;
+    const cleanup = () => {
+      clearTimeout(responseTimer);
+      signal?.removeEventListener('abort', abort);
+    };
+    const dispose = () => {
+      active.destroy();
+      // After GOAWAY, Node's graceful socket.end can wait for a peer FIN.
+      // This session is request-owned, so also release its actual TCP socket.
+      socket?.destroy();
+    };
+    active.once('connect', (_session, connected) => {
+      socket = connected;
+      if (finished) dispose();
+    });
+    const fail = error => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      reject(error);
+      stream?.destroy(error);
+      dispose();
+    };
+    const abort = () => fail(signal.reason ?? new Error('Upstream request aborted'));
+    active.on('error', fail);
+    active.once('close', () => {
+      if (!responded) fail(new Error('Upstream session closed before response'));
+    });
+    active.once('goaway', () => {
+      if (!responded) fail(new Error('Upstream session received GOAWAY before response'));
+    });
+    active.setTimeout(45000, () => fail(new Error('Upstream session timed out')));
 
-    const headers = {
-      ':method': options.method,
-      ':path': url.pathname + url.search,
-      ...Object.fromEntries(options.headers),
-      'accept-encoding': 'identity',
-    };
-    const stream = session.request(headers, { endStream: !options.body });
-    const abort = () => {
-      stream.close(constants.NGHTTP2_CANCEL);
-      reject(options.signal.reason);
-    };
-    stream.once('error', reject);
-    stream.once('close', () => {
-      options.signal.removeEventListener('abort', abort);
-      reject(new Error('Upstream stream closed before response'));
-    });
-    stream.once('response', fields => {
-      const status = fields[':status'];
-      const responseHeaders = new Headers();
-      for (const [key, value] of Object.entries(fields)) {
-        if (key.startsWith(':')) continue;
-        for (const part of Array.isArray(value) ? value : [value]) {
-          responseHeaders.append(key, part);
-        }
-      }
-      const body = [204, 205, 304].includes(status) ? null : Readable.toWeb(stream);
-      if (!body) stream.resume();
-      resolve(new Response(body, { status, headers: responseHeaders }));
-    });
-    if (options.signal.aborted) {
-      abort();
-      return;
+    if (signal?.aborted) return abort();
+    signal?.addEventListener('abort', abort, { once: true });
+    // Leave room within the relay's overall 9s deadline for one fresh GET.
+    if (options.method === 'GET') {
+      responseTimer = setTimeout(() => fail(new Error('Upstream response timed out')), 4000);
+      responseTimer.unref();
     }
-    options.signal.addEventListener('abort', abort, { once: true });
-    if (options.body) {
-      const body = Readable.fromWeb(options.body);
-      body.on('error', error => stream.destroy(error));
-      stream.on('close', () => body.destroy());
-      body.pipe(stream);
+    try {
+      const headers = {
+        ':method': options.method,
+        ':path': url.pathname + url.search,
+        ...Object.fromEntries(options.headers),
+        'accept-encoding': 'identity',
+      };
+      stream = active.request(headers, { endStream: !options.body });
+      stream.once('error', fail);
+      stream.once('close', () => {
+        if (!responded) fail(new Error('Upstream stream closed before response'));
+        finished = true;
+        cleanup();
+        dispose();
+      });
+      stream.once('response', fields => {
+        try {
+          const status = fields[':status'];
+          const responseHeaders = new Headers();
+          for (const [key, value] of Object.entries(fields)) {
+            if (key.startsWith(':')) continue;
+            for (const part of Array.isArray(value) ? value : [value]) {
+              responseHeaders.append(key, part);
+            }
+          }
+          const body = [204, 205, 304].includes(status) ? null : Readable.toWeb(stream);
+          if (!body) stream.resume();
+          const result = new Response(body, { status, headers: responseHeaders });
+          responded = true;
+          clearTimeout(responseTimer);
+          resolve(result);
+        } catch (error) {
+          fail(error);
+        }
+      });
+      if (options.body) {
+        const body = Readable.fromWeb(options.body);
+        body.on('error', error => stream.destroy(error));
+        stream.on('close', () => body.destroy());
+        body.pipe(stream);
+      }
+    } catch (error) {
+      fail(error);
     }
   });
+  return async (url, options) => {
+    try {
+      return await attempt(url, options);
+    } catch (error) {
+      // Never replay a login, payment or other POST. No retry after headers,
+      // caller cancellation or the overall request deadline.
+      if (options.method !== 'GET' || options.body || options.signal?.aborted) throw error;
+      return attempt(url, options);
+    }
+  };
 }
 
 const defaultUpstream = 'https://swim-island-chats.pages.dev';
